@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dàn nhân vật 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EFE9E1; --panel:#FBF8F3; --ink:#2A2230; --muted:#6E6570; --line:#DDD3C7;
+  --chip:#F4EEE6; --chip-on:#C23A28; --chip-on-ink:#FFF7EE; --accent:#C23A28; --gold:#E8A41A;
+  --stage:#E8E1D8;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1D1A20; --panel:#27232B; --ink:#F1EAE2; --muted:#ADA3AC; --line:#3A343F;
+    --chip:#302A35; --chip-on:#E0553F; --chip-on-ink:#1D1A20; --accent:#F07A5F; --gold:#F2B43A; --stage:#2B2730;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1D1A20; --panel:#27232B; --ink:#F1EAE2; --muted:#ADA3AC; --line:#3A343F;
+  --chip:#302A35; --chip-on:#E0553F; --chip-on-ink:#1D1A20; --accent:#F07A5F; --gold:#F2B43A; --stage:#2B2730;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,sans-serif;font-size:15px;line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+h1{font-family:"Patrick Hand",cursive;font-weight:400;font-size:34px;margin:0;line-height:1.1}
+.sub{color:var(--muted);margin:4px 0 14px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:14px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.chip[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
+.spacer{flex:1}
+.toggle{border:2px dashed var(--accent);background:transparent;color:var(--accent);font-weight:600}
+.stage{position:relative;border-radius:18px;overflow:hidden;background:var(--stage);border:1px solid var(--line);height:min(68vh,600px);min-height:380px}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:#5e5560;background:rgba(255,255,255,.7);padding:3px 9px;border-radius:999px;pointer-events:none}
+.bubble{position:absolute;right:14px;top:14px;max-width:min(300px,70%);background:#fff;color:#1E1530;border:2.5px solid #141019;border-radius:18px;padding:8px 14px;font-family:"Patrick Hand",cursive;font-size:20px;line-height:1.2;pointer-events:none;transition:opacity .3s}
+.card{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:18px}
+.card h2{font-family:"Patrick Hand",cursive;font-weight:400;font-size:28px;margin:0;line-height:1.1}
+.tag{display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;background:var(--chip);border:1px solid var(--line);margin:6px 6px 0 0}
+.card p{margin:8px 0 0}
+.card ul{margin:0;padding-left:18px}
+.card li{margin:0 0 6px}
+.lbl{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.note{color:var(--muted);font-size:13px;margin-top:14px}
+@media (max-width:720px){.card{grid-template-columns:minmax(0,1fr)}h1{font-size:28px}.stage{height:58vh}}
+</style>
+
+<div class="wrap">
+  <h1>Phố Cũ Bạc Màu · dàn nhân vật 3D</h1>
+  <div class="sub">Kéo để xoay, cuộn hoặc chụm hai ngón để phóng to. Bấm vào một nhân vật để xem lý do thiết kế.</div>
+  <div class="bar" id="chips"></div>
+  <div class="stage">
+    <canvas id="c"></canvas>
+    <div class="bubble" id="bubble"></div>
+    <div class="hint" id="hint">toon 3 tông · viền đen · bản phác khối</div>
+  </div>
+  <div class="card" id="card"></div>
+  <div class="note">Đây là bản dựng khối nhanh bằng hình cơ bản để chốt dáng, tỉ lệ chiều cao và bảng màu trước khi dựng chi tiết trong Blender. Chiều cao tính theo đơn vị “Tò” (Tò = 1).</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const INFO = {
+  to:{name:"Tò",color:"#C23A28",h:"1",tags:["Nhân vật chính","Người chơi điều khiển"],
+    say:"Ai đã bóc hết màu của phố vậy ta?",
+    role:"Con tò he bột gạo bà Năm nặn chiều 14 tháng 8 âm lịch. Tò tỉnh dậy thấy cả phố phủ một lớp xám làm từ những tờ lịch đã bóc, và dùng que tre cạy mép lớp xám để trả màu lại cho phố.",
+    why:["Tò he là đồ chơi dân gian gắn với Trung thu và phố cũ, nhỏ và màu rực nên nổi bật nhất trên nền xám.",
+      "Thân đỏ gấc, cổ áo cánh hoa vàng, chỏm tóc ba màu: cố ý không có mũ trùm, khăn hay mầm cây để khác hẳn nhân vật của bản mẫu.",
+      "Que tre là công cụ gameplay luôn nhìn thấy được: cạy, móc và bóc lớp xám.",
+      "Làm bằng bột nên sợ nước, tự nhiên sinh ra chướng ngại cho màn 2 mà không cần giải thích."]},
+  ba:{name:"Bà Năm",color:"#7A4E2D",h:"≈ 0.9 (ngồi)",tags:["Người nặn ra Tò","Đầu phố"],
+    say:"Bà nặn con cho có màu, chứ đâu phải để xám.",
+    role:"Nghệ nhân tò he gốc làng Xuân La, ngồi ghế nhựa đỏ đầu phố. Bà là điểm xuất phát và là nơi Tò quay về sau mỗi màn.",
+    why:["Khay ba con tò he trên đùi là thanh tiến độ của bản demo: xong một màn, một con trên khay lấy lại màu.",
+      "Dấu vân tay bà còn in trên bụng Tò nối hai nhân vật mà không cần lời thoại.",
+      "Ngồi ghế nhựa đỏ, áo bà ba nâu, búi tóc bạc: hình ảnh người bán hàng rong quen mắt ở phố Việt.",
+      "Kính tròn cho bà một nét riêng dễ nhận ra ngay cả khi nhìn từ xa trong màn chơi 2D."]},
+  hai:{name:"Cô Hai",color:"#2E8C86",h:"≈ 1.15",tags:["Màn 1","Gánh chè"],
+    say:"Chè đậu, chè bưởi, chè khúc bạch đây!",
+    role:"Cô bán chè ở màn 1. Quầy chè và nồi chè bị phủ xám là câu đố đầu tiên, dạy người chơi cách bóc lớp xám theo từng mảng.",
+    why:["Nón lá và nồi chè cho người chơi nhận ra bối cảnh phố Việt chỉ trong một khung hình.",
+      "Cao nhất nhóm và giơ vá lên cao, để Tò phải ngước nhìn, cảm giác phố rất lớn so với một con tò he.",
+      "Áo xanh ngọc đối màu với thân đỏ của Tò, hai nhân vật đứng cạnh nhau không lẫn vào nhau.",
+      "Màu các loại chè là bảng màu mẫu cho cả màn 1."]},
+  bong:{name:"Bé Bống",color:"#F2C230",h:"≈ 0.7",tags:["Màn 2","Thuyền giấy"],
+    say:"Thuyền của em gấp bằng tờ lịch đó!",
+    role:"Cô bé thả thuyền giấy gấp từ tờ lịch trên rãnh nước mưa ở màn 2. Tò sợ nước nên phải cưỡi thuyền của Bống để qua rãnh.",
+    why:["Thuyền gấp từ tờ lịch nối thẳng vào lõi câu chuyện: lớp xám chính là những ngày bị bóc rồi quên.",
+      "Gần bằng chiều cao của Tò, nên là bạn đồng hành ngang hàng chứ không phải người lớn chỉ dẫn.",
+      "Tóc trái đào là kiểu tóc trẻ con xưa, gợi lại tuổi thơ ở phố cũ.",
+      "Áo vàng, quần xanh ngọc lặp lại ba màu trên chỏm tóc Tò."]},
+  tu:{name:"Chú Tư",color:"#E07B4F",h:"≈ 1.1",tags:["Màn 3","Sửa quạt"],
+    say:"Cầu dao bật sai thứ tự là cháy quạt nghe con.",
+    role:"Chú thợ sửa quạt đầu ngõ ở màn 3. Câu đố của màn là bật cầu dao đúng thứ tự để quạt chạy, gió thổi tung lớp bụi xám.",
+    why:["Bụng tròn, khăn vắt vai, mũ lưỡi trai: dáng chú thợ đầu ngõ dễ đọc chỉ qua bóng.",
+      "Chiếc quạt xanh vừa là đạo cụ, vừa là cơ chế: quạt quay thì bụi bay đi.",
+      "Ria mép và dáng to cho chú vẻ khó tính bên ngoài, tốt bụng bên trong, hợp với một màn chơi khó hơn.",
+      "Màu cam hồng ấm giữ cho màn cuối không bị lạnh khi phải dùng nhiều xám kim loại."]},
+  bui:{name:"Lũ Bụi",color:"#8E8A86",h:"≈ 0.2 đến 0.35",tags:["Đối thủ nhẹ","Ở mọi màn"],
+    say:"…phù…",
+    role:"Những cục bụi sinh ra từ các tờ lịch bị bóc rồi quên. Chúng không ác, chỉ bám vào những chỗ không ai còn nhớ và kéo lớp xám phủ lại.",
+    why:["Khối low-poly góc cạnh đối lập với các nhân vật tròn mềm, nhìn là biết không cùng phe.",
+      "Luôn xám kể cả khi phố đã có màu, để người chơi nhận ra ngay trên nền đã bóc.",
+      "Mắt to tròn như các nhân vật khác nên vẫn dễ thương, hợp với game không có bạo lực.",
+      "Dễ làm nhiều kích cỡ từ một khối, tiết kiệm công dựng cho bản demo."]}
+};
+const ORDER = ["ba","hai","to","bong","tu","bui"];
+
+// ---------- renderer ----------
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#E8E1D8');
+scene.fog = new THREE.Fog('#E8E1D8', 34, 70);
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 200);
+camera.position.set(1, 7.5, 23);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.target.set(1, 2, 0);
+controls.enableDamping = true;
+controls.minDistance = 5; controls.maxDistance = 46;
+controls.maxPolarAngle = Math.PI*0.49;
+controls.autoRotateSpeed = 0.6;
+
+const hemi = new THREE.HemisphereLight('#FFF6EA', '#B9AFA6', 0.62); scene.add(hemi);
+const sun = new THREE.DirectionalLight('#FFFFFF', 0.62);
+sun.position.set(-9, 16, 12); sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+const sc = sun.shadow.camera; sc.left=-18; sc.right=18; sc.top=14; sc.bottom=-10; sc.near=1; sc.far=60;
+sun.shadow.bias = -0.0008; sun.shadow.radius = 4;
+scene.add(sun);
+
+// 3-tone toon ramp (same stops as the Blender material: 0.66 / 0.86 / 1.0)
+const ramp = new THREE.DataTexture(new Uint8Array([150,150,150,255, 205,205,205,255, 255,255,255,255]), 3, 1, THREE.RGBAFormat);
+ramp.minFilter = ramp.magFilter = THREE.NearestFilter; ramp.generateMipmaps = false; ramp.needsUpdate = true;
+
+const mats = {}; const allMats = [];
+function toon(hex, keep){
+  const k = hex + (keep?'k':'');
+  if(mats[k]) return mats[k];
+  const m = new THREE.MeshToonMaterial({color:new THREE.Color(hex).convertSRGBToLinear(), gradientMap:ramp});
+  m.userData.base = m.color.clone();
+  const c = new THREE.Color(hex); const l = 0.299*c.r+0.587*c.g+0.114*c.b;
+  m.userData.grey = new THREE.Color(l*0.78+0.17, l*0.76+0.17, l*0.74+0.17).convertSRGBToLinear();
+  m.userData.keep = !!keep;
+  mats[k] = m; allMats.push(m); return m;
+}
+const OUTLINE = new THREE.MeshBasicMaterial({color:'#141019', side:THREE.BackSide});
+const SPH = new THREE.SphereGeometry(1, 32, 24);
+const SPH_S = new THREE.SphereGeometry(1, 16, 12);
+
+function outline(mesh, w){
+  const o = new THREE.Mesh(mesh.geometry, OUTLINE);
+  const s = mesh.scale;
+  o.scale.set(1 + w/Math.max(s.x,.01), 1 + w/Math.max(s.y,.01), 1 + w/Math.max(s.z,.01));
+  o.userData.isOutline = true;
+  mesh.add(o); return mesh;
+}
+// Blender coords (x, y=back, z=up) -> three (x, z, -y), so the character faces +z like it faced -y in clay.py
+function B(x,y,z){ return new THREE.Vector3(x, z, -y); }
+function blob(parent, pos, scl, hex, opt){
+  opt = opt||{};
+  const m = new THREE.Mesh(opt.geo || (opt.small?SPH_S:SPH), toon(hex, opt.keep));
+  m.position.copy(pos);
+  if(Array.isArray(scl)) m.scale.set(scl[0], scl[2], scl[1]); else m.scale.setScalar(scl);
+  if(opt.rot) m.rotation.set(opt.rot[0]||0, opt.rot[1]||0, opt.rot[2]||0);
+  m.castShadow = opt.shadow!==false; m.receiveShadow = true;
+  if(opt.outline!==false && !opt.small) outline(m, opt.ow||0.045);
+  parent.add(m); return m;
+}
+function mesh(parent, geo, hex, opt){
+  opt=opt||{};
+  const m = new THREE.Mesh(geo, toon(hex, opt.keep));
+  if(opt.pos) m.position.copy(opt.pos);
+  if(opt.rot) m.rotation.set(opt.rot[0]||0,opt.rot[1]||0,opt.rot[2]||0);
+  if(opt.scl) m.scale.set(opt.scl[0],opt.scl[1],opt.scl[2]);
+  m.castShadow = opt.shadow!==false; m.receiveShadow = true;
+  if(opt.outline!==false) outline(m, opt.ow||0.04);
+  parent.add(m); return m;
+}
+function rod(parent, a, b, r, hex, opt){
+  const d = new THREE.Vector3().subVectors(b,a); const len = d.length();
+  const g = new THREE.CylinderGeometry(r, r, len, 12);
+  const m = mesh(parent, g, hex, Object.assign({ow:0.03},opt||{}));
+  m.position.copy(a).addScaledVector(d, .5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), d.normalize());
+  return m;
+}
+// googly eyes: white sclera, small dark pupil looking sideways, glint
+function eyes(parent, cx, y, z, sx, sy, look, gap){
+  gap = gap||0.36;
+  for(const s of [-1,1]){
+    const ex = cx + s*gap;
+    blob(parent, new THREE.Vector3(ex, y, z), [sx, sx*0.6, sy], '#FFFFFF', {ow:0.03});
+    const px = ex + look*sx*0.38;
+    blob(parent, new THREE.Vector3(px, y-sy*0.05, z+sx*0.55), [sx*0.5, sx*0.12, sy*0.55], '#1E1530', {small:true, keep:true});
+    blob(parent, new THREE.Vector3(px+sx*0.18, y+sy*0.2, z+sx*0.62), [sx*0.15, sx*0.05, sx*0.16], '#FFFFFF', {small:true, keep:true});
+  }
+}
+function smile(parent, x, y, z, r, hex){
+  const g = new THREE.TorusGeometry(r, r*0.22, 8, 20, Math.PI);
+  const m = mesh(parent, g, hex||'#7A2318', {pos:new THREE.Vector3(x,y,z), rot:[0,0,Math.PI], outline:false, shadow:false});
+  return m;
+}
+const groups = {}; const anim = [];
+function charGroup(id, x, z, ry){
+  const g = new THREE.Group(); g.position.set(x, 0, z||0); g.rotation.y = ry||0;
+  g.userData.cid = id; scene.add(g); groups[id] = g; return g;
+}
+
+// ---------- ground ----------
+const ground = new THREE.Mesh(new THREE.CircleGeometry(40, 64), toon('#D9D0C4'));
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+// terraced back wall like the reference
+[[ -9, 1.3, '#CBC1B5'], [-11.5, 2.8, '#C2B8AB'], [-14, 4.6, '#CBC1B5']].forEach(([z,h,c])=>{
+  const b = mesh(scene, new THREE.BoxGeometry(70, h, 3), c, {pos:new THREE.Vector3(0,h/2,z), ow:0.05});
+});
+function rock(x,z,s,hex,seed){
+  const g = new THREE.IcosahedronGeometry(1, 0);
+  const p = g.attributes.position; let r = seed;
+  const rnd = ()=>{ r = (r*9301+49297)%233280; return r/233280; };
+  const cache = {};
+  for(let i=0;i<p.count;i++){
+    const key = p.getX(i).toFixed(3)+p.getY(i).toFixed(3)+p.getZ(i).toFixed(3);
+    const f = cache[key] || (cache[key] = 0.8 + rnd()*0.35);
+    p.setXYZ(i, p.getX(i)*f, p.getY(i)*f, p.getZ(i)*f);
+  }
+  g.computeVertexNormals();
+  const m = mesh(scene, g, hex, {pos:new THREE.Vector3(x, s[1]*0.55, z), scl:s, ow:0.04});
+  m.material.flatShading = true; return m;
+}
+rock(-10.5, 3, [1.1,.7,.9], '#E4DED5', 3);
+rock(9.5, -4.5, [.8,.55,.7], '#DCD5CB', 8);
+rock(-4.8, 4.2, [.45,.32,.4], '#E4DED5', 13);
+rock(12.5, 2.5, [.6,.42,.55], '#DCD5CB', 21);
+// a lantern post with a star lantern to hint at Trung thu
+(function(){
+  const g = new THREE.Group(); g.position.set(-12.5, 0, -3); scene.add(g);
+  rod(g, new THREE.Vector3(0,0,0), new THREE.Vector3(0,6.2,0), .09, '#6E5A4A');
+  rod(g, new THREE.Vector3(0,6.1,0), new THREE.Vector3(1.3,6.1,0), .06, '#6E5A4A');
+  const sh = new THREE.Shape();
+  for(let i=0;i<10;i++){ const a = i/10*Math.PI*2 + Math.PI/2; const r = i%2? .32 : .75; i? sh.lineTo(Math.cos(a)*r, Math.sin(a)*r) : sh.moveTo(Math.cos(a)*r, Math.sin(a)*r); }
+  const star = mesh(g, new THREE.ExtrudeGeometry(sh,{depth:.28, bevelEnabled:true, bevelSize:.06, bevelThickness:.06, bevelSegments:2}), '#E8442E', {pos:new THREE.Vector3(1.3,5.0,-.14)});
+  rod(g, new THREE.Vector3(1.3,6.1,0), new THREE.Vector3(1.3,5.75,0), .015, '#141019', {outline:false});
+  anim.push(t=>{ star.rotation.z = Math.sin(t*1.1)*0.08; });
+})();
+
+// ---------- Tò (geometry mirrors clay.py) ----------
+(function(){
+  const g = charGroup('to', 0, 1.2, -0.25);
+  const R='#C23A28', R2='#B4321F', Y='#E8A41A', SK='#F3D7B4';
+  const body = blob(g, B(0,0,1.0), [.84,.76,.95], R);
+  for(const s of [-1,1]) blob(g, B(s*.4,-.08,.13), [.33,.38,.19], R2);
+  const head = new THREE.Group(); g.add(head);
+  blob(head, B(0,0,2.72), [.97,.92,.9], SK);
+  for(let i=0;i<10;i++){
+    const a = i/10*Math.PI*2;
+    const p = new THREE.Mesh(SPH, toon(Y)); p.castShadow = true;
+    p.position.set(Math.cos(a)*.62, 1.8, Math.sin(a)*.62);
+    p.scale.set(.25,.2,.09);
+    p.rotation.order = 'YXZ'; p.rotation.y = -a + Math.PI/2; p.rotation.x = 0.95;
+    outline(p, .03); g.add(p);
+  }
+  for(const s of [-1,1]){
+    blob(g, B(s*.86,-.04,1.2), [.2,.21,.42], R, {rot:[0,0,s*0.42]});
+    blob(g, B(s*1.02,-.1,.8), .26, Y);
+  }
+  // bamboo stick held behind the right hand
+  const a = B(.25,.5,.35), b = B(.95,.75,4.15);
+  rod(g, a, b, .07, '#C99A52');
+  for(const f of [.3,.55,.8]){ const p = a.clone().lerp(b,f); const n = blob(g, p, [.09,.09,.04], '#8C6631', {small:true}); n.lookAt(b); }
+  // three-colour flame tuft
+  blob(head, B(0,0,3.8), [.26,.24,.55], R);
+  blob(head, B(-.34,.05,3.62), [.18,.17,.4], Y, {rot:[0,0,0.6]});
+  blob(head, B(.34,.05,3.62), [.18,.17,.4], '#2E9C93', {rot:[0,0,-0.6]});
+  eyes(head, 0, 2.74, .7, .33, .37, .7);
+  for(const s of [-1,1]){
+    blob(head, B(s*.38,-.83,3.18), [.17,.04,.05], R, {small:true, rot:[0,0,s*-0.2]});
+    blob(head, B(s*.66,-.7,2.46), [.15,.05,.1], '#EE8C78', {small:true});
+  }
+  smile(head, 0, 2.42, .84, .14);
+  // grandma's fingerprint on the belly
+  const fp = new THREE.Group(); fp.position.copy(B(0,-.74,1.12)); g.add(fp);
+  for(const r of [.07,.13,.19]) mesh(fp, new THREE.TorusGeometry(r, .012, 6, 24), '#9E2A1C', {outline:false, shadow:false});
+  anim.push(t=>{ body.scale.y = .95*(1+Math.sin(t*2.2)*0.015); head.position.y = Math.sin(t*2.2)*0.03; });
+})();
+
+// ---------- Bà Năm (seated on red plastic stool, tray of 3 tò he) ----------
+(function(){
+  const g = charGroup('ba', -7.6, 0.4, 0.3);
+  const ST='#D8382A';
+  mesh(g, new THREE.CylinderGeometry(.75,.7,.16,24), ST, {pos:new THREE.Vector3(0,1.05,-.15)});
+  for(const [x,z] of [[-.5,-.6],[.5,-.6],[-.5,.3],[.5,.3]]) rod(g, new THREE.Vector3(x*.75,1,z), new THREE.Vector3(x,0,z*1.2-.05), .07, ST);
+  const BR='#7A4E2D', PA='#3E3A44', SK='#E8C39E';
+  const torso = blob(g, new THREE.Vector3(0,1.85,-.15), [.82,.7,.85], BR);
+  // thighs forward, shins down
+  for(const s of [-1,1]){
+    blob(g, new THREE.Vector3(s*.33,1.25,.35), [.3,.6,.27], PA, {rot:[Math.PI/2,0,0]});
+    blob(g, new THREE.Vector3(s*.36,.62,.85), [.22,.24,.55], PA);
+    blob(g, new THREE.Vector3(s*.36,.12,1.0), [.24,.3,.12], '#5A3B24');
+  }
+  // tray on the lap with three tiny tò he
+  const tray = mesh(g, new THREE.CylinderGeometry(.85,.75,.12,28), '#C9A15A', {pos:new THREE.Vector3(0,1.62,.7)});
+  const tiny = [['#C23A28',-.42],['#E8A41A',0],['#2E9C93',.42]];
+  tiny.forEach(([c,x])=>{
+    blob(g, new THREE.Vector3(x,1.82,.75), [.13,.12,.16], c, {ow:.02});
+    blob(g, new THREE.Vector3(x,2.05,.75), .1, '#F3D7B4', {ow:.02});
+    rod(g, new THREE.Vector3(x+.1,1.7,.65), new THREE.Vector3(x+.18,2.5,.6), .02, '#C99A52', {outline:false});
+  });
+  for(const s of [-1,1]){
+    blob(g, new THREE.Vector3(s*.72,1.9,.1), [.18,.18,.42], BR, {rot:[0.9,0,s*0.25]});
+    blob(g, new THREE.Vector3(s*.6,1.72,.6), .17, SK);
+  }
+  const head = new THREE.Group(); g.add(head);
+  blob(head, new THREE.Vector3(0,2.95,-.1), [.74,.72,.7], SK);
+  blob(head, new THREE.Vector3(0,3.3,-.25), [.74,.62,.5], '#B9B4AE');
+  blob(head, new THREE.Vector3(0,3.4,-.78), [.36,.34,.32], '#B9B4AE');
+  eyes(head, 0, 2.98, .56, .2, .22, .4, .26);
+  for(const s of [-1,1]) mesh(head, new THREE.TorusGeometry(.25,.035,8,24), '#3A2C24', {pos:new THREE.Vector3(s*.26,2.98,.7), outline:false});
+  rod(head, new THREE.Vector3(-.03,3.0,.72), new THREE.Vector3(.03,3.0,.72), .03, '#3A2C24', {outline:false});
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.48,2.72,.5), [.12,.04,.08], '#E79B85', {small:true});
+  smile(head, 0, 2.66, .66, .12);
+  anim.push(t=>{ head.rotation.z = Math.sin(t*0.9)*0.04; });
+})();
+
+// ---------- Cô Hai (tall, nón lá, ladle raised, pot of chè) ----------
+(function(){
+  const g = charGroup('hai', -3.7, -0.3, 0.15);
+  const TE='#2E8C86', PA='#2A2630', SK='#EBC7A0';
+  for(const s of [-1,1]){
+    blob(g, new THREE.Vector3(s*.28,.75,0), [.24,.24,.7], PA);
+    blob(g, new THREE.Vector3(s*.3,.1,.12), [.22,.26,.13], '#B5512F');
+  }
+  const body = blob(g, new THREE.Vector3(0,2.15,0), [.68,.55,.95], TE);
+  blob(g, new THREE.Vector3(0,1.35,0), [.62,.5,.32], TE);
+  // left arm down to the pot, right arm raised holding the ladle
+  blob(g, new THREE.Vector3(-.72,2.1,.05), [.17,.17,.5], TE, {rot:[0,0,-0.35]});
+  blob(g, new THREE.Vector3(-.92,1.6,.12), .15, SK);
+  const arm = new THREE.Group(); arm.position.set(.62,2.7,0); g.add(arm);
+  blob(arm, new THREE.Vector3(.18,.35,0), [.17,.17,.5], TE, {rot:[0,0,-0.4]});
+  blob(arm, new THREE.Vector3(.38,.82,.05), .15, SK);
+  rod(arm, new THREE.Vector3(.38,.6,.05), new THREE.Vector3(.38,1.7,.15), .04, '#8C6631');
+  mesh(arm, new THREE.SphereGeometry(.22,16,10,0,Math.PI*2,Math.PI/2,Math.PI/2), '#9A9DA3', {pos:new THREE.Vector3(.38,1.88,.18), rot:[Math.PI,0,0]});
+  const head = new THREE.Group(); g.add(head);
+  blob(head, new THREE.Vector3(0,3.55,0), [.66,.68,.64], SK);
+  blob(head, new THREE.Vector3(0,3.75,-.2), [.68,.55,.52], '#1E1A22');
+  blob(head, new THREE.Vector3(0,3.4,-.62), [.3,.3,.42], '#1E1A22');
+  eyes(head, 0, 3.6, .6, .2, .23, -.5, .25);
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.42,3.38,.46), [.11,.04,.07], '#E79B85', {small:true});
+  smile(head, 0, 3.32, .62, .11);
+  // nón lá with a chin strap hint
+  const hat = mesh(head, new THREE.ConeGeometry(1.15,.62,28,1,true), '#E3C77A', {pos:new THREE.Vector3(0,4.38,0), ow:.04});
+  hat.material.side = THREE.DoubleSide; hat.castShadow = false;
+  for(let i=1;i<4;i++) mesh(head, new THREE.TorusGeometry(1.15*i/4, .012, 4, 40), '#B99A4E', {pos:new THREE.Vector3(0,4.69-.62*i/4,0), rot:[Math.PI/2,0,0], outline:false, shadow:false});
+  // pot of chè
+  const pot = new THREE.Group(); pot.position.set(-1.55,0,.6); g.add(pot);
+  mesh(pot, new THREE.CylinderGeometry(.55,.48,.85,24), '#6B6F75', {pos:new THREE.Vector3(0,.43,0)});
+  mesh(pot, new THREE.CylinderGeometry(.5,.5,.04,24), '#F1E4C3', {pos:new THREE.Vector3(0,.84,0), outline:false});
+  [['#8CC152',-.18,.1],['#F2C230',.18,-.05],['#C0392B',0,.22],['#FFFFFF',.05,-.22]].forEach(([c,x,z])=>blob(pot,new THREE.Vector3(x,.88,z),[.12,.12,.05],c,{small:true}));
+  mesh(pot, new THREE.TorusGeometry(.56,.04,8,28), '#4E5157', {pos:new THREE.Vector3(0,.84,0), rot:[Math.PI/2,0,0], outline:false});
+  anim.push(t=>{ arm.rotation.z = Math.sin(t*2)*0.12; head.rotation.y = Math.sin(t*.7)*0.08; });
+})();
+
+// ---------- Bé Bống (small, big head, tóc trái đào, paper boat) ----------
+(function(){
+  const g = charGroup('bong', 3.4, 0.9, -0.2);
+  const YE='#F2C230', TE='#2E9C93', SK='#F0CFA8';
+  for(const s of [-1,1]){
+    blob(g, new THREE.Vector3(s*.2,.3,0), [.16,.16,.3], SK);
+    blob(g, new THREE.Vector3(s*.21,.07,.07), [.15,.18,.09], '#C23A28');
+  }
+  blob(g, new THREE.Vector3(0,.72,0), [.44,.38,.24], TE);
+  const body = blob(g, new THREE.Vector3(0,1.1,0), [.44,.36,.38], YE);
+  for(const s of [-1,1]){
+    blob(g, new THREE.Vector3(s*.42,1.08,.22), [.12,.12,.28], YE, {rot:[1.1,0,s*0.3]});
+    blob(g, new THREE.Vector3(s*.3,.98,.52), .11, SK);
+  }
+  // paper boat folded from a calendar page
+  const boat = new THREE.Group(); boat.position.set(0,1.05,.68); g.add(boat);
+  const sh = new THREE.Shape(); sh.moveTo(-.55,.18); sh.lineTo(.55,.18); sh.lineTo(.32,-.12); sh.lineTo(-.32,-.12); sh.closePath();
+  const hull = mesh(boat, new THREE.ExtrudeGeometry(sh,{depth:.34,bevelEnabled:false}), '#F4EFE4', {pos:new THREE.Vector3(0,0,-.17), ow:.025});
+  mesh(boat, new THREE.CylinderGeometry(0,.26,.42,3), '#F4EFE4', {pos:new THREE.Vector3(0,.39,0), scl:[1,1,.35], ow:.025});
+  mesh(boat, new THREE.BoxGeometry(.9,.05,.36), '#D8382A', {pos:new THREE.Vector3(0,.1,0), outline:false});
+  const head = new THREE.Group(); g.add(head);
+  blob(head, new THREE.Vector3(0,2.0,0), [.72,.66,.66], SK);
+  // tóc trái đào: shaved head with one peach-shaped tuft at the front
+  blob(head, new THREE.Vector3(0,2.62,.22), [.2,.18,.2], '#1E1A22', {rot:[0.5,0,0]});
+  blob(head, new THREE.Vector3(0,2.78,.42), [.08,.09,.14], '#1E1A22', {rot:[1.0,0,0], small:true});
+  eyes(head, 0, 2.02, .6, .21, .25, .3, .27);
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.45,1.8,.46), [.12,.04,.08], '#EE8C78', {small:true});
+  smile(head, 0, 1.74, .62, .12);
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.7,2.0,0), [.1,.1,.14], SK, {ow:.025});
+  anim.push(t=>{ g.position.y = Math.abs(Math.sin(t*3))*0.12; boat.rotation.z = Math.sin(t*3)*0.1; });
+})();
+
+// ---------- Chú Tư (round belly, cap, moustache, towel, blue fan) ----------
+(function(){
+  const g = charGroup('tu', 7.4, 0.1, -0.35);
+  const SH='#E07B4F', PA='#4A3B34', SK='#D9A97F';
+  for(const s of [-1,1]){
+    blob(g, new THREE.Vector3(s*.42,.5,0), [.28,.28,.5], PA);
+    blob(g, new THREE.Vector3(s*.44,.1,.14), [.26,.28,.14], '#2B2420');
+  }
+  const belly = blob(g, new THREE.Vector3(0,1.75,0), [1.0,.9,1.05], SH);
+  blob(g, new THREE.Vector3(0,1.0,0), [.82,.7,.35], PA);
+  // towel over the left shoulder
+  mesh(g, new THREE.BoxGeometry(.38,.08,1.5), '#F4F1EA', {pos:new THREE.Vector3(-.55,2.62,0), rot:[0,0,0.35], ow:.025});
+  mesh(g, new THREE.BoxGeometry(.38,.7,.08), '#F4F1EA', {pos:new THREE.Vector3(-.72,2.3,.72), rot:[0,0,0.2], ow:.025});
+  for(const s of [-1,1]) blob(g, new THREE.Vector3(s*1.02,1.85,.05), [.22,.22,.5], SK, {rot:[0,0,s*0.35]});
+  blob(g, new THREE.Vector3(-1.2,1.35,.12), .2, SK);
+  blob(g, new THREE.Vector3(1.15,1.4,.3), .2, SK);
+  // standing fan held in the right hand
+  const fan = new THREE.Group(); fan.position.set(1.85,0,.55); g.add(fan);
+  mesh(fan, new THREE.CylinderGeometry(.5,.58,.14,24), '#3D6CB8', {pos:new THREE.Vector3(0,.07,0)});
+  rod(fan, new THREE.Vector3(0,.1,0), new THREE.Vector3(0,1.55,0), .07, '#3D6CB8');
+  const headF = new THREE.Group(); headF.position.set(0,1.75,.05); fan.add(headF);
+  mesh(headF, new THREE.TorusGeometry(.58,.04,8,32), '#4A7BC8', {ow:.02});
+  blob(headF, new THREE.Vector3(0,0,-.12), [.18,.18,.2], '#3D6CB8', {ow:.02});
+  const blades = new THREE.Group(); blades.position.z = .05; headF.add(blades);
+  for(let i=0;i<3;i++){
+    const bl = new THREE.Mesh(SPH_S, toon('#9DC3F0')); bl.scale.set(.2,.48,.04); bl.position.set(0,.27,0);
+    const piv = new THREE.Group(); piv.rotation.z = i/3*Math.PI*2; piv.add(bl); blades.add(piv);
+  }
+  for(let i=0;i<8;i++){ const a=i/8*Math.PI; rod(headF, new THREE.Vector3(Math.cos(a)*.57,Math.sin(a)*.57,.1), new THREE.Vector3(-Math.cos(a)*.57,-Math.sin(a)*.57,.1), .012, '#2E4F8A', {outline:false, shadow:false}); }
+  const head = new THREE.Group(); g.add(head);
+  blob(head, new THREE.Vector3(0,3.3,0), [.7,.7,.68], SK);
+  // cap
+  mesh(head, new THREE.SphereGeometry(.73,24,12,0,Math.PI*2,0,Math.PI/2), '#2E8C86', {pos:new THREE.Vector3(0,3.55,-.04)});
+  mesh(head, new THREE.CylinderGeometry(.5,.5,.06,20,1,false,-Math.PI/2,Math.PI), '#2E8C86', {pos:new THREE.Vector3(0,3.62,.42), scl:[1,1,1.1], rot:[0.12,0,0]});
+  eyes(head, 0, 3.42, .64, .19, .22, .6, .26);
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.2,3.06,.63), [.24,.07,.07], '#1E1A22', {small:true, rot:[0,0,s*-0.3]});
+  blob(head, new THREE.Vector3(0,3.18,.68), [.13,.11,.11], '#C98E68', {ow:.025});
+  smile(head, 0, 2.92, .6, .1);
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.7,3.3,0), [.1,.1,.14], SK, {ow:.025});
+  groups.tu.userData.blades = blades;
+  anim.push((t,dt,col)=>{ blades.rotation.z -= dt*(1 + col*14); belly.scale.y = 1.05*(1+Math.sin(t*1.6)*0.02); });
+})();
+
+// ---------- Lũ Bụi (low-poly dust balls, always grey) ----------
+(function(){
+  const g = charGroup('bui', 11.2, 0.4, -0.5);
+  const list = [[0,0,.82,1],[-1.3,.9,.55,2],[1.1,1.1,.62,3],[.3,-1.4,.45,4],[-1.0,-1.1,.38,5]];
+  list.forEach(([x,z,s,seed])=>{
+    const b = new THREE.Group(); b.position.set(x, s, z); g.add(b);
+    const geo = new THREE.IcosahedronGeometry(1, 1);
+    const p = geo.attributes.position; let r = seed*17; const rnd=()=>{ r=(r*9301+49297)%233280; return r/233280; };
+    const cache={};
+    for(let i=0;i<p.count;i++){ const k=p.getX(i).toFixed(3)+p.getY(i).toFixed(3)+p.getZ(i).toFixed(3); const f=cache[k]||(cache[k]=0.82+rnd()*0.3); p.setXYZ(i,p.getX(i)*f,p.getY(i)*f,p.getZ(i)*f); }
+    geo.computeVertexNormals();
+    const m = mesh(b, geo, '#8E8A86', {keep:true, scl:[s,s*.92,s], ow:.035});
+    m.material.flatShading = true;
+    for(const sd of [-1,1]){
+      blob(b, new THREE.Vector3(sd*s*.34, s*.12, s*.82), [s*.26,s*.12,s*.3], '#FFFFFF', {keep:true, ow:.02});
+      blob(b, new THREE.Vector3(sd*s*.34 + s*.07, s*.08, s*.95), [s*.12,s*.04,s*.14], '#1E1530', {keep:true, small:true});
+    }
+    const ph = seed*1.3;
+    anim.push(t=>{ b.position.y = s + Math.abs(Math.sin(t*2.4+ph))*s*0.35; b.rotation.y = Math.sin(t*.8+ph)*0.4; });
+  });
+})();
+
+// ---------- grey layer / peel toggle ----------
+let colour = 1, colourTarget = 1;
+function applyColour(k){
+  for(const m of allMats){ if(m.userData.keep) continue; m.color.copy(m.userData.grey).lerp(m.userData.base, k); }
+  const bg = new THREE.Color('#D6D3D0').lerp(new THREE.Color('#E8E1D8'), k);
+  scene.background.copy(bg); scene.fog.color.copy(bg);
+}
+
+// ---------- UI ----------
+const chipsEl = document.getElementById('chips');
+const cardEl = document.getElementById('card');
+const bubble = document.getElementById('bubble');
+let selected = null;
+function chip(label, id, dot){
+  const b = document.createElement('button'); b.className='chip'; b.dataset.id=id;
+  b.innerHTML = (dot?`<i style="background:${dot}"></i>`:'') + label;
+  b.onclick = ()=> select(id); chipsEl.appendChild(b); return b;
+}
+chip('Cả dàn', 'all');
+ORDER.forEach(id=>chip(INFO[id].name, id, INFO[id].color));
+const sp = document.createElement('div'); sp.className='spacer'; chipsEl.appendChild(sp);
+const tg = document.createElement('button'); tg.className='chip toggle'; chipsEl.appendChild(tg);
+function setToggle(){ tg.textContent = colourTarget ? 'Phủ lại lớp xám' : 'Bóc lớp xám'; }
+tg.onclick = ()=>{ colourTarget = colourTarget ? 0 : 1; setToggle(); };
+setToggle();
+
+let fly = null;
+function select(id){
+  selected = id;
+  [...chipsEl.querySelectorAll('.chip[data-id]')].forEach(b=>b.setAttribute('aria-pressed', b.dataset.id===id));
+  let tgt, pos;
+  if(id==='all' || !groups[id]){
+    tgt = new THREE.Vector3(1,2,0); pos = new THREE.Vector3(1,7.5,23);
+    controls.autoRotate = false;
+    renderCard(null);
+  } else {
+    const g = groups[id]; const box = new THREE.Box3().setFromObject(g);
+    const c = box.getCenter(new THREE.Vector3()); const h = box.max.y;
+    tgt = new THREE.Vector3(c.x, Math.max(1.4,h*0.52), c.z);
+    pos = new THREE.Vector3(c.x + 1.2, tgt.y + 2.2, c.z + Math.max(8.5, h*2.4));
+    renderCard(id);
+  }
+  fly = {t0:performance.now(), from:camera.position.clone(), fromT:controls.target.clone(), pos, tgt};
+}
+function renderCard(id){
+  if(!id){
+    cardEl.innerHTML = `<div><div class="lbl">Cả dàn</div><h2>Sáu nhân vật, một con phố</h2>
+      <p>Xếp theo thứ tự xuất hiện trên phố, từ đầu phố (Bà Năm) tới cuối phố (Lũ Bụi). Tò đứng giữa để thấy rõ tỉ lệ chiều cao so với người lớn và trẻ con.</p></div>
+      <div><div class="lbl">Nguyên tắc chung</div><ul>
+      <li>Mọi nhân vật là khối tròn mềm, tô phẳng ba tông, viền đen, mắt to tròn như bản mẫu, riêng Lũ Bụi góc cạnh.</li>
+      <li>Ba màu chủ đạo đỏ gấc, vàng nghệ, xanh ngọc lặp lại ở mọi người để cả dàn thành một bảng màu.</li>
+      <li>Bấm “Bóc lớp xám” để so hai trạng thái: phố bị phủ lịch cũ và phố đã có màu lại. Lũ Bụi luôn xám.</li>
+      <li>Mỗi người có một đạo cụ gắn với câu đố của màn mình: khay tò he, nồi chè, thuyền giấy, quạt.</li></ul></div>`;
+    bubble.style.opacity = 0; return;
+  }
+  const d = INFO[id];
+  cardEl.innerHTML = `<div><div class="lbl">Nhân vật</div><h2 style="color:${d.color}">${d.name}</h2>
+    ${d.tags.map(t=>`<span class="tag">${t}</span>`).join('')}<span class="tag">Cao ${d.h} Tò</span>
+    <p>${d.role}</p></div>
+    <div><div class="lbl">Vì sao thiết kế như vậy</div><ul>${d.why.map(w=>`<li>${w}</li>`).join('')}</ul></div>`;
+  bubble.textContent = d.say; bubble.style.opacity = 1;
+}
+controls.addEventListener('start', ()=>{ fly = null; });
+
+// click a character in the scene
+const ray = new THREE.Raycaster(); const ndc = new THREE.Vector2(); let down = null;
+canvas.addEventListener('pointerdown', e=>{ down = [e.clientX, e.clientY]; });
+canvas.addEventListener('pointerup', e=>{
+  if(!down || Math.hypot(e.clientX-down[0], e.clientY-down[1]) > 5) return;
+  const r = canvas.getBoundingClientRect();
+  ndc.set((e.clientX-r.left)/r.width*2-1, -(e.clientY-r.top)/r.height*2+1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(Object.values(groups), true);
+  for(const h of hits){ let o = h.object; while(o && !o.userData.cid) o = o.parent; if(o){ select(o.userData.cid); return; } }
+});
+
+function resize(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w/h;
+  camera.fov = w < 600 ? 44 : 32; camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+
+let last = performance.now();
+function loop(now){
+  const dt = Math.min(0.05,(now-last)/1000); last = now; const t = now/1000;
+  if(Math.abs(colour-colourTarget) > 0.001){ colour += (colourTarget-colour)*Math.min(1, dt*3.5); applyColour(colour); }
+  for(const f of anim) f(t, dt, colour);
+  if(fly){
+    const k = Math.min(1,(now-fly.t0)/900), e = 1-Math.pow(1-k,3);
+    camera.position.lerpVectors(fly.from, fly.pos, e); controls.target.lerpVectors(fly.fromT, fly.tgt, e);
+    if(k>=1) fly = null;
+  }
+  controls.update(); renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+resize(); applyColour(1);
+const q = new URLSearchParams(location.search);
+select(q.get('c') || 'all');
+if(q.get('grey')) { colourTarget = 0; colour = 0; applyColour(0); setToggle(); }
+camera.position.copy(fly.pos); controls.target.copy(fly.tgt); fly = null;
+requestAnimationFrame(loop);
+})();
+</script>
