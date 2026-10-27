@@ -4,6 +4,9 @@ Game giải đố đi ngang: Tò, con tò he bột gạo, bóc lớp xám (nhữ
 
 ## Bản chơi thử
 
+Chơi tại https://phocu.markhocai.com. Mỗi lần push lên `main` có sửa `prototype/`, `.github/workflows/pages.yml` đăng lại thư mục này lên GitHub Pages (tên miền trong `prototype/CNAME`).
+
+
 - `prototype/man-1/` — Màn 1 "Mái hiên", chơi trên trình duyệt (Three.js). Mở `index.html`.
   - ← → đi, ↑ hoặc Space nhảy, giữ E ở mép giấy cong rồi đi lùi để bóc, R chơi lại. Trên điện thoại có nút bấm.
   - Ba mảng xám: bóc thử (đèn ông sao), bóc để mái hiên bung ra làm bậc, bóc trên mái để sào phơi đồ bắc cầu qua kênh.
