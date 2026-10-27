@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Màn 1: Mái hiên</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EFE9E1; --panel:#FBF8F3; --ink:#2A2230; --muted:#6E6570; --line:#DDD3C7; --accent:#C23A28; --chip:#F4EEE6;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#1D1A20; --panel:#27232B; --ink:#F1EAE2; --muted:#ADA3AC; --line:#3A343F; --accent:#F07A5F; --chip:#302A35; }
+}
+:root[data-theme="dark"]{ --bg:#1D1A20; --panel:#27232B; --ink:#F1EAE2; --muted:#ADA3AC; --line:#3A343F; --accent:#F07A5F; --chip:#302A35; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,sans-serif;font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right,0px)) 32px max(16px,env(safe-area-inset-left,0px))}
+.top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+h1{font-family:"Patrick Hand",cursive;font-weight:400;font-size:30px;margin:0;line-height:1.1}
+.keys{color:var(--muted);font-size:13px}
+.keys b{display:inline-block;border:1px solid var(--line);background:var(--chip);border-radius:6px;padding:0 6px;font-weight:600;color:var(--ink)}
+.stage{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#D6D3D0;height:min(70vh,620px);min-height:360px;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:absolute;left:12px;top:10px;right:12px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:10px}
+.pill{background:rgba(255,255,255,.82);color:#2A2230;border:2px solid #141019;border-radius:999px;padding:3px 12px;font-family:"Patrick Hand",cursive;font-size:19px;line-height:1.3}
+.tray{display:flex;gap:6px;align-items:center}
+.tray i{width:16px;height:16px;border-radius:50%;border:2px solid #141019;background:#B8B4AF;display:inline-block;transition:background .6s}
+.bubble{position:absolute;transform:translate(-50%,-100%);background:#fff;color:#1E1530;border:2.5px solid #141019;border-radius:16px;padding:5px 12px;font-family:"Patrick Hand",cursive;font-size:19px;line-height:1.2;pointer-events:none;max-width:260px;text-align:center;opacity:0;transition:opacity .25s}
+.bubble:after{content:"";position:absolute;left:50%;bottom:-11px;margin-left:-8px;border:8px solid transparent;border-top-color:#141019;border-bottom:0}
+.hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:rgba(20,16,25,.78);color:#fff;border-radius:999px;padding:5px 14px;font-size:14px;pointer-events:none;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;transition:opacity .3s}
+.pad{position:absolute;bottom:12px;display:none;gap:10px}
+.pad.l{left:12px}.pad.r{right:12px}
+.pad button{width:62px;height:62px;border-radius:50%;border:2.5px solid #141019;background:rgba(255,255,255,.85);font:600 20px "Be Vietnam Pro",sans-serif;color:#141019;touch-action:none}
+.pad button.grab{background:#F6D27A;font-size:15px}
+.pad button.on{background:#C23A28;color:#fff}
+@media (pointer:coarse){.pad{display:flex}.hint{bottom:86px}}
+.win{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,16,25,.35)}
+.win .card{background:var(--panel);color:var(--ink);border-radius:18px;border:2.5px solid #141019;padding:20px 24px;max-width:min(420px,90%);text-align:center}
+.win h2{font-family:"Patrick Hand",cursive;font-weight:400;font-size:34px;margin:0}
+.win p{margin:8px 0 14px}
+.btn{border:2px solid #141019;background:#C23A28;color:#fff;border-radius:999px;padding:8px 18px;font:600 15px "Be Vietnam Pro",sans-serif;cursor:pointer}
+.note{color:var(--muted);font-size:13px;margin-top:12px}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <h1>Phố Cũ Bạc Màu · Màn 1: Mái hiên</h1>
+    <span class="keys"><b>←</b> <b>→</b> đi · <b>↑</b> hoặc <b>Space</b> nhảy · giữ <b>E</b> ở mép cong rồi đi lùi để bóc · <b>R</b> chơi lại</span>
+  </div>
+  <div class="stage" id="stage">
+    <canvas id="c" tabindex="0"></canvas>
+    <div class="hud"><span class="pill" id="title">Chiều 14 tháng 8 · phố đã xám</span><span class="pill tray" title="Khay tò he của bà Năm">Khay của bà <i id="t1"></i><i></i><i></i></span></div>
+    <div class="hint" id="hint"></div>
+    <div class="pad l"><button data-k="left">◀</button><button data-k="right">▶</button></div>
+    <div class="pad r"><button class="grab" data-k="grab">Bóc</button><button data-k="jump">⤒</button></div>
+    <div class="win" id="win"><div class="card"><h2>Xong màn 1!</h2><p>Mái hiên đã bung, sào phơi đồ đã thành cầu. Một con tò he trên khay của bà Năm lấy lại màu đỏ.</p><button class="btn" id="again">Chơi lại</button></div></div>
+  </div>
+  <div class="note">Bản chơi thử để kiểm tra cơ chế bóc và nhịp màn 1, chưa phải đồ họa cuối. Nhân vật dùng đúng khối đã duyệt; ba mảng xám là ba bài học: bóc thử, bóc để mở đường lên, và bóc ở trên cao để bắc cầu qua kênh.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+// ================= renderer & scene =================
+const stage = document.getElementById('stage');
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+const scene = new THREE.Scene();
+const SKY_GREY = new THREE.Color('#CFCBC7'), SKY_COL = new THREE.Color('#F2C9A0');
+scene.background = SKY_GREY.clone();
+scene.fog = new THREE.Fog(SKY_GREY.clone(), 30, 75);
+const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 200);
+scene.add(new THREE.HemisphereLight('#FFF6EA', '#B9AFA6', 0.62));
+const sun = new THREE.DirectionalLight('#FFFFFF', 0.62);
+sun.castShadow = true; sun.shadow.mapSize.set(2048,2048);
+const sc = sun.shadow.camera; sc.left=-16; sc.right=16; sc.top=12; sc.bottom=-6; sc.near=1; sc.far=60;
+sun.shadow.bias = -0.0008; scene.add(sun); scene.add(sun.target);
+
+// ================= toon materials with colour zones =================
+const ramp = new THREE.DataTexture(new Uint8Array([150,150,150,255, 205,205,205,255, 255,255,255,255]), 3, 1, THREE.RGBAFormat);
+ramp.minFilter = ramp.magFilter = THREE.NearestFilter; ramp.generateMipmaps = false; ramp.needsUpdate = true;
+// zone '0' is always in colour (Tò), 'keep' is always grey (Lũ Bụi); every other zone fades in as its sheet is peeled
+let ZONE = '0';
+const mats = {}; const zoneMats = {}; const zoneK = {'0':1, keep:0};
+function toon(hex, keep){
+  const z = keep ? 'keep' : ZONE; const k = hex + '|' + z;
+  if(mats[k]) return mats[k];
+  const m = new THREE.MeshToonMaterial({color:new THREE.Color(hex).convertSRGBToLinear(), gradientMap:ramp});
+  m.userData.base = m.color.clone();
+  const c = new THREE.Color(hex); const l = 0.299*c.r+0.587*c.g+0.114*c.b;
+  m.userData.grey = new THREE.Color(l*0.78+0.17, l*0.76+0.17, l*0.74+0.17).convertSRGBToLinear();
+  if(keep) m.color.copy(m.userData.grey);
+  mats[k] = m; (zoneMats[z] = zoneMats[z] || []).push(m);
+  if(z !== '0' && z !== 'keep') m.color.copy(m.userData.grey);
+  return m;
+}
+function setZone(z, k){
+  zoneK[z] = k;
+  for(const m of zoneMats[z]||[]) m.color.copy(m.userData.grey).lerp(m.userData.base, k);
+}
+const OUTLINE = new THREE.MeshBasicMaterial({color:'#141019', side:THREE.BackSide});
+const SPH = new THREE.SphereGeometry(1, 28, 20), SPH_S = new THREE.SphereGeometry(1, 14, 10);
+function outline(mesh, w){
+  const o = new THREE.Mesh(mesh.geometry, OUTLINE); const s = mesh.scale;
+  o.scale.set(1 + w/Math.max(s.x,.01), 1 + w/Math.max(s.y,.01), 1 + w/Math.max(s.z,.01));
+  mesh.add(o); return mesh;
+}
+function B(x,y,z){ return new THREE.Vector3(x, z, -y); }
+function blob(parent, pos, scl, hex, opt){
+  opt = opt||{};
+  const m = new THREE.Mesh(opt.geo || (opt.small?SPH_S:SPH), toon(hex, opt.keep));
+  m.position.copy(pos);
+  if(Array.isArray(scl)) m.scale.set(scl[0], scl[2], scl[1]); else m.scale.setScalar(scl);
+  if(opt.rot) m.rotation.set(opt.rot[0]||0, opt.rot[1]||0, opt.rot[2]||0);
+  m.castShadow = opt.shadow!==false; m.receiveShadow = true;
+  if(opt.outline!==false && !opt.small) outline(m, opt.ow||0.045);
+  parent.add(m); return m;
+}
+function mesh(parent, geo, hex, opt){
+  opt=opt||{};
+  const m = new THREE.Mesh(geo, toon(hex, opt.keep));
+  if(opt.pos) m.position.copy(opt.pos);
+  if(opt.rot) m.rotation.set(opt.rot[0]||0,opt.rot[1]||0,opt.rot[2]||0);
+  if(opt.scl) m.scale.set(opt.scl[0],opt.scl[1],opt.scl[2]);
+  m.castShadow = opt.shadow!==false; m.receiveShadow = true;
+  if(opt.outline!==false) outline(m, opt.ow||0.04);
+  parent.add(m); return m;
+}
+function box(parent, x0, x1, y0, y1, z0, z1, hex, opt){
+  return mesh(parent, new THREE.BoxGeometry(x1-x0, y1-y0, z1-z0), hex, Object.assign({pos:new THREE.Vector3((x0+x1)/2,(y0+y1)/2,(z0+z1)/2), ow:.05}, opt||{}));
+}
+function rod(parent, a, b, r, hex, opt){
+  const d = new THREE.Vector3().subVectors(b,a); const len = d.length();
+  const m = mesh(parent, new THREE.CylinderGeometry(r, r, len, 10), hex, Object.assign({ow:0.03},opt||{}));
+  m.position.copy(a).addScaledVector(d, .5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), d.normalize());
+  return m;
+}
+function eyes(parent, cx, y, z, sx, sy, look, gap, keep){
+  gap = gap||0.36; const out = [];
+  for(const s of [-1,1]){
+    const ex = cx + s*gap;
+    blob(parent, new THREE.Vector3(ex, y, z), [sx, sx*0.6, sy], '#FFFFFF', {ow:0.03, keep:true});
+    const px = ex + look*sx*0.38;
+    out.push(blob(parent, new THREE.Vector3(px, y-sy*0.05, z+sx*0.55), [sx*0.5, sx*0.12, sy*0.55], '#1E1530', {small:true, keep:true}));
+    blob(parent, new THREE.Vector3(px+sx*0.18, y+sy*0.2, z+sx*0.62), [sx*0.15, sx*0.05, sx*0.16], '#FFFFFF', {small:true, keep:true});
+  }
+  return out;
+}
+function smile(parent, x, y, z, r, hex){
+  return mesh(parent, new THREE.TorusGeometry(r, r*0.22, 8, 20, Math.PI), hex||'#7A2318', {pos:new THREE.Vector3(x,y,z), rot:[0,0,Math.PI], outline:false, shadow:false});
+}
+
+// ================= characters (same blocks as the approved 3D line-up) =================
+function buildTo(g){
+  const R='#C23A28', R2='#B4321F', Y='#E8A41A', SK='#F3D7B4';
+  const body = blob(g, B(0,0,1.0), [.84,.76,.95], R);
+  const legs = [];
+  for(const s of [-1,1]) legs.push(blob(g, B(s*.4,-.08,.13), [.33,.38,.19], R2));
+  const head = new THREE.Group(); g.add(head);
+  blob(head, B(0,0,2.72), [.97,.92,.9], SK);
+  for(let i=0;i<10;i++){
+    const a = i/10*Math.PI*2; const p = new THREE.Mesh(SPH, toon(Y)); p.castShadow = true;
+    p.position.set(Math.cos(a)*.62, 1.8, Math.sin(a)*.62); p.scale.set(.25,.2,.09);
+    p.rotation.order = 'YXZ'; p.rotation.y = -a + Math.PI/2; p.rotation.x = 0.95; outline(p,.03); g.add(p);
+  }
+  const arms = [];
+  for(const s of [-1,1]){
+    const a = new THREE.Group(); a.position.copy(B(s*.8,-.04,1.55)); g.add(a);
+    blob(a, new THREE.Vector3(s*.06,-.35,0), [.2,.21,.42], R, {rot:[0,0,s*0.42]});
+    blob(a, new THREE.Vector3(s*.22,-.75,-.1), .26, Y);
+    arms.push(a);
+  }
+  const stick = new THREE.Group(); g.add(stick);
+  const a = B(.25,.5,.35), b = B(.95,.75,4.15); rod(stick, a, b, .07, '#C99A52');
+  blob(head, B(0,0,3.8), [.26,.24,.55], R);
+  blob(head, B(-.34,.05,3.62), [.18,.17,.4], Y, {rot:[0,0,0.6]});
+  blob(head, B(.34,.05,3.62), [.18,.17,.4], '#2E9C93', {rot:[0,0,-0.6]});
+  eyes(head, 0, 2.74, .7, .33, .37, .4);
+  for(const s of [-1,1]){
+    blob(head, B(s*.38,-.83,3.18), [.17,.04,.05], R, {small:true, rot:[0,0,s*-0.2]});
+    blob(head, B(s*.66,-.7,2.46), [.15,.05,.1], '#EE8C78', {small:true});
+  }
+  const mouth = smile(head, 0, 2.42, .84, .14);
+  return {body, head, legs, arms, mouth};
+}
+function buildBa(g){
+  const ST='#D8382A', BR='#7A4E2D', PA='#3E3A44', SK='#E8C39E';
+  mesh(g, new THREE.CylinderGeometry(.75,.7,.16,24), ST, {pos:new THREE.Vector3(0,1.05,-.15)});
+  for(const [x,z] of [[-.5,-.6],[.5,-.6],[-.5,.3],[.5,.3]]) rod(g, new THREE.Vector3(x*.75,1,z), new THREE.Vector3(x,0,z*1.2-.05), .07, ST);
+  blob(g, new THREE.Vector3(0,1.85,-.15), [.82,.7,.85], BR);
+  for(const s of [-1,1]){
+    blob(g, new THREE.Vector3(s*.33,1.25,.35), [.3,.6,.27], PA, {rot:[Math.PI/2,0,0]});
+    blob(g, new THREE.Vector3(s*.36,.62,.85), [.22,.24,.55], PA);
+    blob(g, new THREE.Vector3(s*.36,.12,1.0), [.24,.3,.12], '#5A3B24');
+  }
+  mesh(g, new THREE.CylinderGeometry(.85,.75,.12,28), '#C9A15A', {pos:new THREE.Vector3(0,1.62,.7)});
+  const tiny = [];
+  [['#C23A28',-.42],['#E8A41A',0],['#2E9C93',.42]].forEach(([c,x],i)=>{
+    const z0 = ZONE; ZONE = 'tray'+i;
+    tiny.push(blob(g, new THREE.Vector3(x,1.82,.75), [.13,.12,.16], c, {ow:.02}));
+    blob(g, new THREE.Vector3(x,2.05,.75), .1, '#F3D7B4', {ow:.02});
+    ZONE = z0;
+  });
+  for(const s of [-1,1]){
+    blob(g, new THREE.Vector3(s*.72,1.9,.1), [.18,.18,.42], BR, {rot:[0.9,0,s*0.25]});
+    blob(g, new THREE.Vector3(s*.6,1.72,.6), .17, SK);
+  }
+  const head = new THREE.Group(); g.add(head);
+  blob(head, new THREE.Vector3(0,2.95,-.1), [.74,.72,.7], SK);
+  blob(head, new THREE.Vector3(0,3.3,-.25), [.74,.62,.5], '#B9B4AE');
+  blob(head, new THREE.Vector3(0,3.4,-.78), [.36,.34,.32], '#B9B4AE');
+  eyes(head, 0, 2.98, .56, .2, .22, .6, .26);
+  for(const s of [-1,1]) mesh(head, new THREE.TorusGeometry(.25,.035,8,24), '#3A2C24', {pos:new THREE.Vector3(s*.26,2.98,.7), outline:false});
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.48,2.72,.5), [.12,.04,.08], '#E79B85', {small:true});
+  smile(head, 0, 2.66, .66, .12);
+  return {head};
+}
+function buildHai(g){
+  const TE='#2E8C86', PA='#2A2630', SK='#EBC7A0';
+  for(const s of [-1,1]){
+    blob(g, new THREE.Vector3(s*.28,.75,0), [.24,.24,.7], PA);
+    blob(g, new THREE.Vector3(s*.3,.1,.12), [.22,.26,.13], '#B5512F');
+  }
+  blob(g, new THREE.Vector3(0,2.15,0), [.68,.55,.95], TE);
+  blob(g, new THREE.Vector3(0,1.35,0), [.62,.5,.32], TE);
+  blob(g, new THREE.Vector3(-.72,2.1,.05), [.17,.17,.5], TE, {rot:[0,0,-0.35]});
+  blob(g, new THREE.Vector3(-.92,1.6,.12), .15, SK);
+  const arm = new THREE.Group(); arm.position.set(.62,2.7,0); g.add(arm);
+  blob(arm, new THREE.Vector3(.18,.35,0), [.17,.17,.5], TE, {rot:[0,0,-0.4]});
+  blob(arm, new THREE.Vector3(.38,.82,.05), .15, SK);
+  rod(arm, new THREE.Vector3(.38,.6,.05), new THREE.Vector3(.38,1.7,.15), .04, '#8C6631');
+  mesh(arm, new THREE.SphereGeometry(.22,16,10,0,Math.PI*2,Math.PI/2,Math.PI/2), '#9A9DA3', {pos:new THREE.Vector3(.38,1.88,.18), rot:[Math.PI,0,0]});
+  const head = new THREE.Group(); g.add(head);
+  blob(head, new THREE.Vector3(0,3.55,0), [.66,.68,.64], SK);
+  blob(head, new THREE.Vector3(0,3.75,-.2), [.68,.55,.52], '#1E1A22');
+  blob(head, new THREE.Vector3(0,3.4,-.62), [.3,.3,.42], '#1E1A22');
+  eyes(head, 0, 3.6, .6, .2, .23, -.5, .25);
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.42,3.38,.46), [.11,.04,.07], '#E79B85', {small:true});
+  smile(head, 0, 3.32, .62, .11);
+  const hat = mesh(head, new THREE.ConeGeometry(1.15,.62,28,1,true), '#E3C77A', {pos:new THREE.Vector3(0,4.38,0), ow:.04});
+  hat.material.side = THREE.DoubleSide; hat.castShadow = false;
+  const pot = new THREE.Group(); pot.position.set(-1.55,0,.6); g.add(pot);
+  mesh(pot, new THREE.CylinderGeometry(.55,.48,.85,24), '#6B6F75', {pos:new THREE.Vector3(0,.43,0)});
+  mesh(pot, new THREE.CylinderGeometry(.5,.5,.04,24), '#F1E4C3', {pos:new THREE.Vector3(0,.84,0), outline:false});
+  [['#8CC152',-.18,.1],['#F2C230',.18,-.05],['#C0392B',0,.22],['#FFFFFF',.05,-.22]].forEach(([c,x,z])=>blob(pot,new THREE.Vector3(x,.88,z),[.12,.12,.05],c,{small:true}));
+  return {arm, head};
+}
+function buildBui(g, s, seed){
+  const geo = new THREE.IcosahedronGeometry(1, 1);
+  const p = geo.attributes.position; let r = seed*17; const rnd=()=>{ r=(r*9301+49297)%233280; return r/233280; };
+  const cache={};
+  for(let i=0;i<p.count;i++){ const k=p.getX(i).toFixed(3)+p.getY(i).toFixed(3)+p.getZ(i).toFixed(3); const f=cache[k]||(cache[k]=0.82+rnd()*0.3); p.setXYZ(i,p.getX(i)*f,p.getY(i)*f,p.getZ(i)*f); }
+  geo.computeVertexNormals();
+  const m = mesh(g, geo, '#8E8A86', {keep:true, scl:[s,s*.92,s], ow:.035}); m.material.flatShading = true;
+  for(const sd of [-1,1]){
+    blob(g, new THREE.Vector3(sd*s*.34, s*.12, s*.82), [s*.26,s*.12,s*.3], '#FFFFFF', {keep:true, ow:.02});
+    blob(g, new THREE.Vector3(sd*s*.34 + s*.07, s*.08, s*.95), [s*.12,s*.04,s*.14], '#1E1530', {keep:true, small:true});
+  }
+}
+
+// ================= calendar-page grey sheet texture =================
+function sheetTexture(w, h, seed){
+  const pxu = 64, cw = Math.round(w*pxu), ch = Math.round(h*pxu);
+  const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch; const x = cv.getContext('2d');
+  x.fillStyle = '#B7B3AE'; x.fillRect(0,0,cw,ch);
+  let r = seed; const rnd=()=>{ r=(r*9301+49297)%233280; return r/233280; };
+  // overlapping torn calendar pages with faded day numbers
+  const pw = 1.5*pxu, ph = 1.9*pxu;
+  for(let yy=-ph*0.3; yy<ch; yy+=ph*0.78) for(let xx=-pw*0.3; xx<cw; xx+=pw*0.8){
+    const ox = xx + (rnd()-.5)*20, oy = yy + (rnd()-.5)*20;
+    x.save(); x.translate(ox+pw/2, oy+ph/2); x.rotate((rnd()-.5)*0.14);
+    x.fillStyle = rnd()<.5 ? '#C2BEB9' : '#ADA9A4'; x.fillRect(-pw/2,-ph/2,pw,ph);
+    x.strokeStyle = 'rgba(80,72,70,.25)'; x.lineWidth = 2; x.strokeRect(-pw/2,-ph/2,pw,ph);
+    x.fillStyle = 'rgba(90,82,80,.22)'; x.fillRect(-pw/2,-ph/2,pw,ph*0.16);
+    x.font = `bold ${Math.round(ph*0.42)}px "Patrick Hand", sans-serif`; x.textAlign='center'; x.textBaseline='middle';
+    x.fillStyle = 'rgba(80,72,70,.28)'; x.fillText(String(1+Math.floor(rnd()*30)), 0, ph*0.08);
+    x.restore();
+  }
+  for(let i=0;i<cw*ch/90;i++){ x.fillStyle = `rgba(60,55,52,${rnd()*0.08})`; x.fillRect(rnd()*cw, rnd()*ch, 2, 2); }
+  const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; return t;
+}
+
+// ================= level =================
+const solids = [];      // {x0,x1,top, oneway, on:()=>bool}
+const water = {x0:30, x1:70};
+function plat(x0,x1,top,oneway,on){ const p={x0,x1,top,oneway:!!oneway,on:on||(()=>true)}; solids.push(p); return p; }
+
+ZONE = 'sky';
+// ground (street) and canal
+ZONE = 'A';
+box(scene, -12, 30, -2, 0, -6, 3, '#D9D0C4', {outline:false});
+box(scene, -12, 30, -.02, .06, 1.4, 1.7, '#B8A58E', {outline:false});
+plat(-12, 30, 0, false);
+ZONE = 'C';
+const waterMesh = box(scene, 30, 70, -2.2, -.5, -6, 3, '#3FA7C9', {outline:false});
+box(scene, 29.6, 30.1, -2, 0.05, -6, 3, '#9C8F80', {ow:.04});
+box(scene, 70, 71, -2, 0.05, -6, 3, '#9C8F80', {ow:.04});
+
+// far background row of tube houses
+ZONE = 'sky';
+for(let i=0;i<14;i++){
+  const x0 = -14 + i*5.6, h = 7 + ((i*37)%5);
+  box(scene, x0, x0+5.2, 0, h, -14, -10, ['#E8A598','#E9C46A','#9FCBC1','#F1E0C5','#D9A07A'][i%5], {ow:.06, shadow:false});
+}
+
+// house 0: pink tube house with the tutorial sheet A
+ZONE = 'A';
+box(scene, -6, 12, 0, 8.5, -4, -0.5, '#E8A598');
+box(scene, -6.3, 12.3, 8.5, 8.9, -4.2, -0.2, '#B5513A');
+box(scene, 4.6, 10.4, 0, 2.7, -0.55, -0.45, '#2E8C86', {ow:.03});     // shutter behind sheet A
+for(let i=0;i<6;i++) box(scene, 4.8, 10.2, .25+i*.42, .3+i*.42, -0.45, -0.42, '#246F6A', {outline:false});
+box(scene, -4, -1, 3.6, 6, -0.6, -0.45, '#F1E0C5', {ow:.03}); box(scene, 1, 4, 3.6, 6, -0.6, -0.45, '#F1E0C5', {ow:.03});
+// star lantern hanging from house 0
+const star = new THREE.Group(); star.position.set(7.5, 4.6, -0.2); scene.add(star);
+(function(){
+  const sh = new THREE.Shape();
+  for(let i=0;i<10;i++){ const a = i/10*Math.PI*2 + Math.PI/2; const r = i%2? .3 : .7; i? sh.lineTo(Math.cos(a)*r, Math.sin(a)*r) : sh.moveTo(Math.cos(a)*r, Math.sin(a)*r); }
+  mesh(star, new THREE.ExtrudeGeometry(sh,{depth:.25, bevelEnabled:true, bevelSize:.05, bevelThickness:.05, bevelSegments:2}), '#E8442E', {pos:new THREE.Vector3(0,0,-.12)});
+  rod(star, new THREE.Vector3(0,.7,0), new THREE.Vector3(0,1.6,0), .02, '#141019', {outline:false});
+})();
+
+// house A: Cô Hai's chè house, yellow; awning folded behind sheet B, roof ledge at y=4, rooftop room with sheet C
+ZONE = 'B';
+box(scene, 13, 30, 0, 4, -4, -0.5, '#E9C46A');
+box(scene, 13, 30, 3.8, 4.0, -4, 0.9, '#C98B4A');                     // roof ledge slab, walkable
+plat(13, 30, 4.0, true);
+box(scene, 24.4, 29.6, 0.3, 3.0, -0.55, -0.45, '#F1E0C5', {ow:.03});  // window
+box(scene, 25.2, 28.8, 1.0, 2.6, -0.48, -0.42, '#2E8C86', {ow:.02});
+// folded awning: hinged at the top, hangs flat against the wall until sheet B is peeled
+const awning = new THREE.Group(); awning.position.set(19.5, 2.75, -0.42); scene.add(awning);
+for(let i=0;i<8;i++) mesh(awning, new THREE.BoxGeometry(.7, .06, 1.9), i%2? '#F4F1EA' : '#D8382A', {pos:new THREE.Vector3(-2.45+i*.7, 0, .95), ow:.02});
+mesh(awning, new THREE.CylinderGeometry(.06,.06,5.6,8), '#8C6631', {pos:new THREE.Vector3(0,0,1.9), rot:[0,0,Math.PI/2], ow:.02});
+awning.rotation.x = Math.PI/2;   // folded down
+const awningPlat = plat(16.9, 22.1, 2.6, true, ()=>awningOpen && awningT > .6);
+let awningOpen = false, awningT = 0;
+
+ZONE = 'C';
+box(scene, 21, 29, 4, 7.2, -3.5, -0.5, '#9FCBC1');                    // rooftop room
+box(scene, 20.7, 29.3, 7.2, 7.5, -3.7, -0.3, '#B5513A');
+// bamboo laundry pole: hidden inside the rooftop room until sheet C is peeled
+const pole = new THREE.Group(); pole.position.set(28, 0, 0); scene.add(pole);
+rod(pole, new THREE.Vector3(0, 3.92, .1), new THREE.Vector3(12.6, 3.92, .1), .1, '#C99A52');
+for(let i=0;i<5;i++) mesh(pole, new THREE.BoxGeometry(.9, 1.1, .05), ['#E8442E','#F2C230','#9FCBC1','#F4F1EA','#E8A598'][i], {pos:new THREE.Vector3(2.2+i*2.3, 3.3, -.15), rot:[0,0,(i%2?.08:-.06)], ow:.02});
+pole.visible = false;
+const polePlat = plat(29.6, 40.5, 4.0, true, ()=>poleOut>=1);
+let poleOut = 0;
+
+// house B across the canal, goal on its roof
+ZONE = 'goal';
+box(scene, 40, 58, -2, 4, -4, -0.5, '#D9A07A');
+box(scene, 40, 58, 3.8, 4.0, -4, 0.9, '#C98B4A');
+plat(40, 58, 4.0, true);
+box(scene, 44, 47, 1, 3, -0.55, -0.45, '#F1E0C5', {ow:.03}); box(scene, 51, 54, 1, 3, -0.55, -0.45, '#F1E0C5', {ow:.03});
+box(scene, 55, 58, 4, 9, -3.5, -0.5, '#E8A598');
+// goal: a grey tò he on a little stand
+const goal = new THREE.Group(); goal.position.set(53.2, 4, 0); scene.add(goal);
+mesh(goal, new THREE.CylinderGeometry(.35,.4,.5,16), '#8C6631', {pos:new THREE.Vector3(0,.25,0)});
+const gt = new THREE.Group(); gt.position.y = .5; gt.scale.setScalar(.28); goal.add(gt);
+buildTo(gt);
+// buildTo used zone 'goal' so the little tò he stays grey until reached
+
+// ================= sheets =================
+ZONE = 'sheet';
+const sheets = [];
+function sheet(id, x0, x1, y0, y1, z, onDone){
+  const w = x1-x0, h = y1-y0, tex = sheetTexture(w, h, id.charCodeAt(0)*7);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshToonMaterial({map:tex, gradientMap:ramp}));
+  m.position.set(x0+w/2, y0+h/2, z); m.receiveShadow = true; scene.add(m);
+  const ol = new THREE.Mesh(new THREE.PlaneGeometry(w+.1, h+.1), new THREE.MeshBasicMaterial({color:'#141019'}));
+  ol.position.set(0,0,-.01); m.add(ol);
+  const curl = new THREE.Mesh(new THREE.CylinderGeometry(1,1,h,16), new THREE.MeshToonMaterial({color:new THREE.Color('#C9C5C0').convertSRGBToLinear(), gradientMap:ramp}));
+  curl.castShadow = true; outline(curl, .03); scene.add(curl);
+  const s = {id, x0, x1, y0, y1, z, w, h, p:0, done:false, m, tex, curl, onDone, ol};
+  sheets.push(s); updSheet(s); return s;
+}
+function updSheet(s){
+  const rem = Math.max(0.0001, s.w - s.p);
+  s.m.scale.x = rem/s.w; s.m.position.x = s.x0 + s.p + rem/2;
+  s.tex.repeat.x = rem/s.w; s.tex.offset.x = s.p/s.w;
+  const r = .14 + .26*Math.min(1, s.p/2.5);
+  s.curl.scale.set(r, 1, r); s.curl.position.set(s.x0 + s.p, s.y0 + s.h/2, s.z + r);
+  if(s.done){ s.m.visible = false; s.curl.visible = false; }
+}
+sheet('A', 4.4, 10.6, .1, 2.9, -0.38, ()=>{});
+sheet('B', 16.8, 22.2, .1, 2.9, -0.35, ()=>{ awningOpen = true; });
+sheet('C', 21.6, 28.4, 4.1, 6.9, -0.38, ()=>{ pole.visible = true; });
+
+// ================= characters in the level =================
+const S = 0.55;  // Tò is small: the street should feel big
+ZONE = 'A';
+const ba = new THREE.Group(); ba.position.set(-1.2, 0, .3); ba.rotation.y = .5; ba.scale.setScalar(S*1.05); scene.add(ba); const baR = buildBa(ba);
+ZONE = 'B';
+const hai = new THREE.Group(); hai.position.set(14.6, 0, .4); hai.rotation.y = .25; hai.scale.setScalar(S*1.05); scene.add(hai); const haiR = buildHai(hai);
+ZONE = '0';
+const toG = new THREE.Group(); toG.scale.setScalar(S); scene.add(toG);
+const toInner = new THREE.Group(); toG.add(toInner); const TO = buildTo(toInner);
+ZONE = 'keep';
+const buis = [];
+[[44.5, 46.5, .5], [48, 50.5, .42]].forEach(([a,b,s],i)=>{
+  const g = new THREE.Group(); scene.add(g); buildBui(g, s, i+3); g.scale.setScalar(1);
+  buis.push({g, a, b, s, x:a, dir:1, ph:i*1.7});
+});
+for(const k of ['A','B','C','goal','tray0','tray1','tray2','sky']) setZone(k, 0);
+
+// ================= bubbles & hint =================
+const bubbles = {};
+function bubble(id){ const d = document.createElement('div'); d.className='bubble'; stage.appendChild(d); bubbles[id]=d; return d; }
+bubble('ba'); bubble('hai'); bubble('to');
+const hintEl = document.getElementById('hint');
+let toSay = '', toSayT = 0;
+function say(t, dur){ toSay = t; toSayT = dur||2.2; }
+
+// ================= input =================
+const keys = {left:false,right:false,jump:false,grab:false};
+const KM = {ArrowLeft:'left', KeyA:'left', ArrowRight:'right', KeyD:'right', ArrowUp:'jump', KeyW:'jump', Space:'jump', KeyE:'grab', KeyJ:'grab', ShiftLeft:'grab', ShiftRight:'grab'};
+let jumpQueued = false;
+addEventListener('keydown', e=>{
+  if(e.code==='KeyR'){ reset(); return; }
+  const k = KM[e.code]; if(!k) return; e.preventDefault();
+  if(k==='jump' && !keys.jump) jumpQueued = true; keys[k] = true;
+});
+addEventListener('keyup', e=>{ const k = KM[e.code]; if(k) keys[k] = false; });
+document.querySelectorAll('.pad button').forEach(b=>{
+  const k = b.dataset.k;
+  const on = e=>{ e.preventDefault(); if(k==='jump' && !keys.jump) jumpQueued = true; keys[k]=true; b.classList.add('on'); };
+  const off = e=>{ e.preventDefault(); keys[k]=false; b.classList.remove('on'); };
+  b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
+});
+canvas.addEventListener('pointerdown', ()=>canvas.focus());
+
+// ================= player =================
+const P = {x:1.6, y:0, vx:0, vy:0, w:.95, h:2.25, ground:true, face:1, grab:null, check:{x:1.6,y:0}, won:false, knock:0, walkT:0};
+const GRAV = 30, JUMP = 13, SPEED = 5.4, PEEL_SPEED = 2.6;
+function reset(){
+  P.x=1.6; P.y=0; P.vx=P.vy=0; P.grab=null; P.won=false; P.check={x:1.6,y:0}; P.face=1;
+  for(const s of sheets){ s.p=0; s.done=false; s.m.visible=true; s.curl.visible=true; updSheet(s); }
+  awningOpen=false; awningT=0; awning.rotation.x = Math.PI/2; poleOut=0; pole.visible=false; pole.scale.x=.001;
+  for(const k of ['A','B','C','goal','tray0','sky']) setZone(k, 0);
+  document.getElementById('win').style.display='none'; document.getElementById('t1').style.background='';
+  startT = performance.now()/1000;
+}
+function standingOn(x, yPrev, yNew){
+  let best = null;
+  for(const s of solids){
+    if(!s.on()) continue;
+    if(x + P.w/2 - .08 < s.x0 || x - P.w/2 + .08 > s.x1) continue;
+    if(yPrev >= s.top - .02 && yNew <= s.top + .001){ if(!best || s.top > best.top) best = s; }
+  }
+  return best;
+}
+function nearSheet(){
+  for(const s of sheets){
+    if(s.done) continue;
+    const tabX = s.x0 + s.p, grip = P.y + 1.0;
+    if(Math.abs(P.x - tabX) < 1.0 && grip > s.y0 - .3 && grip < s.y1 + .3) return s;
+  }
+  return null;
+}
+function step(dt, t){
+  if(P.won) { P.vx = 0; }
+  let dir = (keys.right?1:0) - (keys.left?1:0);
+  if(P.won) dir = 0;
+  // grabbing: hold the curled edge, walk backwards to peel
+  if(P.grab){
+    const s = P.grab;
+    if(!keys.grab || !P.ground){ P.grab = null; }
+    else {
+      P.vx = dir * PEEL_SPEED; P.face = -1;
+      const nx = P.x + P.vx*dt;
+      P.x = Math.max(s.x0 + s.p - .2, nx);
+      s.p = Math.min(s.w, Math.max(s.p, P.x - s.x0 - .45));
+      updSheet(s);
+      if(s.p >= s.w - .02){ s.done = true; updSheet(s); P.grab = null; s.onDone(); say({A:'Ồ, màu kìa!',B:'Mái hiên bung ra rồi!',C:'Sào phơi đồ!'}[s.id], 2.4); }
+    }
+  }
+  if(!P.grab){
+    if(keys.grab && P.ground){ const s = nearSheet(); if(s){ P.grab = s; P.x = s.x0 + s.p + .45; } }
+    const target = dir * SPEED;
+    if(P.knock > 0){ P.knock -= dt; } else P.vx += (target - P.vx) * Math.min(1, dt*14);
+    if(dir) P.face = dir;
+    if(jumpQueued && P.ground && !P.grab){ P.vy = JUMP; P.ground = false; }
+  }
+  jumpQueued = false;
+  P.vy -= GRAV*dt;
+  const yPrev = P.y; let ny = P.y + P.vy*dt;
+  let nx = P.grab ? P.x : P.x + P.vx*dt;
+  nx = Math.max(-5, Math.min(57.5, nx));
+  const st = P.vy <= 0 ? standingOn(nx, yPrev, ny) : null;
+  if(st){ ny = st.top; P.vy = 0; P.ground = true; }
+  else P.ground = false;
+  // walked off a one-way edge?
+  P.x = nx; P.y = ny;
+  if(P.ground && P.x < 30 && P.y < 0.01){ P.check = {x:Math.min(P.x, 28.5), y:0}; }
+  if(P.ground && P.y > 3.9 && P.x < 29.5 && P.x > 13){ P.check = {x:Math.min(P.x, 28.5), y:4}; }
+  if(P.ground && P.y > 3.9 && P.x > 40.5){ P.check = {x:P.x, y:4}; }
+  // fell into the canal: Tò is made of rice dough and hates water
+  if(P.y < -0.3 && P.x > water.x0){ say('Á! Nước! Tò sợ nước lắm!', 2.4); P.x = P.check.x; P.y = P.check.y; P.vx = P.vy = 0; P.grab = null; }
+  // dust balls bump Tò back
+  for(const b of buis){
+    const by = 4 + b.s;
+    if(Math.abs(P.x - b.x) < (P.w/2 + b.s*.9) && P.y < by + b.s*.6 && P.y + P.h > 4.05){
+      P.vx = (P.x < b.x ? -1 : 1) * 9; P.vy = 7; P.knock = .35; P.ground = false; P.grab = null;
+      say('Hắt xì! Bụi quá!', 1.6);
+    }
+  }
+  // goal
+  if(!P.won && Math.abs(P.x - goal.position.x) < 1.1 && P.y > 3.9){
+    P.won = true; winT = t; say('Con tò he có màu rồi!', 2.0);
+  }
+}
+
+// ================= animation & camera =================
+let startT = performance.now()/1000, winT = 0, simT = 0;
+const camPos = new THREE.Vector3(6, 6, 22), camLook = new THREE.Vector3(6, 3, 0);
+function resize(){
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w/h;
+  camera.fov = w < 640 ? 46 : 34; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+const tmpV = new THREE.Vector3();
+function place(el, obj, dy, text, show){
+  if(!show || !text){ el.style.opacity = 0; return; }
+  tmpV.copy(obj.position); tmpV.y += dy; tmpV.project(camera);
+  el.style.left = ((tmpV.x+1)/2*stage.clientWidth)+'px'; el.style.top = ((1-tmpV.y)/2*stage.clientHeight)+'px';
+  if(el.textContent !== text) el.textContent = text; el.style.opacity = 1;
+}
+function animate(dt, t){
+  // Tò pose
+  toG.position.set(P.x, P.y, 0);
+  const faceY = P.grab ? -0.9 : (P.face > 0 ? 0.75 : -0.75);
+  toInner.rotation.y += (faceY - toInner.rotation.y) * Math.min(1, dt*12);
+  const moving = Math.abs(P.vx) > .3 && P.ground;
+  P.walkT += dt * (moving ? (P.grab ? 7 : 12) : 0);
+  const bob = moving ? Math.abs(Math.sin(P.walkT))*0.18 : Math.sin(t*2.2)*0.03;
+  toInner.position.y = bob;
+  toInner.rotation.z = moving ? Math.sin(P.walkT)*0.08 : 0;
+  TO.legs[0].position.z = .08 + (moving? Math.sin(P.walkT)*.25:0); TO.legs[1].position.z = .08 - (moving? Math.sin(P.walkT)*.25:0);
+  for(const [i,a] of TO.arms.entries()){
+    const target = P.grab ? -1.3 : (P.ground ? (moving? Math.sin(P.walkT + i*Math.PI)*0.5 : 0) : -2.2);
+    a.rotation.x += (target - a.rotation.x) * Math.min(1, dt*12);
+  }
+  TO.body.scale.y = .95*(1 + (P.ground ? 0 : 0.06));
+  // awning unfolds with a little bounce
+  if(awningOpen && awningT < 1){ awningT = Math.min(1, awningT + dt*1.6); }
+  const ea = awningT<1 ? 1 - Math.pow(1-awningT,3)*Math.cos(awningT*7) : 1;
+  awning.rotation.x = Math.PI/2 * (1-ea) + 0.25*ea;
+  if(pole.visible && poleOut < 1){ poleOut = Math.min(1, poleOut + dt*0.9); }
+  pole.position.x = 28; pole.scale.x = Math.max(.001, 1 - Math.pow(1-poleOut, 3));
+  // colour spreads from each sheet as it is peeled
+  const sa = sheets[0], sb = sheets[1], scS = sheets[2];
+  setZone('A', zoneK.A + ((sa.p/sa.w) - zoneK.A)*Math.min(1, dt*3));
+  setZone('B', zoneK.B + ((sb.p/sb.w) - zoneK.B)*Math.min(1, dt*3));
+  setZone('C', zoneK.C + ((scS.p/scS.w) - zoneK.C)*Math.min(1, dt*3));
+  if(P.won){ setZone('goal', Math.min(1, zoneK.goal + dt*0.8)); setZone('tray0', Math.min(1, zoneK.tray0 + dt*0.8)); }
+  const prog = (sa.p/sa.w + sb.p/sb.w + scS.p/scS.w + (P.won?1:0)*1.5)/4.5;
+  setZone('sky', zoneK.sky + (prog - zoneK.sky)*Math.min(1, dt*2));
+  scene.background.copy(SKY_GREY).lerp(SKY_COL, zoneK.sky*0.85); scene.fog.color.copy(scene.background);
+  star.rotation.z = Math.sin(t*1.1)*0.1*zoneK.A;
+  haiR.arm.rotation.z = Math.sin(t*2)*0.12*Math.max(.2, zoneK.B);
+  // sheet tab pulse when Tò can grab it
+  const near = !P.grab && nearSheet();
+  for(const s of sheets){ if(!s.done){ updSheet(s); if(near===s){ const k = 1.15 + Math.sin(t*8)*0.15; s.curl.scale.x*=k; s.curl.scale.z*=k; } } }
+  // dust balls patrol roof B
+  for(const b of buis){
+    b.x += b.dir * dt * 1.4; if(b.x > b.b){ b.x = b.b; b.dir = -1; } if(b.x < b.a){ b.x = b.a; b.dir = 1; }
+    b.g.position.set(b.x, 4 + b.s + Math.abs(Math.sin(t*3 + b.ph))*0.25, .2); b.g.rotation.y = b.dir*0.4;
+  }
+  goal.rotation.y = Math.sin(t*1.5)*0.3; gt.position.y = .5 + (P.won ? Math.abs(Math.sin(t*6))*0.3 : 0);
+  // camera follows Tò, looks a bit ahead
+  const look = Math.max(4, Math.min(52, P.x + P.face*1.5));
+  const ty = 2.8 + Math.max(0, P.y-1)*0.55;
+  camLook.lerp(tmpV.set(look, ty, 0), Math.min(1, dt*3));
+  camPos.lerp(tmpV.set(look, ty + 3.2, 19), Math.min(1, dt*3));
+  camera.position.copy(camPos); camera.lookAt(camLook);
+  sun.position.set(camLook.x - 8, 18, 12); sun.target.position.set(camLook.x, 0, 0);
+  // bubbles & hints
+  const dBa = Math.abs(P.x - ba.position.x), dHai = Math.abs(P.x - hai.position.x);
+  place(bubbles.ba, ba, 2.3, zoneK.A > .9 ? 'Giỏi lắm! Giờ qua giúp cô Hai.' : 'Phố xám hết rồi. Tò bóc giúp bà nhé!', dBa < 4.5 && P.y < 1);
+  place(bubbles.hai, hai, 2.9, awningOpen ? 'Leo lên mái hiên, rồi lên mái nhà đi con!' : 'Mái hiên của cô bị dán xám dính cứng rồi!', dHai < 5 && P.y < 1 && !P.won);
+  if(toSayT > 0) toSayT -= dt;
+  place(bubbles.to, toG, 1.75, toSay, toSayT > 0);
+  let h = '';
+  if(P.won) h = 'Xong màn! Bấm R để chơi lại.';
+  else if(P.grab) h = 'Giữ nút bóc và đi lùi (→) để xé lớp xám';
+  else if(near) h = 'Giữ E (hoặc nút Bóc) để nắm mép cong';
+  else if(!sheets[0].done && P.x < 4.5) h = 'Mép giấy cong là chỗ bóc được. Đi tới tấm xám phía trước';
+  else if(sheets[1].done && P.y < 1 && P.x > 15 && P.x < 24) h = 'Nhảy lên mái hiên (↑), rồi nhảy tiếp lên mái nhà';
+  else if(P.y > 3.9 && P.x < 30 && !sheets[2].done) h = 'Trên mái có một tấm xám nữa, ngay sau phòng nhỏ';
+  else if(sheets[2].done && P.x < 40 && P.y > 3.9) h = 'Đi trên sào phơi đồ qua kênh. Cẩn thận Lũ Bụi bên kia';
+  hintEl.textContent = h; hintEl.style.opacity = h ? 1 : 0;
+}
+
+let last = performance.now();
+function loop(now){
+  const dt = Math.min(0.033, (now-last)/1000); last = now; const t = now/1000;
+  if(!hook.pause){ step(dt, t); animate(dt, t); }
+  if(P.won && t - winT > 2.2){ document.getElementById('win').style.display='flex'; document.getElementById('t1').style.background='#C23A28'; }
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+document.getElementById('again').onclick = ()=>{ reset(); canvas.focus(); };
+// test hook: lets an automated run drive the same input the keyboard does
+const hook = window.__game = {pause:false, P, keys, sheets, jump:()=>{ jumpQueued = true; }, tick:(n)=>{ for(let i=0;i<n;i++){ simT += 1/60; step(1/60, simT); animate(1/60, simT); } }, get poleOut(){ return poleOut; }, get awningOpen(){ return awningOpen; }};
+resize(); requestAnimationFrame(loop);
+})();
+</script>
