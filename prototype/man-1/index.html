@@ -1,7 +1,4 @@
-<!doctype html>
-<html lang="vi">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Màn 1: Mái hiên</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,6 +33,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .pad button.grab{background:#F6D27A;font-size:15px}
 .pad button.on{background:#C23A28;color:#fff}
 @media (pointer:coarse){.pad{display:flex}.hint{bottom:86px}}
+@media (max-width:640px){.pill{font-size:14px;padding:1px 9px;border-width:1.5px}.tray i{width:12px;height:12px}#title{display:none}.hud{justify-content:flex-end}}
 .win{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,16,25,.35)}
 .win .card{background:var(--panel);color:var(--ink);border-radius:18px;border:2.5px solid #141019;padding:20px 24px;max-width:min(420px,90%);text-align:center}
 .win h2{font-family:"Patrick Hand",cursive;font-weight:400;font-size:34px;margin:0}
@@ -81,7 +79,7 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 const scene = new THREE.Scene();
 const SKY_GREY = new THREE.Color('#CFCBC7'), SKY_COL = new THREE.Color('#F2C9A0');
 scene.background = SKY_GREY.clone();
-scene.fog = new THREE.Fog(SKY_GREY.clone(), 30, 75);
+scene.fog = new THREE.Fog(SKY_GREY.clone(), 26, 68);
 const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 200);
 scene.add(new THREE.HemisphereLight('#FFF6EA', '#B9AFA6', 0.62));
 const sun = new THREE.DirectionalLight('#FFFFFF', 0.62);
@@ -140,7 +138,11 @@ function mesh(parent, geo, hex, opt){
   parent.add(m); return m;
 }
 function box(parent, x0, x1, y0, y1, z0, z1, hex, opt){
-  return mesh(parent, new THREE.BoxGeometry(x1-x0, y1-y0, z1-z0), hex, Object.assign({pos:new THREE.Vector3((x0+x1)/2,(y0+y1)/2,(z0+z1)/2), ow:.05}, opt||{}));
+  const m = mesh(parent, new THREE.BoxGeometry(x1-x0, y1-y0, z1-z0), hex, Object.assign({pos:new THREE.Vector3((x0+x1)/2,(y0+y1)/2,(z0+z1)/2), ow:.05}, opt||{}));
+  // outline width in world units, so big walls don't grow thick dark rims seen from the slanted camera
+  const o = m.children[m.children.length-1], w = (opt&&opt.ow) || .05;
+  if(o && o.material === OUTLINE) o.scale.set(1 + 2*w/(x1-x0), 1 + 2*w/(y1-y0), 1 + 2*w/(z1-z0));
+  return m;
 }
 function rod(parent, a, b, r, hex, opt){
   const d = new THREE.Vector3().subVectors(b,a); const len = d.length();
@@ -337,16 +339,16 @@ const star = new THREE.Group(); star.position.set(7.5, 4.6, -0.2); scene.add(sta
 // house A: Cô Hai's chè house, yellow; awning folded behind sheet B, roof ledge at y=4, rooftop room with sheet C
 ZONE = 'B';
 box(scene, 13, 30, 0, 4, -4, -0.5, '#E9C46A');
-box(scene, 13, 30, 3.8, 4.0, -4, 0.9, '#C98B4A');                     // roof ledge slab, walkable
+box(scene, 13, 30, 3.8, 4.0, -4, 0.45, '#C98B4A');                    // roof ledge slab, walkable
 plat(13, 30, 4.0, true);
 box(scene, 24.4, 29.6, 0.3, 3.0, -0.55, -0.45, '#F1E0C5', {ow:.03});  // window
 box(scene, 25.2, 28.8, 1.0, 2.6, -0.48, -0.42, '#2E8C86', {ow:.02});
 // folded awning: hinged at the top, hangs flat against the wall until sheet B is peeled
-const awning = new THREE.Group(); awning.position.set(19.5, 2.75, -0.42); scene.add(awning);
+const awning = new THREE.Group(); awning.position.set(19.5, 2.5, -0.42); scene.add(awning);
 for(let i=0;i<8;i++) mesh(awning, new THREE.BoxGeometry(.7, .06, 1.9), i%2? '#F4F1EA' : '#D8382A', {pos:new THREE.Vector3(-2.45+i*.7, 0, .95), ow:.02});
 mesh(awning, new THREE.CylinderGeometry(.06,.06,5.6,8), '#8C6631', {pos:new THREE.Vector3(0,0,1.9), rot:[0,0,Math.PI/2], ow:.02});
 awning.rotation.x = Math.PI/2;   // folded down
-const awningPlat = plat(16.9, 22.1, 2.6, true, ()=>awningOpen && awningT > .6);
+const awningPlat = plat(16.9, 22.1, 2.55, true, ()=>awningOpen && awningT > .6);
 let awningOpen = false, awningT = 0;
 
 ZONE = 'C';
@@ -373,6 +375,114 @@ mesh(goal, new THREE.CylinderGeometry(.35,.4,.5,16), '#8C6631', {pos:new THREE.V
 const gt = new THREE.Group(); gt.position.y = .5; gt.scale.setScalar(.28); goal.add(gt);
 buildTo(gt);
 // buildTo used zone 'goal' so the little tò he stays grey until reached
+
+// ================= depth: foreground street, poles & wires, balconies, back rows =================
+// everything here is decor only (no platforms); near things take the zone of the house they stand by
+function zoneFor(x){ return x < 12.5 ? 'A' : x < 21 ? 'B' : x < 30 ? 'C' : 'goal'; }
+let seed = 7; const rnd = ()=> (seed = (seed*16807) % 2147483647) / 2147483647;
+// lower road in front of the pavement, and the canal's stone embankment
+for(const [x0,x1] of [[-14,12.5],[12.5,30],[30,72]]){
+  ZONE = zoneFor(x0+.1);
+  box(scene, x0, x1, -1.2, -.28, 3, 10, '#A79C90', {outline:false});
+  if(x0 < 30) box(scene, x0, x1, -.28, 0, 2.95, 3.15, '#C2B6A8', {outline:false});   // curb face
+}
+ZONE = 'goal';
+box(scene, 30, 72, -2, .12, 2.6, 3.3, '#9C8F80', {ow:.04});
+for(let x=31; x<71; x+=1.6) box(scene, x, x+1.5, -1.9, .1, 2.58, 2.62, '#8A7D6F', {outline:false});
+// road markings
+ZONE = 'A';
+for(let x=-12; x<72; x+=4){ ZONE = zoneFor(x); box(scene, x, x+2, -.27, -.26, 6.4, 6.6, '#E9E2D6', {outline:false, shadow:false}); }
+// foreground props on the pavement edge: plastic stools, crates, pots, a broom
+const STOOL = ['#D8382A','#2F6FB5','#D8382A','#E9A23B'];
+function stool(x, z, c){ const g = new THREE.Group(); g.position.set(x, -.28, z); g.rotation.y = rnd()*.6-.3; scene.add(g);
+  mesh(g, new THREE.CylinderGeometry(.34,.4,.08,16), c, {pos:new THREE.Vector3(0,.55,0)});
+  for(let i=0;i<4;i++){ const a = i*Math.PI/2+.78; mesh(g, new THREE.BoxGeometry(.07,.55,.07), c, {pos:new THREE.Vector3(Math.cos(a)*.27,.27,Math.sin(a)*.27), rot:[Math.sin(a)*.12,0,-Math.cos(a)*.12], ow:.015}); } }
+function crate(x, z, s, c){ const g = new THREE.Group(); g.position.set(x, -.28, z); g.rotation.y = rnd()*.5-.25; scene.add(g);
+  mesh(g, new THREE.BoxGeometry(s*1.1, s*.7, s*.8), c, {pos:new THREE.Vector3(0, s*.35, 0)});
+  for(let i=0;i<3;i++) mesh(g, new THREE.BoxGeometry(s*1.12, s*.06, s*.82), '#5E4630', {pos:new THREE.Vector3(0, s*(.15+i*.22), 0), outline:false}); }
+function pot(x, z, s){ mesh(scene, new THREE.CylinderGeometry(.42*s,.3*s,.6*s,12), '#B5513A', {pos:new THREE.Vector3(x,-.28+.3*s,z)});
+  blob(scene, new THREE.Vector3(x,-.28+.85*s,z), [.55*s,.5*s,.55*s], '#4E9A4A');
+  for(let i=0;i<3;i++) blob(scene, new THREE.Vector3(x+(rnd()-.5)*.6*s, -.28+(1.05+rnd()*.3)*s, z+(rnd()-.5)*.4*s), .28*s, '#5FAF55', {ow:.03}); }
+for(const [x,z,k] of [[-9,4.2,'p'],[-6.5,3.7,'s'],[-5.7,4.4,'s'],[-1.2,4.0,'c'],[2.5,3.9,'p'],[9.5,4.3,'s'],[11.2,3.8,'c'],
+                      [14.5,4.1,'s'],[15.3,3.7,'s'],[16.1,4.5,'s'],[23,3.9,'p'],[27.3,4.2,'c'],[44,3.9,'p'],[50,4.4,'c'],[57,4.0,'p'],[63,4.2,'s']]){
+  ZONE = zoneFor(x);
+  if(k==='s') stool(x, z, STOOL[Math.floor(rnd()*4)]);
+  else if(k==='c') crate(x, z, .9+rnd()*.3, ['#E9C46A','#9FCBC1','#E8A598'][Math.floor(rnd()*3)]);
+  else pot(x, z, 1+rnd()*.4);
+}
+// a big tree at each end of the street frames the scene
+function tree(x, z, h){ ZONE = zoneFor(x);
+  rod(scene, new THREE.Vector3(x,-.3,z), new THREE.Vector3(x+.3,h*.6,z), .28, '#7A5638', {ow:.04});
+  for(let i=0;i<6;i++) blob(scene, new THREE.Vector3(x+(rnd()-.5)*3, h*.62+rnd()*h*.3, z+(rnd()-.5)*1.5), 1.1+rnd()*.7, i%2?'#4E9A4A':'#5FAF55', {ow:.05}); }
+tree(-11, 3.8, 7); tree(62, 4.0, 8);
+// power poles along the pavement, with sagging wires
+const POLES = [-8, 13, 31, 42, 60], WIRE_Y = [8.6, 8.0, 7.4];
+for(const x of POLES){
+  ZONE = zoneFor(x);
+  const z = x > 30 ? 2.95 : 3.4;
+  box(scene, x-.14, x+.14, -.3, 9.4, z-.14, z+.14, '#A39A8F', {ow:.04});
+  box(scene, x-1.1, x+1.1, 8.55, 8.7, z-.1, z+.1, '#8A8178', {ow:.03});
+  mesh(scene, new THREE.CylinderGeometry(.32,.32,.7,12), '#8A8178', {pos:new THREE.Vector3(x+.4, 7.0, z+.3)});   // transformer
+  for(let i=0;i<5;i++) box(scene, x-.25, x+.25, 1.6+i*.6, 1.65+i*.6, z+.14, z+.2, '#6E655C', {outline:false}); // climbing steps
+}
+const WIRE_M = new THREE.MeshBasicMaterial({color:'#2A2530'});
+function wire(a, b, sag){
+  const pts = []; for(let i=0;i<=16;i++){ const t = i/16; pts.push(new THREE.Vector3().lerpVectors(a,b,t).add(new THREE.Vector3(0, -sag*4*t*(1-t), 0))); }
+  const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, .03, 5), WIRE_M); scene.add(m); return m;
+}
+for(let i=0;i<POLES.length-1;i++){
+  const za = POLES[i] > 30 ? 2.95 : 3.4, zb = POLES[i+1] > 30 ? 2.95 : 3.4;
+  for(const [k,dx] of [[0,-.9],[1,0],[2,.9]]) wire(new THREE.Vector3(POLES[i]+dx, 8.62, za), new THREE.Vector3(POLES[i+1]+dx, 8.62, zb), .9+k*.25);
+  wire(new THREE.Vector3(POLES[i], 7.6, za), new THREE.Vector3(POLES[i+1], 7.6, zb), 1.4);
+}
+// drop wires from poles to the houses' upper floors
+wire(new THREE.Vector3(-8,7.6,3.4), new THREE.Vector3(-3,7.8,-.5), .5);
+wire(new THREE.Vector3(13,7.6,3.4), new THREE.Vector3(9,7.2,-.5), .4);
+wire(new THREE.Vector3(13,7.6,3.4), new THREE.Vector3(22,7.3,-.5), .6);
+wire(new THREE.Vector3(42,7.6,2.95), new THREE.Vector3(56,8.2,-.5), .7);
+// balconies, AC units, signboards on the houses (all above Tò's head or flat on walls)
+ZONE = 'A';
+box(scene, -4.5, 4.5, 6.4, 6.6, -.5, .7, '#B5513A');                              // balcony slab house 0
+for(let x=-4.3; x<=4.31; x+=.45) rod(scene, new THREE.Vector3(x,6.6,.6), new THREE.Vector3(x,7.4,.6), .03, '#2E8C86', {outline:false});
+box(scene, -4.5, 4.5, 7.35, 7.45, .52, .68, '#2E8C86', {ow:.02});
+for(const x of [-3.2, -.4, 2.8]){ mesh(scene, new THREE.CylinderGeometry(.24,.18,.32,10), '#B5513A', {pos:new THREE.Vector3(x,6.76,.1)}); blob(scene, new THREE.Vector3(x,7.05,.1), .3, '#5FAF55', {ow:.03}); }
+box(scene, -1, 1, 6.6, 8.2, -.55, -.45, '#F1E0C5', {ow:.03});                     // upper door
+box(scene, 6, 7.4, 6.8, 7.6, -.5, -.05, '#E9E2D6', {ow:.03});                      // AC unit
+box(scene, 6.1, 7.3, 6.9, 7.5, -.05, -.02, '#B8B0A4', {outline:false});
+box(scene, 8, 11.6, 5.4, 6.4, -.5, -.38, '#D8382A', {ow:.03});                     // shop sign
+box(scene, 8.3, 11.3, 5.65, 6.15, -.38, -.36, '#F2C230', {outline:false});
+ZONE = 'B';
+box(scene, 13.8, 20, 3.15, 3.65, -.5, -.36, '#2F6FB5', {ow:.03});                   // "chè" sign above the awning
+box(scene, 14.1, 19.7, 3.28, 3.52, -.36, -.34, '#F4F1EA', {outline:false});
+ZONE = 'C';
+box(scene, 21.4, 29.2, 7.5, 7.6, -3.5, -.5, '#8A7D6F', {outline:false});
+mesh(scene, new THREE.CylinderGeometry(.55,.55,1.3,14), '#2F6FB5', {pos:new THREE.Vector3(27.6, 8.15, -2.4)});   // water tank on the roof
+ZONE = 'goal';
+box(scene, 55.3, 57.7, 6, 8, -.55, -.45, '#F1E0C5', {ow:.03});
+box(scene, 41.5, 46, 4.3, 5.6, -3.2, -2.9, '#F1E0C5', {ow:.03});
+// mid row: taller houses right behind the street, side walls visible thanks to the slanted camera
+const MID = ['#E8A598','#E9C46A','#9FCBC1','#F1E0C5','#D9A07A','#C7B8E0'];
+for(let i=0;i<16;i++){
+  const x0 = -16 + i*5.4 + (i%3)*.4, w = 4.6 + (i%2)*.5, h = 10 + ((i*53)%5)*1.1, x1 = x0 + w;
+  ZONE = zoneFor((x0+x1)/2);
+  const c = MID[i%MID.length];
+  box(scene, x0, x1, -2, h, -9.5, -5, c, {ow:.05});
+  box(scene, x0-.2, x1+.2, h, h+.35, -9.7, -4.8, '#B5513A', {ow:.03});
+  for(let f=0; f<3; f++){ const y = 4.6 + f*2.2; if(y+1.3 < h) box(scene, x0+.8, x1-.8, y, y+1.2, -5.02, -4.9, '#7E8FA0', {outline:false}); }
+  if(i%2) box(scene, x0+.5, x1-.5, 6.2, 6.35, -5, -4.2, '#8A7D6F', {ow:.02});      // little balcony
+}
+// third row and a clock tower far off at the end of the street (the story's destination)
+ZONE = 'sky';
+for(let i=0;i<12;i++){
+  const x0 = -20 + i*8, h = 13 + ((i*29)%6)*1.4;
+  box(scene, x0, x0+7, -2, h, -26, -21, ['#D9C7B8','#E2D2B0','#C8D3CC','#DCC9C0'][i%4], {outline:false, shadow:false});
+}
+box(scene, 63, 67, -2, 20, -20, -16, '#D9A07A', {ow:.07, shadow:false});
+box(scene, 62.5, 67.5, 20, 21, -20.5, -15.5, '#B5513A', {ow:.05, shadow:false});
+mesh(scene, new THREE.ConeGeometry(3.3, 4, 4), '#B5513A', {pos:new THREE.Vector3(65, 23, -18), rot:[0,Math.PI/4,0], ow:.06, shadow:false});
+mesh(scene, new THREE.CylinderGeometry(1.4,1.4,.2,28), '#F4F1EA', {pos:new THREE.Vector3(65, 16.5, -15.9), rot:[Math.PI/2,0,0], ow:.05, shadow:false});
+box(scene, 64.92, 65.08, 16.5, 17.6, -15.78, -15.74, '#141019', {outline:false, shadow:false});
+box(scene, 65, 65.8, 16.42, 16.58, -15.78, -15.74, '#141019', {outline:false, shadow:false});
 
 // ================= sheets =================
 ZONE = 'sheet';
@@ -497,8 +607,8 @@ function runIntro(dt, t){
   toInner.rotation.y = it < 13 ? 0.9 : 0.9 - Math.min(1,(it-13))*1.6;
   baR.head.rotation.x = it < 13 ? 0 : Math.min(.35, (it-13)*.3);   // Bà Năm nods off
   const camX = 2.5 + Math.max(0, it - 8.5)*1.4*(it < 12 ? 1 : 0) + (it >= 12 ? 4.9 - Math.min(4.9,(it-12)*2.4) : 0);
-  camLook.lerp(tmpV.set(camX, 2.6, 0), Math.min(1, dt*2));
-  camPos.lerp(tmpV.set(camX, 5.2, 17), Math.min(1, dt*2));
+  camLook.lerp(tmpV.set(camX, 2.6, -1), Math.min(1, dt*2));
+  camPos.lerp(tmpV.set(camX - 2.5, 5.4, 16.5), Math.min(1, dt*2));
   camera.position.copy(camPos); camera.lookAt(camLook);
   sun.position.set(camLook.x - 8, 18, 12); sun.target.position.set(camLook.x, 0, 0);
   if(it >= INTRO_END) endIntro();
@@ -661,7 +771,7 @@ function animate(dt, t){
   // awning unfolds with a little bounce
   if(awningOpen && awningT < 1){ awningT = Math.min(1, awningT + dt*1.6); }
   const ea = awningT<1 ? 1 - Math.pow(1-awningT,3)*Math.cos(awningT*7) : 1;
-  awning.rotation.x = Math.PI/2 * (1-ea) + 0.25*ea;
+  awning.rotation.x = Math.PI/2 * (1-ea) + 0.06*ea;
   if(pole.visible && poleOut < 1){ poleOut = Math.min(1, poleOut + dt*0.9); }
   pole.position.x = 28; pole.scale.x = Math.max(.001, 1 - Math.pow(1-poleOut, 3));
   // colour spreads from each sheet as it is peeled
@@ -701,8 +811,8 @@ function animate(dt, t){
   // camera follows Tò, looks a bit ahead
   const look = Math.max(4, Math.min(52, P.x + P.face*1.5));
   const ty = 2.8 + Math.max(0, P.y-1)*0.55;
-  camLook.lerp(tmpV.set(look, ty, 0), Math.min(1, dt*3));
-  camPos.lerp(tmpV.set(look, ty + 3.2, 19), Math.min(1, dt*3));
+  camLook.lerp(tmpV.set(look, ty, -1), Math.min(1, dt*3));
+  camPos.lerp(tmpV.set(look - 3, ty + 3.6, 18.5), Math.min(1, dt*3));   // slight 3/4 view shows the houses' sides
   camera.position.copy(camPos); camera.lookAt(camLook);
   sun.position.set(camLook.x - 8, 18, 12); sun.target.position.set(camLook.x, 0, 0);
   // bubbles & hints
