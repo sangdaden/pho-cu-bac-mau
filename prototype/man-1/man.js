@@ -3,6 +3,7 @@
 //            6 bồn nước, mèo, thang 64..82 · 7 xe chè cô Hai 82..97 · 8 chồng lịch, sào phơi 97..116 · 9 con tò he xám 116..134
 LV.level = 1;
 LV.start = {x:1.6, y:0};
+LV.nextUrl = '../man-2/';
 LV.bounds = [-5.5, 133.5];
 LV.cam = [4, 129];
 LV.sky = ['r1','r2','r3','r4','r5','r6','r7','r8','r9','r9'];
