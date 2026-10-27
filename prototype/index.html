@@ -5,38 +5,84 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Phố Cũ Bạc Màu</title>
 <meta name="description" content="Game giải đố đi ngang: Tò, con tò he bột gạo, bóc lớp xám khỏi một con phố Việt để trả lại màu. Bản chơi thử trên trình duyệt.">
+<link rel="canonical" href="https://phocu.markhocai.com/">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/icon/favicon-32.png">
+<link rel="apple-touch-icon" href="/icon/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#c8553d">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Phố Cũ Bạc Màu">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="Phố Cũ Bạc Màu">
+<meta property="og:description" content="Game giải đố đi ngang: Tò, con tò he bột gạo, bóc lớp xám khỏi một con phố Việt để trả lại màu. Bản chơi thử trên trình duyệt.">
+<meta property="og:url" content="https://phocu.markhocai.com/">
+<meta property="og:image" content="https://phocu.markhocai.com/icon/anh-chia-se.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Tò kéo tấm giấy xám bị xé, lỗ rách lộ ra phố cổ ven sông đầy đèn lồng">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="anh/bia.webp">
 <style>
-  :root { --nen: #e9e4dc; --chu: #2f2a26; --phu: #6e655d; --the: #f7f2ea; --nhan: #c8553d; }
-  @media (prefers-color-scheme: dark) { :root { --nen: #1f1c1a; --chu: #efe8dd; --phu: #a99f94; --the: #2a2724; --nhan: #e2765f; } }
+  :root { --nen: #f3ebe0; --chu: #2a2230; --phu: #6e6570; --the: #fffaf3; --vien: #2a2230; --do: #e2452d; --vang: #f7d04a; --xanh: #2e9c93; }
+  @media (prefers-color-scheme: dark) { :root { --nen: #1f1b22; --chu: #f3ebe0; --phu: #b3a9b0; --the: #2b2630; } }
+  * { box-sizing: border-box; }
   body { margin: 0; background: var(--nen); color: var(--chu); font: 16px/1.6 "Be Vietnam Pro", system-ui, sans-serif; }
-  main { max-width: 720px; margin: 0 auto; padding: 48px 16px; }
-  h1 { font-family: "Patrick Hand", cursive; font-size: 3rem; line-height: 1.1; margin: 0 0 8px; }
-  p.phu { color: var(--phu); margin: 0 0 24px; }
-  .the { background: var(--the); border-radius: 16px; padding: 20px; margin: 16px 0; }
-  .the h2 { font-family: "Patrick Hand", cursive; font-size: 1.6rem; margin: 0 0 4px; }
-  .the p { margin: 0 0 12px; }
-  a.nut { display: inline-block; padding: 8px 18px; border-radius: 999px; background: var(--nhan); color: #fff; text-decoration: none; font-weight: 600; }
-  footer { color: var(--phu); font-size: .9rem; margin-top: 32px; }
+  .hero { position: relative; min-height: min(100svh, 62vw); min-height: max(560px, min(100svh, 62vw)); overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 24px 16px 40px; }
+  .hero > img.nen { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 55%; z-index: -1; }
+  .hero::after { content: ""; position: absolute; inset: auto 0 0 0; height: 30%; background: linear-gradient(transparent, rgba(42, 34, 48, .45)); z-index: -1; pointer-events: none; }
+  .hero h1 { margin: 0; line-height: 0; }
+  .hero h1 img { width: min(560px, 82vw); height: auto; }
+  .choi { display: inline-flex; align-items: center; gap: 10px; font: 800 1.6rem/1 "Baloo 2", system-ui, sans-serif; color: #fff; background: var(--do); padding: 16px 34px 12px; border-radius: 999px; border: 4px solid var(--vien); box-shadow: 0 6px 0 var(--vien); text-decoration: none; white-space: nowrap; transition: transform .12s, box-shadow .12s; }
+  .choi:hover { transform: translateY(2px); box-shadow: 0 4px 0 var(--vien); }
+  .choi:active { transform: translateY(6px); box-shadow: 0 0 0 var(--vien); }
+  .choi span { font-size: 1rem; font-weight: 600; opacity: .9; }
+  @media (max-width: 520px) { .choi span { display: none; } .hero > img.nen { object-position: 14% 60%; } }
+  main { max-width: 980px; margin: 0 auto; padding: 40px 16px 24px; }
+  .gioi-thieu { font-size: 1.1rem; max-width: 640px; margin: 0 auto 32px; text-align: center; }
+  .luoi { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .the { background: var(--the); border: 3px solid var(--vien); border-radius: 22px; overflow: hidden; box-shadow: 0 5px 0 var(--vien); display: flex; flex-direction: column; }
+  .the img { width: 100%; height: auto; aspect-ratio: 16 / 7; object-fit: cover; border-bottom: 3px solid var(--vien); background: #e9e1d6; }
+  .the div { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .the h2 { font: 800 1.6rem/1.1 "Baloo 2", system-ui, sans-serif; margin: 0; }
+  .the p { margin: 0; color: var(--phu); flex: 1; }
+  .the a { align-self: flex-start; font: 800 1.1rem/1 "Baloo 2", system-ui, sans-serif; color: var(--vien); background: var(--vang); border: 3px solid var(--vien); border-radius: 999px; padding: 10px 20px 7px; text-decoration: none; }
+  .the:nth-child(2) a { background: var(--xanh); color: #fff; }
+  kbd { font: 600 .85em "Be Vietnam Pro", sans-serif; border: 2px solid currentColor; border-radius: 6px; padding: 0 5px; }
+  footer { text-align: center; color: var(--phu); font-size: .9rem; padding: 24px 16px 40px; }
   footer a { color: inherit; }
 </style>
 </head>
 <body>
+<header class="hero">
+  <img class="nen" src="anh/bia.webp" alt="" width="1920" height="1080">
+  <h1><img src="anh/logo.png" alt="Phố Cũ Bạc Màu: bóc lớp xám, trả lại màu cho phố" width="769" height="513"></h1>
+  <a class="choi" href="man-1/">Chơi Màn 1 <span>miễn phí, không cần cài</span></a>
+</header>
 <main>
-  <h1>Phố Cũ Bạc Màu</h1>
-  <p class="phu">Tò, con tò he bột gạo, bóc lớp xám (những tờ lịch đã bóc rồi bị quên) khỏi một con phố Việt để trả lại màu. Đây là bản chơi thử.</p>
-  <div class="the">
-    <h2>Màn 1: Mái hiên</h2>
-    <p>← → đi, ↑ hoặc Space nhảy, giữ E ở mép giấy cong rồi đi lùi để bóc. Trên điện thoại có nút bấm.</p>
-    <a class="nut" href="man-1/">Chơi thử</a>
+  <p class="gioi-thieu">Tò, con tò he bột gạo, bóc lớp xám (những tờ lịch đã bóc rồi bị quên) khỏi một con phố Việt. Bóc tới đâu, màu sắc và tiếng người quay lại tới đó. Đây là bản chơi thử.</p>
+  <div class="luoi">
+    <section class="the">
+      <img src="anh/the-man-1.webp" alt="Tò đứng dưới mái hiên vừa bóc, nửa phố đã có màu" loading="lazy" width="571" height="263">
+      <div>
+        <h2>Màn 1: Mái hiên</h2>
+        <p><kbd>←</kbd> <kbd>→</kbd> đi, <kbd>↑</kbd> hoặc <kbd>Space</kbd> nhảy, giữ <kbd>E</kbd> ở mép giấy cong rồi đi lùi để bóc. Trên điện thoại có nút bấm.</p>
+        <a href="man-1/">Chơi thử</a>
+      </div>
+    </section>
+    <section class="the">
+      <img src="anh/the-nhan-vat.webp" alt="Sáu nhân vật: bà Năm, cô Hai, Tò, bé Bống, chú Tư và lũ Bụi" loading="lazy" width="1095" height="307">
+      <div>
+        <h2>Người trong phố</h2>
+        <p>Sáu nhân vật xoay xem được, kèm lý do thiết kế từng người.</p>
+        <a href="nhan-vat-3d/">Xem nhân vật</a>
+      </div>
+    </section>
   </div>
-  <div class="the">
-    <h2>Dàn nhân vật</h2>
-    <p>Sáu nhân vật toon xoay được, kèm lý do thiết kế từng người.</p>
-    <a class="nut" href="nhan-vat-3d/">Xem nhân vật</a>
-  </div>
-  <footer><a href="https://markhocai.com">markhocai.com</a></footer>
 </main>
+<footer>Một game của <a href="https://markhocai.com">Mark học AI</a></footer>
 </body>
 </html>
