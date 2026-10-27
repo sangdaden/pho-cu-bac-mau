@@ -5,7 +5,8 @@ Game giải đố đi ngang: Tò, con tò he bột gạo, bóc lớp xám (nhữ
 ## Bản chơi thử
 
 - `prototype/man-1/` — Màn 1 "Mái hiên", chơi trên trình duyệt (Three.js). Mở `index.html`.
-  - ← → đi, ↑ hoặc Space nhảy, giữ E ở mép giấy cong rồi đi lùi để bóc, R chơi lại. Trên điện thoại có nút bấm.
+  - ← → đi, ↑ hoặc Space nhảy, E nắm mép sáng rồi đi lùi để kéo (E lần nữa để buông), H gợi ý, R về chỗ an toàn. Trên điện thoại có nút bấm.
+  - Mở đầu: phố còn màu, lịch cũ bay tới phủ xám (Space để bỏ qua). Có 5 đom đóm, đủ thì mở ký ức của cô Hai.
   - Ba mảng xám: bóc thử (đèn ông sao), bóc để mái hiên bung ra làm bậc, bóc trên mái để sào phơi đồ bắc cầu qua kênh.
 - `prototype/nhan-vat-3d/` — Dàn 6 nhân vật toon xoay được, có lý do thiết kế từng người.
 

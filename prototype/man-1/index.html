@@ -29,7 +29,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .tray i{width:16px;height:16px;border-radius:50%;border:2px solid #141019;background:#B8B4AF;display:inline-block;transition:background .6s}
 .bubble{position:absolute;transform:translate(-50%,-100%);background:#fff;color:#1E1530;border:2.5px solid #141019;border-radius:16px;padding:5px 12px;font-family:"Patrick Hand",cursive;font-size:19px;line-height:1.2;pointer-events:none;max-width:260px;text-align:center;opacity:0;transition:opacity .25s}
 .bubble:after{content:"";position:absolute;left:50%;bottom:-11px;margin-left:-8px;border:8px solid transparent;border-top-color:#141019;border-bottom:0}
-.hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:rgba(20,16,25,.78);color:#fff;border-radius:999px;padding:5px 14px;font-size:14px;pointer-events:none;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;transition:opacity .3s}
+.hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:rgba(20,16,25,.78);color:#fff;border-radius:999px;padding:5px 14px;font-size:14px;pointer-events:none;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;transition:opacity .3s;opacity:0}
 .pad{position:absolute;bottom:12px;display:none;gap:10px}
 .pad.l{left:12px}.pad.r{right:12px}
 .pad button{width:62px;height:62px;border-radius:50%;border:2.5px solid #141019;background:rgba(255,255,255,.85);font:600 20px "Be Vietnam Pro",sans-serif;color:#141019;touch-action:none}
@@ -42,22 +42,30 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .win p{margin:8px 0 14px}
 .btn{border:2px solid #141019;background:#C23A28;color:#fff;border-radius:999px;padding:8px 18px;font:600 15px "Be Vietnam Pro",sans-serif;cursor:pointer}
 .note{color:var(--muted);font-size:13px;margin-top:12px}
+.cap{position:absolute;left:50%;top:16%;transform:translateX(-50%);width:min(760px,90%);text-align:center;color:#fff;font-family:"Patrick Hand",cursive;font-size:clamp(20px,3.2vw,30px);line-height:1.25;text-shadow:0 2px 0 #141019,0 0 10px rgba(20,16,25,.6);pointer-events:none;transition:opacity .5s;opacity:0}
+.bars{position:absolute;left:0;right:0;height:9%;background:#1D1A22;transition:transform .6s;pointer-events:none}
+.bars.t{top:0}.bars.b{bottom:0}
+.bars.off.t{transform:translateY(-100%)}.bars.off.b{transform:translateY(100%)}
+.skip{position:absolute;right:14px;bottom:2.5%;color:#fff;font-size:13px;pointer-events:none;transition:opacity .4s}
+.memory{background:#FFF4D6;border:2px dashed #C99A52;border-radius:12px;padding:8px 12px;margin:0 0 14px;color:#4A3B34;font-size:14px;text-align:left}
 </style>
 
 <div class="wrap">
   <div class="top">
     <h1>Phố Cũ Bạc Màu · Màn 1: Mái hiên</h1>
-    <span class="keys"><b>←</b> <b>→</b> đi · <b>↑</b> hoặc <b>Space</b> nhảy · giữ <b>E</b> ở mép cong rồi đi lùi để bóc · <b>R</b> chơi lại</span>
+    <span class="keys"><b>←</b> <b>→</b> đi · <b>↑</b> hoặc <b>Space</b> nhảy · <b>E</b> nắm mép sáng, đi lùi để kéo, <b>E</b> lần nữa để buông · <b>H</b> gợi ý · <b>R</b> về chỗ an toàn</span>
   </div>
   <div class="stage" id="stage">
     <canvas id="c" tabindex="0"></canvas>
-    <div class="hud"><span class="pill" id="title">Chiều 14 tháng 8 · phố đã xám</span><span class="pill tray" title="Khay tò he của bà Năm">Khay của bà <i id="t1"></i><i></i><i></i></span></div>
+    <div class="hud"><span class="pill" id="title">Chiều 14 tháng 8 · phố đã xám</span><span style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><span class="pill" id="ffly">Đom đóm 0/5</span><span class="pill tray" title="Khay tò he của bà Năm">Khay của bà <i id="t1"></i><i></i><i></i></span></span></div>
+    <div class="bars t" id="barT"></div><div class="bars b" id="barB"></div>
+    <div class="cap" id="cap"></div><div class="skip" id="skip">Space hoặc chạm để bỏ qua</div>
     <div class="hint" id="hint"></div>
-    <div class="pad l"><button data-k="left">◀</button><button data-k="right">▶</button></div>
+    <div class="pad l"><button data-k="left">◀</button><button data-k="right">▶</button><button data-k="hint" style="width:44px;height:44px;align-self:flex-end;font-size:16px">?</button></div>
     <div class="pad r"><button class="grab" data-k="grab">Bóc</button><button data-k="jump">⤒</button></div>
-    <div class="win" id="win"><div class="card"><h2>Xong màn 1!</h2><p>Mái hiên đã bung, sào phơi đồ đã thành cầu. Một con tò he trên khay của bà Năm lấy lại màu đỏ.</p><button class="btn" id="again">Chơi lại</button></div></div>
+    <div class="win" id="win"><div class="card"><h2>Xong màn 1!</h2><p>Mái hiên đã bung, sào phơi đồ đã thành cầu. Một con tò he trên khay của bà Năm lấy lại màu đỏ.</p><div class="memory" id="memory"></div><button class="btn" id="again">Chơi lại</button></div></div>
   </div>
-  <div class="note">Bản chơi thử để kiểm tra cơ chế bóc và nhịp màn 1, chưa phải đồ họa cuối. Nhân vật dùng đúng khối đã duyệt; ba mảng xám là ba bài học: bóc thử, bóc để mở đường lên, và bóc ở trên cao để bắc cầu qua kênh.</div>
+  <div class="note">Bản chơi thử để kiểm tra cơ chế bóc và nhịp màn 1, chưa phải đồ họa cuối. Có 5 con đom đóm, tìm đủ để mở ký ức của cô Hai. Nhân vật dùng đúng khối đã duyệt; ba mảng xám là ba bài học: bóc thử, bóc để mở đường lên, và bóc ở trên cao để bắc cầu qua kênh.</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -313,8 +321,9 @@ for(let i=0;i<14;i++){
 ZONE = 'A';
 box(scene, -6, 12, 0, 8.5, -4, -0.5, '#E8A598');
 box(scene, -6.3, 12.3, 8.5, 8.9, -4.2, -0.2, '#B5513A');
-box(scene, 4.6, 10.4, 0, 2.7, -0.55, -0.45, '#2E8C86', {ow:.03});     // shutter behind sheet A
-for(let i=0;i<6;i++) box(scene, 4.8, 10.2, .25+i*.42, .3+i*.42, -0.45, -0.42, '#246F6A', {outline:false});
+box(scene, 4.0, 10.8, 0, 3.4, -0.55, -0.45, '#2E8C86', {ow:.03});     // shutter behind sheet A
+for(let i=0;i<8;i++) box(scene, 4.2, 10.6, .25+i*.4, .3+i*.4, -0.45, -0.42, '#246F6A', {outline:false});
+for(const [x,c] of [[4.6,'#E8442E'],[6.2,'#F2C230'],[9.0,'#E8442E'],[10.3,'#9FCBC1']]){ mesh(scene, new THREE.CylinderGeometry(.3,.24,.5,12), '#B5513A', {pos:new THREE.Vector3(x,.25,-.1)}); blob(scene, new THREE.Vector3(x,.75,-.1), [.38,.3,.32], '#4E9A4A'); blob(scene, new THREE.Vector3(x+.1,1.0,.05), .12, c, {ow:.02}); }
 box(scene, -4, -1, 3.6, 6, -0.6, -0.45, '#F1E0C5', {ow:.03}); box(scene, 1, 4, 3.6, 6, -0.6, -0.45, '#F1E0C5', {ow:.03});
 // star lantern hanging from house 0
 const star = new THREE.Group(); star.position.set(7.5, 4.6, -0.2); scene.add(star);
@@ -368,6 +377,13 @@ buildTo(gt);
 // ================= sheets =================
 ZONE = 'sheet';
 const sheets = [];
+const haloTex = (function(){ const c = document.createElement('canvas'); c.width = 64; c.height = 64; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0,0,64,0); g.addColorStop(0,'rgba(255,255,255,0)'); g.addColorStop(.5,'rgba(255,255,255,1)'); g.addColorStop(1,'rgba(255,255,255,0)');
+  x.fillStyle = g; x.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
+const dotTex = (function(){ const c = document.createElement('canvas'); c.width = 64; c.height = 64; const x = c.getContext('2d');
+  const g = x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(.35,'rgba(255,255,255,.55)'); g.addColorStop(1,'rgba(255,255,255,0)');
+  x.fillStyle = g; x.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
+const arrowGeo = (function(){ const sh = new THREE.Shape(); sh.moveTo(-.45,-.13); sh.lineTo(.1,-.13); sh.lineTo(.1,-.3); sh.lineTo(.45,0); sh.lineTo(.1,.3); sh.lineTo(.1,.13); sh.lineTo(-.45,.13); sh.closePath(); return new THREE.ShapeGeometry(sh); })();
 function sheet(id, x0, x1, y0, y1, z, onDone){
   const w = x1-x0, h = y1-y0, tex = sheetTexture(w, h, id.charCodeAt(0)*7);
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshToonMaterial({map:tex, gradientMap:ramp}));
@@ -376,7 +392,12 @@ function sheet(id, x0, x1, y0, y1, z, onDone){
   ol.position.set(0,0,-.01); m.add(ol);
   const curl = new THREE.Mesh(new THREE.CylinderGeometry(1,1,h,16), new THREE.MeshToonMaterial({color:new THREE.Color('#C9C5C0').convertSRGBToLinear(), gradientMap:ramp}));
   curl.castShadow = true; outline(curl, .03); scene.add(curl);
-  const s = {id, x0, x1, y0, y1, z, w, h, p:0, done:false, m, tex, curl, onDone, ol};
+  const glow = new THREE.Group(); scene.add(glow);
+  const core = new THREE.Mesh(new THREE.PlaneGeometry(.1, h), new THREE.MeshBasicMaterial({color:'#FFF2B0', transparent:true, depthWrite:false}));
+  const halo = new THREE.Mesh(new THREE.PlaneGeometry(.7, h+.4), new THREE.MeshBasicMaterial({map:haloTex, color:'#FFC94A', transparent:true, depthWrite:false, blending:THREE.AdditiveBlending}));
+  glow.add(halo); glow.add(core);
+  const arrow = new THREE.Mesh(arrowGeo, new THREE.MeshBasicMaterial({color:'#F6B93B'})); outline(arrow, .05); arrow.visible = false; scene.add(arrow);
+  const s = {id, x0, x1, y0, y1, z, w, h, p:0, done:false, m, tex, curl, onDone, ol, glow, halo, arrow};
   sheets.push(s); updSheet(s); return s;
 }
 function updSheet(s){
@@ -385,9 +406,10 @@ function updSheet(s){
   s.tex.repeat.x = rem/s.w; s.tex.offset.x = s.p/s.w;
   const r = .14 + .26*Math.min(1, s.p/2.5);
   s.curl.scale.set(r, 1, r); s.curl.position.set(s.x0 + s.p, s.y0 + s.h/2, s.z + r);
-  if(s.done){ s.m.visible = false; s.curl.visible = false; }
+  s.glow.position.set(s.x0 + s.p, s.y0 + s.h/2, s.z + 2*r + .03);
+  if(s.done){ s.m.visible = false; s.curl.visible = false; s.glow.visible = false; s.arrow.visible = false; }
 }
-sheet('A', 4.4, 10.6, .1, 2.9, -0.38, ()=>{});
+sheet('A', 3.8, 11.0, .1, 3.6, -0.38, ()=>{});
 sheet('B', 16.8, 22.2, .1, 2.9, -0.35, ()=>{ awningOpen = true; });
 sheet('C', 21.6, 28.4, 4.1, 6.9, -0.38, ()=>{ pole.visible = true; });
 
@@ -408,31 +430,111 @@ const buis = [];
 });
 for(const k of ['A','B','C','goal','tray0','tray1','tray2','sky']) setZone(k, 0);
 
+// ================= fireflies (đom đóm): 5 per level, 3 fly out of peeled sheets, 2 hidden =================
+const flies = [];
+function firefly(x, y, sheetId){
+  const g = new THREE.Group(); g.position.set(x, y, .3); scene.add(g);
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(.11, 10, 8), new THREE.MeshBasicMaterial({color:'#FFF2A0'})));
+  const h = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.1), new THREE.MeshBasicMaterial({map:dotTex, color:'#FFD54A', transparent:true, depthWrite:false, blending:THREE.AdditiveBlending}));
+  g.add(h);
+  const f = {g, h, x, y, sheetId, got:false, gotT:0, ph:Math.random()*6}; flies.push(f); return f;
+}
+firefly(7.4, 2.6, 'A'); firefly(19.5, 3.5, 'B'); firefly(25, 6.6, 'C'); firefly(34.5, 7.1, null); firefly(-3.6, 1.4, null);
+let fliesGot = 0;
+const fflyEl = document.getElementById('ffly');
+
+// ================= intro: the street in colour, then the calendar pages blow in =================
+const capEl = document.getElementById('cap'), skipEl = document.getElementById('skip'), barT = document.getElementById('barT'), barB = document.getElementById('barB');
+const CAPS = [[0.6, 4.2, 'Chiều 14 tháng Tám, phố cũ rộn ràng chuẩn bị Trung thu.'],
+  [4.6, 8.2, 'Bà Năm nặn xong một con tò he, ấn ngón tay lên bụng cho may.'],
+  [8.6, 12.4, 'Rồi đồng hồ cuối phố đứng lại. Gió cuốn bao nhiêu tờ lịch cũ bay khắp phố.'],
+  [12.8, 16.2, 'Cả phố bạc màu. Ai cũng ngủ quên giữa chừng.']];
+const INTRO_END = 18.6;
+const intro = {on:true, t:0};
+const pageTex = (function(){ const c = document.createElement('canvas'); c.width = 64; c.height = 80; const x = c.getContext('2d');
+  x.fillStyle = '#F2ECE1'; x.fillRect(0,0,64,80); x.fillStyle = '#C23A28'; x.fillRect(0,0,64,14);
+  x.fillStyle = '#5A4E4A'; x.font = 'bold 40px sans-serif'; x.textAlign = 'center'; x.fillText('14', 32, 62); const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t; })();
+const pages = [];
+for(let i=0;i<46;i++){
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(.55, .7), new THREE.MeshBasicMaterial({map:pageTex, side:THREE.DoubleSide, transparent:true}));
+  m.visible = false; scene.add(m);
+  pages.push({m, x0: 16 + Math.random()*26, y0: 1 + Math.random()*8, z: -1.2 + Math.random()*3.2, sp: 7 + Math.random()*6, ph: Math.random()*6, d: Math.random()*1.4});
+}
+function endIntro(){
+  intro.on = false; capEl.style.opacity = 0; skipEl.style.opacity = 0; barT.classList.add('off'); barB.classList.add('off');
+  for(const p of pages) p.m.visible = false;
+  for(const sh of sheets){ sh.m.visible = sh.curl.visible = sh.glow.visible = !sh.done; }
+  for(const k of ['A','B','C','goal','tray0','tray1','tray2','sky']) setZone(k, 0);
+  toInner.scale.setScalar(1);
+  say('Bà ơi?… Bà ngủ mất rồi.', 2.6);
+}
+function runIntro(dt, t){
+  intro.t += dt; const it = intro.t;
+  let cap = ''; for(const c of CAPS) if(it >= c[0] && it < c[1]) cap = c[2];
+  if(cap){ if(capEl.textContent !== cap) capEl.textContent = cap; capEl.style.opacity = 1; } else capEl.style.opacity = 0;
+  // colour holds, then the grey sweeps in with the pages
+  const k = it < 9.6 ? 1 : Math.max(0, 1 - (it - 9.6)/2.8);
+  for(const z of ['A','B','C','goal','tray0','tray1','tray2']) setZone(z, k);
+  setZone('sky', k);
+  scene.background.copy(SKY_GREY).lerp(SKY_COL, zoneK.sky*0.85); scene.fog.color.copy(scene.background);
+  for(const p of pages){
+    const pt = it - 8.8 - p.d;
+    p.m.visible = pt > 0 && pt < 4.6;
+    if(p.m.visible){
+      p.m.position.set(p.x0 - pt*p.sp, p.y0 + Math.sin(pt*3 + p.ph)*0.6 - pt*0.3, p.z);
+      p.m.rotation.set(Math.sin(pt*4 + p.ph)*0.8, pt*2 + p.ph, Math.cos(pt*3 + p.ph)*0.6);
+      p.m.material.opacity = Math.min(1, (4.6 - pt));
+    }
+  }
+  // the grey sheets only appear once the pages have blown in
+  const showSheets = it > 11.2;
+  for(const sh of sheets){ sh.m.visible = sh.curl.visible = sh.glow.visible = showSheets; }
+  for(const f of flies) f.g.visible = false;
+  // Tò is "made": a little squash-and-pop while the second caption is up
+  toG.position.set(P.x, P.y, 0);
+  const pop = (it > 5.2 && it < 6.2) ? Math.sin((it - 5.2)*Math.PI) : 0;
+  toInner.scale.set(1 + pop*.12, 1 - pop*.1 + Math.sin(t*2.2)*0.01, 1 + pop*.12);
+  toInner.rotation.y = it < 13 ? 0.9 : 0.9 - Math.min(1,(it-13))*1.6;
+  baR.head.rotation.x = it < 13 ? 0 : Math.min(.35, (it-13)*.3);   // Bà Năm nods off
+  const camX = 2.5 + Math.max(0, it - 8.5)*1.4*(it < 12 ? 1 : 0) + (it >= 12 ? 4.9 - Math.min(4.9,(it-12)*2.4) : 0);
+  camLook.lerp(tmpV.set(camX, 2.6, 0), Math.min(1, dt*2));
+  camPos.lerp(tmpV.set(camX, 5.2, 17), Math.min(1, dt*2));
+  camera.position.copy(camPos); camera.lookAt(camLook);
+  sun.position.set(camLook.x - 8, 18, 12); sun.target.position.set(camLook.x, 0, 0);
+  if(it >= INTRO_END) endIntro();
+}
+
 // ================= bubbles & hint =================
 const bubbles = {};
 function bubble(id){ const d = document.createElement('div'); d.className='bubble'; stage.appendChild(d); bubbles[id]=d; return d; }
 bubble('ba'); bubble('hai'); bubble('to');
 const hintEl = document.getElementById('hint');
 let toSay = '', toSayT = 0;
+let sayNext = null;
 function say(t, dur){ toSay = t; toSayT = dur||2.2; }
 
 // ================= input =================
 const keys = {left:false,right:false,jump:false,grab:false};
-const KM = {ArrowLeft:'left', KeyA:'left', ArrowRight:'right', KeyD:'right', ArrowUp:'jump', KeyW:'jump', Space:'jump', KeyE:'grab', KeyJ:'grab', ShiftLeft:'grab', ShiftRight:'grab'};
-let jumpQueued = false;
+const KM = {ArrowLeft:'left', KeyA:'left', ArrowRight:'right', KeyD:'right', ArrowUp:'jump', KeyW:'jump', Space:'jump', KeyE:'grab', KeyJ:'grab'};
+let jumpQueued = false, grabQueued = false, hintT = 0;
+function safeSpot(){ if(intro.on || P.won) return; P.x = P.check.x; P.y = P.check.y; P.vx = P.vy = 0; P.grab = null; say('Về chỗ an toàn.', 1.2); }
 addEventListener('keydown', e=>{
-  if(e.code==='KeyR'){ reset(); return; }
+  if(intro.on && (e.code==='Space' || e.code==='Enter' || e.code==='Escape')){ e.preventDefault(); endIntro(); return; }
+  if(e.code==='KeyR'){ safeSpot(); return; }
+  if(e.code==='KeyH'){ hintT = 6; return; }
   const k = KM[e.code]; if(!k) return; e.preventDefault();
-  if(k==='jump' && !keys.jump) jumpQueued = true; keys[k] = true;
+  if(k==='jump' && !keys.jump) jumpQueued = true;
+  if(k==='grab' && !keys.grab) grabQueued = true;
+  keys[k] = true;
 });
 addEventListener('keyup', e=>{ const k = KM[e.code]; if(k) keys[k] = false; });
 document.querySelectorAll('.pad button').forEach(b=>{
   const k = b.dataset.k;
-  const on = e=>{ e.preventDefault(); if(k==='jump' && !keys.jump) jumpQueued = true; keys[k]=true; b.classList.add('on'); };
+  const on = e=>{ e.preventDefault(); if(intro.on){ endIntro(); return; } if(k==='hint'){ hintT = 6; return; } if(k==='jump' && !keys.jump) jumpQueued = true; if(k==='grab' && !keys.grab) grabQueued = true; keys[k]=true; b.classList.add('on'); };
   const off = e=>{ e.preventDefault(); keys[k]=false; b.classList.remove('on'); };
   b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
 });
-canvas.addEventListener('pointerdown', ()=>canvas.focus());
+canvas.addEventListener('pointerdown', ()=>{ canvas.focus(); if(intro.on) endIntro(); });
 
 // ================= player =================
 const P = {x:1.6, y:0, vx:0, vy:0, w:.95, h:2.25, ground:true, face:1, grab:null, check:{x:1.6,y:0}, won:false, knock:0, walkT:0};
@@ -443,6 +545,7 @@ function reset(){
   awningOpen=false; awningT=0; awning.rotation.x = Math.PI/2; poleOut=0; pole.visible=false; pole.scale.x=.001;
   for(const k of ['A','B','C','goal','tray0','sky']) setZone(k, 0);
   document.getElementById('win').style.display='none'; document.getElementById('t1').style.background='';
+  for(const f of flies){ f.got = false; f.g.visible = true; f.g.scale.setScalar(1); } fliesGot = 0; fflyEl.textContent = 'Đom đóm 0/5';
   startT = performance.now()/1000;
 }
 function standingOn(x, yPrev, yNew){
@@ -469,24 +572,24 @@ function step(dt, t){
   // grabbing: hold the curled edge, walk backwards to peel
   if(P.grab){
     const s = P.grab;
-    if(!keys.grab || !P.ground){ P.grab = null; }
+    if(grabQueued || !P.ground){ P.grab = null; grabQueued = false; }
     else {
       P.vx = dir * PEEL_SPEED; P.face = -1;
       const nx = P.x + P.vx*dt;
       P.x = Math.max(s.x0 + s.p - .2, nx);
       s.p = Math.min(s.w, Math.max(s.p, P.x - s.x0 - .45));
       updSheet(s);
-      if(s.p >= s.w - .02){ s.done = true; updSheet(s); P.grab = null; s.onDone(); say({A:'Ồ, màu kìa!',B:'Mái hiên bung ra rồi!',C:'Sào phơi đồ!'}[s.id], 2.4); }
+      if(s.p >= s.w - .02){ s.done = true; updSheet(s); P.grab = null; s.onDone(); say({A:'Ồ… bên dưới vẫn còn màu!',B:'Mái hiên bung ra rồi!',C:'Sào phơi đồ!'}[s.id], 2.4); if(s.id==='A') sayNext = ['Ai làm phố xám hết vậy ta?', 2.6]; }
     }
   }
   if(!P.grab){
-    if(keys.grab && P.ground){ const s = nearSheet(); if(s){ P.grab = s; P.x = s.x0 + s.p + .45; } }
+    if(grabQueued && P.ground){ const s = nearSheet(); if(s){ P.grab = s; P.x = s.x0 + s.p + .45; } }
     const target = dir * SPEED;
     if(P.knock > 0){ P.knock -= dt; } else P.vx += (target - P.vx) * Math.min(1, dt*14);
     if(dir) P.face = dir;
     if(jumpQueued && P.ground && !P.grab){ P.vy = JUMP; P.ground = false; }
   }
-  jumpQueued = false;
+  jumpQueued = false; grabQueued = false;
   P.vy -= GRAV*dt;
   const yPrev = P.y; let ny = P.y + P.vy*dt;
   let nx = P.grab ? P.x : P.x + P.vx*dt;
@@ -507,6 +610,14 @@ function step(dt, t){
     if(Math.abs(P.x - b.x) < (P.w/2 + b.s*.9) && P.y < by + b.s*.6 && P.y + P.h > 4.05){
       P.vx = (P.x < b.x ? -1 : 1) * 9; P.vy = 7; P.knock = .35; P.ground = false; P.grab = null;
       say('Hắt xì! Bụi quá!', 1.6);
+    }
+  }
+  // fireflies
+  for(const f of flies){
+    if(f.got || (f.sheetId && !sheets.find(s=>s.id===f.sheetId).done)) continue;
+    if(Math.abs(P.x - f.g.position.x) < .9 && f.g.position.y > P.y - .3 && f.g.position.y < P.y + P.h + .4){
+      f.got = true; f.gotT = 0; fliesGot++; fflyEl.textContent = 'Đom đóm ' + fliesGot + '/5';
+      if(fliesGot === 5) say('Đủ 5 con đom đóm rồi!', 2);
     }
   }
   // goal
@@ -563,10 +674,24 @@ function animate(dt, t){
   setZone('sky', zoneK.sky + (prog - zoneK.sky)*Math.min(1, dt*2));
   scene.background.copy(SKY_GREY).lerp(SKY_COL, zoneK.sky*0.85); scene.fog.color.copy(scene.background);
   star.rotation.z = Math.sin(t*1.1)*0.1*zoneK.A;
+  baR.head.rotation.x = .35*(1 - zoneK.A);
   haiR.arm.rotation.z = Math.sin(t*2)*0.12*Math.max(.2, zoneK.B);
   // sheet tab pulse when Tò can grab it
   const near = !P.grab && nearSheet();
   for(const s of sheets){ if(!s.done){ updSheet(s); if(near===s){ const k = 1.15 + Math.sin(t*8)*0.15; s.curl.scale.x*=k; s.curl.scale.z*=k; } } }
+  for(const s of sheets){
+    if(s.done) continue;
+    s.halo.material.opacity = 0.55 + Math.sin(t*4 + s.x0)*0.25 + (near===s ? .3 : 0);
+    s.arrow.visible = near===s || P.grab===s;
+    s.arrow.position.set(s.x0 + s.p + 1.9 + Math.sin(t*6)*0.12, s.y0 + 1.5, s.z + 1.2);
+  }
+  for(const f of flies){
+    const hidden = f.sheetId && !sheets.find(s=>s.id===f.sheetId).done;
+    if(f.got){ f.gotT += dt; const k = 1 + f.gotT*4; f.g.scale.setScalar(k); f.h.material.opacity = Math.max(0, 1 - f.gotT*2); f.g.visible = f.gotT < .5; f.g.position.y += dt*2; continue; }
+    f.g.visible = !hidden;
+    f.g.position.set(f.x + Math.sin(t*1.3 + f.ph)*0.35, f.y + Math.sin(t*2.1 + f.ph)*0.25, .3);
+    f.h.material.opacity = 0.6 + Math.sin(t*5 + f.ph)*0.35;
+  }
   // dust balls patrol roof B
   for(const b of buis){
     b.x += b.dir * dt * 1.4; if(b.x > b.b){ b.x = b.b; b.dir = -1; } if(b.x < b.a){ b.x = b.a; b.dir = 1; }
@@ -585,29 +710,42 @@ function animate(dt, t){
   place(bubbles.ba, ba, 2.3, zoneK.A > .9 ? 'Giỏi lắm! Giờ qua giúp cô Hai.' : 'Phố xám hết rồi. Tò bóc giúp bà nhé!', dBa < 4.5 && P.y < 1);
   place(bubbles.hai, hai, 2.9, awningOpen ? 'Leo lên mái hiên, rồi lên mái nhà đi con!' : 'Mái hiên của cô bị dán xám dính cứng rồi!', dHai < 5 && P.y < 1 && !P.won);
   if(toSayT > 0) toSayT -= dt;
+  if(toSayT <= 0 && sayNext){ say(sayNext[0], sayNext[1]); sayNext = null; }
   place(bubbles.to, toG, 1.75, toSay, toSayT > 0);
+  // short control prompts always; the fuller hint only when H is pressed
+  if(hintT > 0) hintT -= dt;
   let h = '';
-  if(P.won) h = 'Xong màn! Bấm R để chơi lại.';
-  else if(P.grab) h = 'Giữ nút bóc và đi lùi (→) để xé lớp xám';
-  else if(near) h = 'Giữ E (hoặc nút Bóc) để nắm mép cong';
-  else if(!sheets[0].done && P.x < 4.5) h = 'Mép giấy cong là chỗ bóc được. Đi tới tấm xám phía trước';
-  else if(sheets[1].done && P.y < 1 && P.x > 15 && P.x < 24) h = 'Nhảy lên mái hiên (↑), rồi nhảy tiếp lên mái nhà';
-  else if(P.y > 3.9 && P.x < 30 && !sheets[2].done) h = 'Trên mái có một tấm xám nữa, ngay sau phòng nhỏ';
-  else if(sheets[2].done && P.x < 40 && P.y > 3.9) h = 'Đi trên sào phơi đồ qua kênh. Cẩn thận Lũ Bụi bên kia';
+  if(P.won) h = '';
+  else if(P.grab) h = 'Đi lùi để kéo · E để buông';
+  else if(near) h = 'E để nắm mép';
+  else if(hintT > 0){
+    if(!sheets[0].done) h = 'Vệt sáng vàng là chỗ bóc được. Đứng cạnh tấm xám trước nhà hồng, bấm E.';
+    else if(!sheets[1].done) h = 'Mái hiên nhà cô Hai bị dán xám. Bóc tấm xám dưới mái, từ mép bên trái.';
+    else if(P.y < 1) h = 'Nhảy lên mái hiên sọc đỏ, rồi nhảy tiếp lên mái nhà.';
+    else if(!sheets[2].done) h = 'Trên mái còn một tấm xám ở phòng nhỏ. Bóc nó ra.';
+    else if(P.x < 40) h = 'Đi trên sào phơi đồ qua kênh. Nhảy lên lấy đom đóm phía trên.';
+    else h = fliesGot < 5 ? 'Nhảy qua Lũ Bụi. Còn đom đóm thì thử tìm sau lưng bà Năm.' : 'Nhảy qua Lũ Bụi, tới con tò he xám.';
+  }
   hintEl.textContent = h; hintEl.style.opacity = h ? 1 : 0;
 }
 
 let last = performance.now();
 function loop(now){
   const dt = Math.min(0.033, (now-last)/1000); last = now; const t = now/1000;
-  if(!hook.pause){ step(dt, t); animate(dt, t); }
-  if(P.won && t - winT > 2.2){ document.getElementById('win').style.display='flex'; document.getElementById('t1').style.background='#C23A28'; }
+  if(!hook.pause){ if(intro.on) runIntro(dt, t); else { step(dt, t); animate(dt, t); } }
+  if(P.won && t - winT > 2.2 && document.getElementById('win').style.display !== 'flex') showWin();
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
+function showWin(){
+  document.getElementById('win').style.display='flex'; document.getElementById('t1').style.background='#C23A28';
+  document.getElementById('memory').innerHTML = fliesGot === 5
+    ? '<b>Ký ức mở khoá.</b> Ngày đầu cô Hai mở quán, có đứa bé đứng nhìn nồi chè mãi mà không đủ tiền. Cô múc cho một chén đầy, không lấy tiền. Đứa bé đó bây giờ là chú Tư.'
+    : 'Còn ' + (5 - fliesGot) + ' con đom đóm chưa tìm thấy. Tìm đủ 5 con để mở ký ức của cô Hai.';
+}
 document.getElementById('again').onclick = ()=>{ reset(); canvas.focus(); };
 // test hook: lets an automated run drive the same input the keyboard does
-const hook = window.__game = {pause:false, P, keys, sheets, jump:()=>{ jumpQueued = true; }, tick:(n)=>{ for(let i=0;i<n;i++){ simT += 1/60; step(1/60, simT); animate(1/60, simT); } }, get poleOut(){ return poleOut; }, get awningOpen(){ return awningOpen; }};
+const hook = window.__game = {pause:false, P, keys, sheets, jump:()=>{ jumpQueued = true; }, grab:()=>{ grabQueued = true; }, skipIntro:()=>{ if(intro.on) endIntro(); }, introTick:(n)=>{ for(let i=0;i<n && intro.on;i++){ simT += 1/60; runIntro(1/60, simT); } }, get flies(){ return fliesGot; }, tick:(n)=>{ for(let i=0;i<n;i++){ simT += 1/60; step(1/60, simT); animate(1/60, simT); } }, get poleOut(){ return poleOut; }, get awningOpen(){ return awningOpen; }};
 resize(); requestAnimationFrame(loop);
 })();
 </script>
