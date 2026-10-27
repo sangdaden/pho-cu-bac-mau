@@ -33,7 +33,13 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .pad button.grab{background:#F6D27A;font-size:15px}
 .pad button.on{background:#C23A28;color:#fff}
 @media (pointer:coarse){.pad{display:flex}.hint{bottom:86px}}
-@media (max-width:640px){.pill{font-size:14px;padding:1px 9px;border-width:1.5px}.tray i{width:12px;height:12px}#title{display:none}.hud{justify-content:flex-end}}
+@media (max-width:640px){.pill{font-size:14px;padding:1px 9px;border-width:1.5px}.tray i{width:12px;height:12px}#title{white-space:nowrap}}
+#title{transition:background .3s}#title.pop{animation:pop .7s}
+@keyframes pop{0%{transform:scale(1)}30%{transform:scale(1.12);background:#FFE7A3}100%{transform:scale(1)}}
+.zzz{position:absolute;transform:translate(-50%,-100%);font-family:"Patrick Hand",cursive;font-size:20px;color:#3A3340;opacity:0;pointer-events:none;transition:opacity .4s;letter-spacing:2px}
+.memo{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(20,16,25,.38);opacity:0;transition:opacity .5s;pointer-events:none}
+.memo canvas{width:min(64%,440px);height:auto;transform:rotate(-2.5deg);border-radius:4px;box-shadow:0 10px 28px rgba(0,0,0,.4)}
+.win .next{font-size:13px;color:var(--muted);margin:-4px 0 14px}
 .win{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,16,25,.35)}
 .win .card{background:var(--panel);color:var(--ink);border-radius:18px;border:2.5px solid #141019;padding:20px 24px;max-width:min(420px,90%);text-align:center}
 .win h2{font-family:"Patrick Hand",cursive;font-weight:400;font-size:34px;margin:0}
@@ -61,9 +67,10 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
     <div class="hint" id="hint"></div>
     <div class="pad l"><button data-k="left">◀</button><button data-k="right">▶</button><button data-k="hint" style="width:44px;height:44px;align-self:flex-end;font-size:16px">?</button></div>
     <div class="pad r"><button class="grab" data-k="grab">Bóc</button><button data-k="jump">⤒</button></div>
-    <div class="win" id="win"><div class="card"><h2>Xong màn 1!</h2><p>Mái hiên đã bung, sào phơi đồ đã thành cầu. Một con tò he trên khay của bà Năm lấy lại màu đỏ.</p><div class="memory" id="memory"></div><button class="btn" id="again">Chơi lại</button></div></div>
+    <div class="memo" id="memo"><canvas id="memoC" width="480" height="360"></canvas></div>
+    <div class="win" id="win"><div class="card"><h2>Xong màn 1!</h2><p>Mái hiên đã bung, sào phơi đồ đã thành cầu. Một con tò he trên khay của bà Năm lấy lại màu đỏ.</p><div class="memory" id="memory"></div><p class="next">Tiếp theo · Màn 2: Rãnh nước. Bé Bống đang chờ trong con hẻm.</p><button class="btn" id="again">Chơi lại</button></div></div>
   </div>
-  <div class="note">Bản chơi thử để kiểm tra cơ chế bóc và nhịp màn 1, chưa phải đồ họa cuối. Có 5 con đom đóm, tìm đủ để mở ký ức của cô Hai. Nhân vật dùng đúng khối đã duyệt; ba mảng xám là ba bài học: bóc thử, bóc để mở đường lên, và bóc ở trên cao để bắc cầu qua kênh.</div>
+  <div class="note">Bản chơi thử để kiểm tra cơ chế bóc và nhịp màn 1, chưa phải đồ họa cuối. Ô mục tiêu ở góc trái luôn nói việc tiếp theo. Có 5 con đom đóm, tìm đủ để mở trọn ký ức của cô Hai. Nhân vật dùng đúng khối đã duyệt; ba mảng xám là ba bài học: bóc thử, bóc để mở đường lên, và bóc ở trên cao để bắc cầu qua kênh.</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -484,6 +491,17 @@ mesh(scene, new THREE.CylinderGeometry(1.4,1.4,.2,28), '#F4F1EA', {pos:new THREE
 box(scene, 64.92, 65.08, 16.5, 17.6, -15.78, -15.74, '#141019', {outline:false, shadow:false});
 box(scene, 65, 65.8, 16.42, 16.58, -15.78, -15.74, '#141019', {outline:false, shadow:false});
 
+// sleeping cat on the rooftop room: the chapter's one cameo, not part of any puzzle
+ZONE = 'C';
+const cat = new THREE.Group(); cat.position.set(23.6, 7.5, -1.0); cat.rotation.y = -.6; cat.scale.setScalar(1.45); scene.add(cat);
+blob(cat, new THREE.Vector3(0,.26,0), [.58,.38,.28], '#E89A3C');
+blob(cat, new THREE.Vector3(.48,.3,.1), [.27,.25,.23], '#E89A3C');
+blob(cat, new THREE.Vector3(.7,.25,.12), .09, '#F4F1EA', {ow:.02});
+for(const dz of [-.08,.16]) mesh(cat, new THREE.ConeGeometry(.09,.18,4), '#E89A3C', {pos:new THREE.Vector3(.44,.55,.1+dz), ow:.02});
+for(const dz of [-.04,.2]) box(cat, .7,.73, .35,.37, .06+dz-.05, .06+dz+.03, '#141019', {outline:false});
+rod(cat, new THREE.Vector3(-.52,.12,-.1), new THREE.Vector3(.05,.08,.42), .07, '#D9822E', {ow:.02});
+for(const dx of [-.25,-.05,.15]) box(cat, dx, dx+.07, .45, .5, -.2, .2, '#C76E22', {outline:false});
+
 // ================= sheets =================
 ZONE = 'sheet';
 const sheets = [];
@@ -577,9 +595,10 @@ function endIntro(){
   for(const k of ['A','B','C','goal','tray0','tray1','tray2','sky']) setZone(k, 0);
   toInner.scale.setScalar(1);
   say('Bà ơi?… Bà ngủ mất rồi.', 2.6);
+  OBJ = ''; objective('Đánh thức bà Năm');
 }
 function runIntro(dt, t){
-  intro.t += dt; const it = intro.t;
+  intro.t += dt; const it = intro.t; nowT = t;
   let cap = ''; for(const c of CAPS) if(it >= c[0] && it < c[1]) cap = c[2];
   if(cap){ if(capEl.textContent !== cap) capEl.textContent = cap; capEl.style.opacity = 1; } else capEl.style.opacity = 0;
   // colour holds, then the grey sweeps in with the pages
@@ -622,6 +641,72 @@ const hintEl = document.getElementById('hint');
 let toSay = '', toSayT = 0;
 let sayNext = null;
 function say(t, dur){ toSay = t; toSayT = dur||2.2; }
+bubble('bui'); bubble('cat');
+const zzz = {}; for(const k of ['ba','hai','cat']){ const d = document.createElement('div'); d.className = 'zzz'; d.textContent = 'z z z'; stage.appendChild(d); zzz[k] = d; }
+// story beats: an objective line, short locked camera moves that show what changed and what comes next
+const titleEl = document.getElementById('title');
+let OBJ = '', nowT = 0, lastProgT = 0;
+function objective(t){ lastProgT = nowT; if(OBJ === t) return; OBJ = t; titleEl.textContent = t; titleEl.classList.remove('pop'); void titleEl.offsetWidth; titleEl.classList.add('pop'); }
+const seq = []; let cur = null, winReady = false;
+function play(steps){ for(const st of steps) seq.push(st); }
+function busy(){ return !!cur || seq.length > 0; }
+let baLine = '', baLineT = 0, haiLine = '', haiLineT = 0, haiWake = 0, haiAwake = false, metRoof = false, metCat = false, metBui = false;
+function baSay(t, d){ baLine = t; baLineT = d; } function haiSay(t, d){ haiLine = t; haiLineT = d; }
+const memoEl = document.getElementById('memo');
+(function drawMemory(){
+  // the back of Cô Hai's calendar page: her first day at the stall, a child gets a bowl for free. No words.
+  const c = document.getElementById('memoC'), x = c.getContext('2d'), W = 480, H = 360;
+  x.fillStyle = '#F6EBD9'; x.beginPath(); x.moveTo(0, 14);
+  for(let i=0;i<=24;i++) x.lineTo(i*20, 6 + (i%2)*10); x.lineTo(W, H); x.lineTo(0, H); x.closePath(); x.fill();
+  const g = x.createLinearGradient(0, 30, 0, 250); g.addColorStop(0, '#F7C48A'); g.addColorStop(1, '#FBE3C0');
+  x.fillStyle = g; x.fillRect(22, 32, W-44, 220);
+  x.fillStyle = '#E8A598'; x.fillRect(30, 70, 120, 182); x.fillStyle = '#E9C46A'; x.fillRect(330, 90, 120, 162);
+  x.fillStyle = '#F1E0C5'; x.fillRect(50, 100, 34, 44); x.fillRect(360, 120, 34, 44);
+  for(let i=0;i<9;i++){ x.fillStyle = i%2 ? '#F4F1EA' : '#D8382A'; x.fillRect(150 + i*20, 96, 20, 22); }
+  x.fillStyle = '#A27650'; x.fillRect(150, 196, 180, 14); x.fillRect(160, 210, 10, 42); x.fillRect(310, 210, 10, 42);
+  x.fillStyle = '#5E4630'; x.beginPath(); x.ellipse(205, 186, 34, 14, 0, 0, Math.PI*2); x.fill(); x.fillRect(171, 170, 68, 16);
+  x.strokeStyle = 'rgba(255,255,255,.8)'; x.lineWidth = 3; for(const dx of [190, 205, 220]){ x.beginPath(); x.moveTo(dx, 164); x.bezierCurveTo(dx-8, 150, dx+8, 140, dx, 126); x.stroke(); }
+  x.fillStyle = '#2E8C86'; x.beginPath(); x.ellipse(270, 178, 24, 34, 0, 0, Math.PI*2); x.fill();
+  x.fillStyle = '#F2C9A0'; x.beginPath(); x.arc(270, 132, 16, 0, Math.PI*2); x.fill();
+  x.fillStyle = '#E9D29A'; x.beginPath(); x.moveTo(240, 128); x.lineTo(270, 98); x.lineTo(300, 128); x.closePath(); x.fill();
+  x.fillStyle = '#F2C9A0'; x.fillRect(288, 168, 30, 9);
+  x.fillStyle = '#F4F1EA'; x.beginPath(); x.ellipse(330, 172, 15, 7, 0, 0, Math.PI*2); x.fill();
+  for(const [dx,cl] of [[-6,'#D8382A'],[0,'#4E9A4A'],[6,'#F2C230']]){ x.fillStyle = cl; x.beginPath(); x.arc(330+dx, 168, 3.5, 0, Math.PI*2); x.fill(); }
+  x.fillStyle = '#4C7FB8'; x.beginPath(); x.ellipse(358, 228, 14, 22, 0, 0, Math.PI*2); x.fill();
+  x.fillStyle = '#F2C9A0'; x.beginPath(); x.arc(358, 196, 12, 0, Math.PI*2); x.fill();
+  x.fillStyle = '#2A2230'; x.beginPath(); x.arc(358, 191, 12, Math.PI, 0); x.fill();
+  x.fillStyle = '#F2C9A0'; x.fillRect(338, 206, 14, 6);
+  x.fillStyle = '#D9D0C4'; x.fillRect(22, 252, W-44, 70);
+  x.fillStyle = 'rgba(120,70,30,.10)'; x.fillRect(0, 0, W, H);
+  x.strokeStyle = '#141019'; x.lineWidth = 3; x.strokeRect(22, 32, W-44, 290);
+  x.save(); x.translate(W-60, H-14); x.scale(-1, 1); x.fillStyle = 'rgba(194,58,40,.18)'; x.font = 'bold 30px sans-serif'; x.fillText('14', 0, 0); x.restore();
+})();
+function onPeeled(id){
+  if(id === 'A'){
+    say('Ồ… bên dưới vẫn còn màu!', 2.4);
+    play([{dur:2.2},
+      {dur:2.8, cam:[15.5, 2.6], start:()=>baSay('Con của bà giỏi quá! Cô Hai cũng ngủ quên rồi.', 5.5)},
+      {dur:0, start:()=>{ say('Ai làm phố xám hết vậy ta?', 2.6); objective('Đánh thức cô Hai'); }}]);
+  } else if(id === 'B'){
+    say('Mái hiên bung ra rồi!', 1.6);
+    play([{dur:1.4},
+      {dur:3.6, start:()=>{ memoEl.style.opacity = 1; }, end:()=>{ memoEl.style.opacity = 0; }},
+      {dur:2.0, start:()=>{ haiAwake = true; haiSay('Chè đậu, chè bưởi đây!', 2.6); }},
+      {dur:2.8, cam:[22.5, 5.6], start:()=>haiSay('Leo lên mái hiên, ra mái nhà đi con!', 5)},
+      {dur:0, start:()=>objective('Lên mái nhà')}]);
+  } else {
+    say('Sào phơi đồ!', 1.6);
+    play([{dur:1.6},
+      {dur:3.0, cam:[47, 5.2]},
+      {dur:0, start:()=>{ say('Con tò he bên kia… cũng xám!', 2.6); objective('Qua kênh, tới con tò he xám'); }}]);
+  }
+}
+function runSeq(dt){
+  if(!cur && seq.length){ cur = seq.shift(); cur.t = 0; if(cur.start) cur.start(); }
+  if(!cur) return;
+  cur.t += dt;
+  if(cur.t >= cur.dur){ if(cur.end) cur.end(); cur = null; if(seq.length) runSeq(0); }
+}
 
 // ================= input =================
 const keys = {left:false,right:false,jump:false,grab:false};
@@ -657,6 +742,7 @@ function reset(){
   document.getElementById('win').style.display='none'; document.getElementById('t1').style.background='';
   for(const f of flies){ f.got = false; f.g.visible = true; f.g.scale.setScalar(1); } fliesGot = 0; fflyEl.textContent = 'Đom đóm 0/5';
   startT = performance.now()/1000;
+  seq.length = 0; cur = null; winReady = false; haiAwake = false; haiWake = 0; metRoof = metCat = metBui = false; baLineT = haiLineT = 0; memoEl.style.opacity = 0; objective('Đánh thức bà Năm');
 }
 function standingOn(x, yPrev, yNew){
   let best = null;
@@ -679,6 +765,7 @@ function step(dt, t){
   if(P.won) { P.vx = 0; }
   let dir = (keys.right?1:0) - (keys.left?1:0);
   if(P.won) dir = 0;
+  if(busy()){ dir = 0; jumpQueued = false; grabQueued = false; P.grab = null; }
   // grabbing: hold the curled edge, walk backwards to peel
   if(P.grab){
     const s = P.grab;
@@ -689,7 +776,8 @@ function step(dt, t){
       P.x = Math.max(s.x0 + s.p - .2, nx);
       s.p = Math.min(s.w, Math.max(s.p, P.x - s.x0 - .45));
       updSheet(s);
-      if(s.p >= s.w - .02){ s.done = true; updSheet(s); P.grab = null; s.onDone(); say({A:'Ồ… bên dưới vẫn còn màu!',B:'Mái hiên bung ra rồi!',C:'Sào phơi đồ!'}[s.id], 2.4); if(s.id==='A') sayNext = ['Ai làm phố xám hết vậy ta?', 2.6]; }
+      if(s.p >= s.w - .02){ s.done = true; updSheet(s); P.grab = null; s.onDone(); onPeeled(s.id); }
+      else if(dir) lastProgT = nowT;
     }
   }
   if(!P.grab){
@@ -722,6 +810,9 @@ function step(dt, t){
       say('Hắt xì! Bụi quá!', 1.6);
     }
   }
+  if(!metRoof && P.ground && P.y > 3.9 && P.x < 30 && sheets[1].done){ metRoof = true; objective('Bóc tấm xám trên mái'); }
+  if(!metCat && P.y > 3.9 && Math.abs(P.x - cat.position.x) < 3.2){ metCat = true; say('Suỵt… mèo đang ngủ.', 2.2); }
+  if(!metBui && P.x > 37.5 && P.y > 3.9){ metBui = true; say('Lũ Bụi… đừng chạm vào.', 2.4); }
   // fireflies
   for(const f of flies){
     if(f.got || (f.sheetId && !sheets.find(s=>s.id===f.sheetId).done)) continue;
@@ -733,6 +824,11 @@ function step(dt, t){
   // goal
   if(!P.won && Math.abs(P.x - goal.position.x) < 1.1 && P.y > 3.9){
     P.won = true; winT = t; say('Con tò he có màu rồi!', 2.0);
+    play([{dur:2.2},
+      {dur:3.4, cam:[60, 14, 24], start:()=>{ barT.classList.remove('off'); barB.classList.remove('off'); capEl.textContent = 'Xa xa, kim đồng hồ trên tháp vẫn đứng im.'; capEl.style.opacity = 1; },
+        end:()=>{ barT.classList.add('off'); barB.classList.add('off'); capEl.style.opacity = 0; }},
+      {dur:2.6, start:()=>say('Đồng hồ… đứng rồi. Phải tới đó thôi.', 2.6)},
+      {dur:0, start:()=>{ winReady = true; }}]);
   }
 }
 
@@ -753,6 +849,7 @@ function place(el, obj, dy, text, show){
   if(el.textContent !== text) el.textContent = text; el.style.opacity = 1;
 }
 function animate(dt, t){
+  nowT = t; runSeq(dt);
   // Tò pose
   toG.position.set(P.x, P.y, 0);
   const faceY = P.grab ? -0.9 : (P.face > 0 ? 0.75 : -0.75);
@@ -784,14 +881,17 @@ function animate(dt, t){
   setZone('sky', zoneK.sky + (prog - zoneK.sky)*Math.min(1, dt*2));
   scene.background.copy(SKY_GREY).lerp(SKY_COL, zoneK.sky*0.85); scene.fog.color.copy(scene.background);
   star.rotation.z = Math.sin(t*1.1)*0.1*zoneK.A;
-  baR.head.rotation.x = .35*(1 - zoneK.A);
-  haiR.arm.rotation.z = Math.sin(t*2)*0.12*Math.max(.2, zoneK.B);
+  baR.head.rotation.x = .35*(1 - zoneK.A) + (zoneK.A < .5 ? Math.sin(t*1.3)*.05 : 0);
+  haiWake += ((haiAwake ? 1 : 0) - haiWake) * Math.min(1, dt*3);
+  haiR.head.rotation.x = .38*(1 - haiWake) + (haiWake < .5 ? Math.sin(t*1.2 + 1)*.05 : 0);
+  haiR.arm.rotation.z = Math.sin(t*2)*0.12*haiWake;
+  cat.scale.set(1.45, 1.45*(1 + Math.sin(t*1.6)*.04), 1.45);
   // sheet tab pulse when Tò can grab it
   const near = !P.grab && nearSheet();
   for(const s of sheets){ if(!s.done){ updSheet(s); if(near===s){ const k = 1.15 + Math.sin(t*8)*0.15; s.curl.scale.x*=k; s.curl.scale.z*=k; } } }
   for(const s of sheets){
     if(s.done) continue;
-    s.halo.material.opacity = 0.55 + Math.sin(t*4 + s.x0)*0.25 + (near===s ? .3 : 0);
+    s.halo.material.opacity = (0.55 + Math.sin(t*4 + s.x0)*0.25 + (near===s ? .3 : 0)) * (s === sheets.find(q=>!q.done) ? 1 : .3);
     s.arrow.visible = near===s || P.grab===s;
     s.arrow.position.set(s.x0 + s.p + 1.9 + Math.sin(t*6)*0.12, s.y0 + 1.5, s.z + 1.2);
   }
@@ -809,16 +909,25 @@ function animate(dt, t){
   }
   goal.rotation.y = Math.sin(t*1.5)*0.3; gt.position.y = .5 + (P.won ? Math.abs(Math.sin(t*6))*0.3 : 0);
   // camera follows Tò, looks a bit ahead
-  const look = Math.max(4, Math.min(52, P.x + P.face*1.5));
-  const ty = 2.8 + Math.max(0, P.y-1)*0.55;
-  camLook.lerp(tmpV.set(look, ty, -1), Math.min(1, dt*3));
-  camPos.lerp(tmpV.set(look - 3, ty + 3.6, 18.5), Math.min(1, dt*3));   // slight 3/4 view shows the houses' sides
+  let look = Math.max(4, Math.min(52, P.x + P.face*1.5));
+  let ty = 2.8 + Math.max(0, P.y-1)*0.55, cz = 18.5, ck = 3;
+  if(cur && cur.cam){ look = cur.cam[0]; ty = cur.cam[1]; cz = cur.cam[2] || 18.5; ck = 2.2; }
+  camLook.lerp(tmpV.set(look, ty, -1), Math.min(1, dt*ck));
+  camPos.lerp(tmpV.set(look - 3, ty + 3.6, cz), Math.min(1, dt*ck));   // slight 3/4 view shows the houses' sides
   camera.position.copy(camPos); camera.lookAt(camLook);
   sun.position.set(camLook.x - 8, 18, 12); sun.target.position.set(camLook.x, 0, 0);
   // bubbles & hints
   const dBa = Math.abs(P.x - ba.position.x), dHai = Math.abs(P.x - hai.position.x);
-  place(bubbles.ba, ba, 2.3, zoneK.A > .9 ? 'Giỏi lắm! Giờ qua giúp cô Hai.' : 'Phố xám hết rồi. Tò bóc giúp bà nhé!', dBa < 4.5 && P.y < 1);
-  place(bubbles.hai, hai, 2.9, awningOpen ? 'Leo lên mái hiên, rồi lên mái nhà đi con!' : 'Mái hiên của cô bị dán xám dính cứng rồi!', dHai < 5 && P.y < 1 && !P.won);
+  if(baLineT > 0) baLineT -= dt; if(haiLineT > 0) haiLineT -= dt;
+  const baAwake = zoneK.A > .9;
+  place(bubbles.ba, ba, 2.3, baLineT > 0 ? baLine : baAwake ? 'Qua giúp cô Hai đi con.' : '…khò… con bóc giúp… phố nhé…', baLineT > 0 || (dBa < 4.5 && P.y < 1 && !busy()));
+  place(bubbles.hai, hai, 2.9, haiLineT > 0 ? haiLine : haiAwake ? 'Lên mái hiên, ra mái nhà đi con!' : 'Mái hiên… dính cứng rồi…', haiLineT > 0 || (dHai < 5 && P.y < 1 && !P.won && !busy()));
+  place(zzz.ba, ba, 2.2, 'z z z', !baAwake && !(dBa < 4.5 && P.y < 1));
+  place(zzz.hai, hai, 2.8, 'z z z', !haiAwake && !(dHai < 5 && P.y < 1));
+  place(zzz.cat, cat, 1.2, 'z z z', true);
+  const b0 = buis.reduce((a,b)=>Math.abs(b.x-P.x) < Math.abs(a.x-P.x) ? b : a);
+  place(bubbles.bui, b0.g, .9, '…phù…', P.y > 3.5 && P.x > 37 && Math.abs(b0.x - P.x) < 5 && Math.sin(t*1.4) > 0 && !P.won);
+  if(!P.won && !busy() && hintT <= 0 && t - lastProgT > 25){ hintT = 6; lastProgT = t; }
   if(toSayT > 0) toSayT -= dt;
   if(toSayT <= 0 && sayNext){ say(sayNext[0], sayNext[1]); sayNext = null; }
   place(bubbles.to, toG, 1.75, toSay, toSayT > 0);
@@ -829,7 +938,7 @@ function animate(dt, t){
   else if(P.grab) h = 'Đi lùi để kéo · E để buông';
   else if(near) h = 'E để nắm mép';
   else if(hintT > 0){
-    if(!sheets[0].done) h = 'Vệt sáng vàng là chỗ bóc được. Đứng cạnh tấm xám trước nhà hồng, bấm E.';
+    if(!sheets[0].done) h = 'Vệt sáng vàng là chỗ bóc được. Đứng cạnh tấm xám gần bà Năm, bấm E.';
     else if(!sheets[1].done) h = 'Mái hiên nhà cô Hai bị dán xám. Bóc tấm xám dưới mái, từ mép bên trái.';
     else if(P.y < 1) h = 'Nhảy lên mái hiên sọc đỏ, rồi nhảy tiếp lên mái nhà.';
     else if(!sheets[2].done) h = 'Trên mái còn một tấm xám ở phòng nhỏ. Bóc nó ra.';
@@ -843,7 +952,7 @@ let last = performance.now();
 function loop(now){
   const dt = Math.min(0.033, (now-last)/1000); last = now; const t = now/1000;
   if(!hook.pause){ if(intro.on) runIntro(dt, t); else { step(dt, t); animate(dt, t); } }
-  if(P.won && t - winT > 2.2 && document.getElementById('win').style.display !== 'flex') showWin();
+  if(P.won && winReady && document.getElementById('win').style.display !== 'flex') showWin();
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
@@ -855,7 +964,7 @@ function showWin(){
 }
 document.getElementById('again').onclick = ()=>{ reset(); canvas.focus(); };
 // test hook: lets an automated run drive the same input the keyboard does
-const hook = window.__game = {pause:false, P, keys, sheets, jump:()=>{ jumpQueued = true; }, grab:()=>{ grabQueued = true; }, skipIntro:()=>{ if(intro.on) endIntro(); }, introTick:(n)=>{ for(let i=0;i<n && intro.on;i++){ simT += 1/60; runIntro(1/60, simT); } }, get flies(){ return fliesGot; }, tick:(n)=>{ for(let i=0;i<n;i++){ simT += 1/60; step(1/60, simT); animate(1/60, simT); } }, get poleOut(){ return poleOut; }, get awningOpen(){ return awningOpen; }};
+const hook = window.__game = {pause:false, P, keys, sheets, jump:()=>{ jumpQueued = true; }, grab:()=>{ grabQueued = true; }, skipIntro:()=>{ if(intro.on) endIntro(); }, introTick:(n)=>{ for(let i=0;i<n && intro.on;i++){ simT += 1/60; runIntro(1/60, simT); } }, get flies(){ return fliesGot; }, tick:(n)=>{ for(let i=0;i<n;i++){ simT += 1/60; step(1/60, simT); animate(1/60, simT); } }, get poleOut(){ return poleOut; }, get busy(){ return busy(); }, get objective(){ return OBJ; }, get awningOpen(){ return awningOpen; }};
 resize(); requestAnimationFrame(loop);
 })();
 </script>
