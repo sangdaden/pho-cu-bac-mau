@@ -1,8 +1,7 @@
 <!doctype html>
 <html lang="vi">
-<head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Phố Cũ Bạc Màu</title>
 <meta name="description" content="Game giải đố đi ngang: Tò, con tò he bột gạo, bóc lớp xám khỏi một con phố Việt để trả lại màu. Bản chơi thử trên trình duyệt.">
 <link rel="canonical" href="https://phocu.markhocai.com/">
@@ -22,67 +21,108 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Tò kéo tấm giấy xám bị xé, lỗ rách lộ ra phố cổ ven sông đầy đèn lồng">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="anh/bia.webp">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  :root { --nen: #f3ebe0; --chu: #2a2230; --phu: #6e6570; --the: #fffaf3; --vien: #2a2230; --do: #e2452d; --vang: #f7d04a; --xanh: #2e9c93; }
-  @media (prefers-color-scheme: dark) { :root { --nen: #1f1b22; --chu: #f3ebe0; --phu: #b3a9b0; --the: #2b2630; } }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--nen); color: var(--chu); font: 16px/1.6 "Be Vietnam Pro", system-ui, sans-serif; }
-  .hero { position: relative; min-height: min(100svh, 62vw); min-height: max(560px, min(100svh, 62vw)); overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 24px 16px 40px; }
-  .hero > img.nen { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 55%; z-index: -1; }
-  .hero::after { content: ""; position: absolute; inset: auto 0 0 0; height: 30%; background: linear-gradient(transparent, rgba(42, 34, 48, .45)); z-index: -1; pointer-events: none; }
-  .hero h1 { margin: 0; line-height: 0; }
-  .hero h1 img { width: min(560px, 82vw); height: auto; }
-  .choi { display: inline-flex; align-items: center; gap: 10px; font: 800 1.6rem/1 "Baloo 2", system-ui, sans-serif; color: #fff; background: var(--do); padding: 16px 34px 12px; border-radius: 999px; border: 4px solid var(--vien); box-shadow: 0 6px 0 var(--vien); text-decoration: none; white-space: nowrap; transition: transform .12s, box-shadow .12s; }
-  .choi:hover { transform: translateY(2px); box-shadow: 0 4px 0 var(--vien); }
-  .choi:active { transform: translateY(6px); box-shadow: 0 0 0 var(--vien); }
-  .choi span { font-size: 1rem; font-weight: 600; opacity: .9; }
-  @media (max-width: 520px) { .choi span { display: none; } .hero > img.nen { object-position: 14% 60%; } }
-  main { max-width: 980px; margin: 0 auto; padding: 40px 16px 24px; }
-  .gioi-thieu { font-size: 1.1rem; max-width: 640px; margin: 0 auto 32px; text-align: center; }
-  .luoi { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-  .the { background: var(--the); border: 3px solid var(--vien); border-radius: 22px; overflow: hidden; box-shadow: 0 5px 0 var(--vien); display: flex; flex-direction: column; }
-  .the img { width: 100%; height: auto; aspect-ratio: 16 / 7; object-fit: cover; border-bottom: 3px solid var(--vien); background: #e9e1d6; }
-  .the div { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-  .the h2 { font: 800 1.6rem/1.1 "Baloo 2", system-ui, sans-serif; margin: 0; }
-  .the p { margin: 0; color: var(--phu); flex: 1; }
-  .the a { align-self: flex-start; font: 800 1.1rem/1 "Baloo 2", system-ui, sans-serif; color: var(--vien); background: var(--vang); border: 3px solid var(--vien); border-radius: 999px; padding: 10px 20px 7px; text-decoration: none; }
-  .the:nth-child(2) a { background: var(--xanh); color: #fff; }
-  kbd { font: 600 .85em "Be Vietnam Pro", sans-serif; border: 2px solid currentColor; border-radius: 6px; padding: 0 5px; }
-  footer { text-align: center; color: var(--phu); font-size: .9rem; padding: 24px 16px 40px; }
-  footer a { color: inherit; }
+:root{--ink:#2A2230;--panel:#FBF8F3;--muted:#6E6570;--line:#DDD3C7;--chip:#F4EEE6;--accent:#C23A28}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#F1EAE2;--panel:#27232B;--muted:#ADA3AC;--line:#3A343F;--chip:#302A35}}
+:root[data-theme="dark"]{--ink:#F1EAE2;--panel:#27232B;--muted:#ADA3AC;--line:#3A343F;--chip:#302A35}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-ui,sans-serif;overflow:hidden}
+.bg{position:fixed;inset:0;overflow:hidden}
+.bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;animation:drift 30s ease-in-out infinite alternate}
+.bg .blur{filter:blur(24px) brightness(.6);transform:scale(1.15);animation:none}
+@keyframes drift{from{transform:scale(1.02)}to{transform:scale(1.08) translateY(-1%)}}
+@media (max-aspect-ratio:1/1){.bg img.main{object-fit:contain;object-position:50% 34%;animation:none}}
+.bg:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,16,25,0) 52%,rgba(20,16,25,.75) 100%)}
+.menu{position:fixed;left:0;right:0;bottom:max(28px,env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 16px}
+.btn{border:2.5px solid #141019;background:var(--accent);color:#fff;border-radius:999px;padding:12px 30px;font:600 20px "Be Vietnam Pro",sans-serif;cursor:pointer;box-shadow:0 5px 0 #141019;min-width:min(320px,100%);transition:transform .12s}
+.btn:hover,.btn:focus-visible{transform:translateY(-2px);outline:none}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 #141019}
+.btn small{display:block;font-weight:400;font-size:13px;opacity:.9}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.sm{border:2px solid #141019;background:rgba(255,255,255,.88);color:#141019;border-radius:999px;padding:7px 16px;font:600 14px "Be Vietnam Pro",sans-serif;cursor:pointer}
+.sm:hover{background:#FFE7A3}
+.tray{display:flex;gap:6px;align-items:center;font-family:"Patrick Hand",cursive;font-size:18px;background:rgba(255,255,255,.88);color:#2A2230;border:2px solid #141019;border-radius:999px;padding:2px 12px}
+.tray i{width:14px;height:14px;border-radius:50%;border:2px solid #141019;background:#B8B4AF;display:inline-block}
+.foot{position:fixed;right:14px;bottom:8px;font-size:12px;color:rgba(255,255,255,.7)}
+.foot a{color:inherit}
+.over{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,16,25,.6);z-index:3;padding:16px}
+.card{background:var(--panel);color:var(--ink);border:2.5px solid #141019;border-radius:18px;padding:20px 22px;max-width:440px;width:100%;max-height:92%;overflow:auto;text-align:center}
+.card h2{font-family:"Patrick Hand",cursive;font-weight:400;font-size:32px;margin:0 0 10px}
+.card p{margin:6px 0 14px;color:var(--muted);font-size:14px}
+.lv{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.lv button{display:flex;justify-content:space-between;align-items:center;border:2px solid #141019;background:var(--chip);color:var(--ink);border-radius:12px;padding:10px 14px;font:600 15px "Be Vietnam Pro",sans-serif;cursor:pointer;text-align:left}
+.lv button:disabled{opacity:.45;cursor:default}
+.lv button span{font-weight:400;font-size:13px;color:var(--muted)}
+.keyl{list-style:none;padding:0;margin:0 0 14px;text-align:left;font-size:14px;color:var(--muted)}
+.keyl li{margin:6px 0}
+.keyl b{display:inline-block;border:1px solid var(--line);background:var(--chip);border-radius:6px;padding:0 6px;font-weight:600;color:var(--ink)}
+.fade{position:fixed;inset:0;background:#141019;opacity:1;pointer-events:none;transition:opacity .9s;z-index:9}
+.fade.out{opacity:0}
+@media (max-height:520px){.menu{bottom:14px;gap:8px}.btn{padding:8px 24px;font-size:17px}}
 </style>
-</head>
-<body>
-<header class="hero">
-  <img class="nen" src="anh/bia.webp" alt="" width="1920" height="1080">
-  <h1><img src="anh/logo.png" alt="Phố Cũ Bạc Màu: bóc lớp xám, trả lại màu cho phố" width="769" height="513"></h1>
-  <a class="choi" href="man-1/">Chơi Màn 1 <span>miễn phí, không cần cài</span></a>
-</header>
-<main>
-  <p class="gioi-thieu">Tò, con tò he bột gạo, bóc lớp xám (những tờ lịch đã bóc rồi bị quên) khỏi một con phố Việt. Bóc tới đâu, màu sắc và tiếng người quay lại tới đó. Đây là bản chơi thử.</p>
-  <div class="luoi">
-    <section class="the">
-      <img src="anh/the-man-1.webp" alt="Tò đứng dưới mái hiên vừa bóc, nửa phố đã có màu" loading="lazy" width="571" height="263">
-      <div>
-        <h2>Màn 1: Mái hiên</h2>
-        <p><kbd>←</kbd> <kbd>→</kbd> đi, <kbd>↑</kbd> hoặc <kbd>Space</kbd> nhảy, giữ <kbd>E</kbd> ở mép giấy cong rồi đi lùi để bóc. Trên điện thoại có nút bấm.</p>
-        <a href="man-1/">Chơi thử</a>
-      </div>
-    </section>
-    <section class="the">
-      <img src="anh/the-nhan-vat.webp" alt="Sáu nhân vật: bà Năm, cô Hai, Tò, bé Bống, chú Tư và lũ Bụi" loading="lazy" width="1095" height="307">
-      <div>
-        <h2>Người trong phố</h2>
-        <p>Sáu nhân vật xoay xem được, kèm lý do thiết kế từng người.</p>
-        <a href="nhan-vat-3d/">Xem nhân vật</a>
-      </div>
-    </section>
+<div class="bg"><img class="blur" src="anh/bia.jpg" alt=""><img class="main" src="anh/bia.jpg" alt="Tò, con tò he bột gạo, bóc tờ lịch xám để lộ con phố có màu"></div>
+
+<div class="menu">
+  <div class="tray" id="tray" style="display:none" title="Khay tò he của bà Năm">Khay của bà <i></i><i></i><i></i></div>
+  <button class="btn" id="play">Chơi</button>
+  <div class="row">
+    <button class="sm" id="fresh" style="display:none">Chơi từ đầu</button>
+    <button class="sm" id="pick" style="display:none">Chọn màn</button>
+    <button class="sm" id="how">Cách chơi</button>
   </div>
-</main>
-<footer>Một game của <a href="https://markhocai.com">Mark học AI</a></footer>
-</body>
-</html>
+</div>
+<div class="foot">Một game của <a href="https://markhocai.com">Mark học AI</a></div>
+
+<div class="over" id="levels"><div class="card"><h2>Chọn màn</h2><div class="lv" id="lvList"></div><button class="sm" data-close>Đóng</button></div></div>
+<div class="over" id="help"><div class="card"><h2>Cách chơi</h2>
+  <p>Cả con phố bị phủ những tờ lịch xám, những ngày đã sống qua mà chẳng ai để ý. Tò bóc chúng ra để màu và người quay lại.</p>
+  <ul class="keyl">
+    <li><b>←</b> <b>→</b> đi · <b>↑</b> hoặc <b>Space</b> nhảy</li>
+    <li><b>E</b> nắm mép sáng, rồi đi lùi để bóc · <b>E</b> lần nữa để buông</li>
+    <li>Đang cầm tờ lịch: <b>E</b> để dán, thả thuyền, phóng máy bay, phẩy quạt · <b>Q</b> để gấp</li>
+    <li><b>R</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>H</b> gợi ý · <b>Esc</b> tạm dừng</li>
+    <li>Trên điện thoại có nút bấm ở hai góc màn hình.</li>
+  </ul>
+  <button class="sm" data-close>Đóng</button></div></div>
+<div class="over" id="sure"><div class="card"><h2>Chơi từ đầu?</h2><p>Tiến độ, khay tò he và những con tò he cũ đã tìm được sẽ bị xoá.</p><div class="row"><button class="btn" id="sureY" style="min-width:0">Chơi từ đầu</button><button class="sm" data-close>Thôi</button></div></div></div>
+<div class="fade" id="fade"></div>
+
+<script>
+const LV = [null, {name:'Màn 1: Mái hiên', sub:'Chiều 14 tháng Tám, con phố của bà Năm'}, {name:'Màn 2: Rãnh nước', sub:'Hoàng hôn, con hẻm có rãnh nước'}, {name:'Màn 3: Tháp đồng hồ', sub:'Đêm, tháp đồng hồ cuối phố'}];
+const $ = id => document.getElementById(id);
+const get = (k, d)=>{ try { return JSON.parse(localStorage.getItem(k) || d); } catch(e){ return JSON.parse(d); } };
+const save = get('phocu.save', '{}') || {}, tray = get('phocu.tray', '[]');
+let leaving = false;
+function go(n){ if(leaving) return; leaving = true; $('fade').classList.remove('out'); setTimeout(()=>{ location.href = 'man-' + n + '/index.html'; }, 900); }
+function wipe(){ for(const k of ['phocu.save', 'phocu.tray', 'phocu.relic']) try { localStorage.removeItem(k); } catch(e){} }
+const cur = Math.min(3, Math.max(1, save.man || 1)), started = !!save.man;
+if(started){
+  $('play').innerHTML = (save.done ? 'Chơi lại Màn 3' : 'Chơi tiếp') + '<small>' + LV[cur].name + '</small>';
+  $('fresh').style.display = ''; $('pick').style.display = '';
+  $('tray').style.display = '';
+  const C = ['#C23A28', '#E9A23B', '#2E9C93']; document.querySelectorAll('#tray i').forEach((el, i)=>{ if(tray.includes(i+1)) el.style.background = C[i]; });
+}
+$('play').onclick = ()=>go(cur);
+$('fresh').onclick = ()=>{ $('sure').style.display = 'flex'; };
+$('sureY').onclick = ()=>{ wipe(); go(1); };
+$('how').onclick = ()=>{ $('help').style.display = 'flex'; };
+$('pick').onclick = ()=>{
+  const L = $('lvList'); L.innerHTML = '';
+  for(let n=1;n<=3;n++){ const b = document.createElement('button'); const open = n <= (save.max || 1);
+    b.innerHTML = LV[n].name + '<span>' + (open ? LV[n].sub : 'chưa mở') + '</span>'; b.disabled = !open; b.onclick = ()=>go(n); L.appendChild(b); }
+  $('levels').style.display = 'flex';
+};
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick = ()=>{ b.closest('.over').style.display = 'none'; });
+addEventListener('keydown', e=>{
+  const open = [...document.querySelectorAll('.over')].find(o=>o.style.display === 'flex');
+  if(e.code === 'Escape' && open){ open.style.display = 'none'; return; }
+  if(!open && (e.code === 'Enter' || e.code === 'Space')){ e.preventDefault(); $('play').click(); }
+});
+requestAnimationFrame(()=>requestAnimationFrame(()=>$('fade').classList.add('out')));
+addEventListener('pageshow', e=>{ if(e.persisted){ leaving = false; $('fade').classList.add('out'); } });
+$('play').focus();
+</script>

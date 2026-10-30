@@ -139,12 +139,17 @@ function buildTo(g){
   blob(head, B(0,0,3.8), [.26,.24,.55], R);
   blob(head, B(-.34,.05,3.62), [.18,.17,.4], Y, {rot:[0,0,0.6]});
   blob(head, B(.34,.05,3.62), [.18,.17,.4], '#2E9C93', {rot:[0,0,-0.6]});
-  eyes(head, 0, 2.74, .7, .33, .37, .4);
+  // eyes as on the approved cover: big round whites, large black pupils looking up, two highlights, thin dark brows, round rosy cheeks
   for(const s of [-1,1]){
-    blob(head, B(s*.38,-.83,3.18), [.17,.04,.05], R, {small:true, rot:[0,0,s*-0.2]});
-    blob(head, B(s*.66,-.7,2.46), [.15,.05,.1], '#EE8C78', {small:true});
+    const ex = s*.36;
+    blob(head, new THREE.Vector3(ex, 2.76, .64), [.36, .24, .42], '#FFFFFF', {ow:.03, keep:true});
+    blob(head, new THREE.Vector3(ex + s*.015, 2.85, .84), [.25, .08, .29], '#141019', {small:true, keep:true});
+    blob(head, new THREE.Vector3(ex + .08, 2.97, .91), [.085, .03, .095], '#FFFFFF', {small:true, keep:true});
+    blob(head, new THREE.Vector3(ex - .07, 2.75, .9), [.04, .02, .045], '#FFFFFF', {small:true, keep:true});
+    mesh(head, new THREE.TorusGeometry(.17, .022, 6, 14, Math.PI*.7), '#3A2420', {pos:new THREE.Vector3(ex, 3.08, .76), rot:[-.25, 0, Math.PI*.15], outline:false, shadow:false});
+    blob(head, new THREE.Vector3(s*.64, 2.42, .6), [.15, .05, .12], '#F2938A', {small:true});
   }
-  const mouth = smile(head, 0, 2.42, .84, .14);
+  const mouth = smile(head, 0, 2.4, .86, .07);
   return {body, head, legs, arms, mouth};
 }
 function buildBa(g){
@@ -220,6 +225,81 @@ function buildBui(g, s, seed){
     blob(g, new THREE.Vector3(sd*s*.34, s*.12, s*.82), [s*.26,s*.12,s*.3], '#FFFFFF', {keep:true, ow:.02});
     blob(g, new THREE.Vector3(sd*s*.34 + s*.07, s*.08, s*.95), [s*.12,s*.04,s*.14], '#1E1530', {keep:true, small:true});
   }
+}
+function buildBong(g){
+  const YE='#F2C230', TE='#2E9C93', SK='#F0CFA8';
+  for(const s of [-1,1]){ blob(g, new THREE.Vector3(s*.2,.3,0), [.16,.16,.3], SK); blob(g, new THREE.Vector3(s*.21,.07,.07), [.15,.18,.09], '#C23A28'); }
+  blob(g, new THREE.Vector3(0,.72,0), [.44,.38,.24], TE);
+  blob(g, new THREE.Vector3(0,1.1,0), [.44,.36,.38], YE);
+  const arms = [];
+  for(const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.42,1.08,.22); g.add(a);
+    blob(a, new THREE.Vector3(0,0,0), [.12,.12,.28], YE, {rot:[1.1,0,s*0.3]}); blob(a, new THREE.Vector3(-s*.12,-.1,.3), .11, SK); arms.push(a); }
+  const boat = new THREE.Group(); boat.position.set(0,1.05,.68); g.add(boat);
+  const sh = new THREE.Shape(); sh.moveTo(-.55,.18); sh.lineTo(.55,.18); sh.lineTo(.32,-.12); sh.lineTo(-.32,-.12); sh.closePath();
+  mesh(boat, new THREE.ExtrudeGeometry(sh,{depth:.34,bevelEnabled:false}), '#F4EFE4', {pos:new THREE.Vector3(0,0,-.17), ow:.025});
+  mesh(boat, new THREE.CylinderGeometry(0,.26,.42,3), '#F4EFE4', {pos:new THREE.Vector3(0,.39,0), scl:[1,1,.35], ow:.025});
+  mesh(boat, new THREE.BoxGeometry(.9,.05,.36), '#D8382A', {pos:new THREE.Vector3(0,.1,0), outline:false});
+  const head = new THREE.Group(); g.add(head);
+  blob(head, new THREE.Vector3(0,2.0,0), [.72,.66,.66], SK);
+  blob(head, new THREE.Vector3(0,2.2,-.18), [.74,.6,.56], '#1E1A22');
+  blob(head, new THREE.Vector3(0,2.62,.22), [.2,.18,.2], '#1E1A22', {rot:[0.5,0,0]});
+  blob(head, new THREE.Vector3(0,2.78,.42), [.08,.09,.14], '#1E1A22', {rot:[1.0,0,0], small:true});
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.5,2.45,.3), [.14,.12,.12], '#C23A28', {ow:.02});
+  eyes(head, 0, 2.02, .6, .21, .25, .3, .27);
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.45,1.8,.46), [.12,.04,.08], '#EE8C78', {small:true});
+  smile(head, 0, 1.74, .62, .12);
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.7,2.0,0), [.1,.1,.14], SK, {ow:.025});
+  return {head, boat, arms};
+}
+// Mẹ Bống: áo bà ba tím, quần đen, tóc búi, ngồi bó gối trên mạn ghe
+function buildMe(g){
+  const AO='#8E6CC0', PA='#2A2630', SK='#EBC7A0';
+  for(const s of [-1,1]){
+    blob(g, new THREE.Vector3(s*.3,.75,0), [.25,.25,.7], PA);
+    blob(g, new THREE.Vector3(s*.3,.1,.12), [.2,.24,.12], '#7A4E2D');
+  }
+  blob(g, new THREE.Vector3(0,2.15,0), [.66,.55,.92], AO);
+  blob(g, new THREE.Vector3(0,1.4,0), [.6,.5,.35], AO);
+  for(let i=0;i<4;i++) blob(g, new THREE.Vector3(.18,2.5-i*.3,.5), .045, '#F4F1EA', {small:true});
+  const arms = [];
+  for(const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.62,2.6,0); g.add(a);
+    blob(a, new THREE.Vector3(s*.1,-.4,.05), [.17,.17,.5], AO, {rot:[0,0,s*0.3]}); blob(a, new THREE.Vector3(s*.2,-.85,.12), .15, SK); arms.push(a); }
+  const head = new THREE.Group(); g.add(head);
+  blob(head, new THREE.Vector3(0,3.5,0), [.64,.66,.62], SK);
+  blob(head, new THREE.Vector3(0,3.72,-.18), [.67,.56,.52], '#1E1A22');
+  blob(head, new THREE.Vector3(0,3.75,-.7), [.32,.3,.3], '#1E1A22');
+  rod(head, new THREE.Vector3(-.35,3.85,-.7), new THREE.Vector3(.35,3.7,-.7), .025, '#C99A52', {outline:false});
+  eyes(head, 0, 3.55, .58, .19, .22, .2, .24);
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.42,3.32,.46), [.11,.04,.07], '#E79B85', {small:true});
+  smile(head, 0, 3.28, .6, .1);
+  return {head, arms};
+}
+
+
+// Chú Tư: round belly, cap, moustache, towel over the shoulder; the blue standing fan is built by the level when it needs one
+function buildTu(g){
+  const SH='#E07B4F', PA='#4A3B34', SK='#D9A97F';
+  for(const s of [-1,1]){
+    blob(g, new THREE.Vector3(s*.42,.5,0), [.28,.28,.5], PA);
+    blob(g, new THREE.Vector3(s*.44,.1,.14), [.26,.28,.14], '#2B2420');
+  }
+  const belly = blob(g, new THREE.Vector3(0,1.75,0), [1.0,.9,1.05], SH);
+  blob(g, new THREE.Vector3(0,1.0,0), [.82,.7,.35], PA);
+  mesh(g, new THREE.BoxGeometry(.38,.08,1.5), '#F4F1EA', {pos:new THREE.Vector3(-.55,2.62,0), rot:[0,0,0.35], ow:.025});
+  mesh(g, new THREE.BoxGeometry(.38,.7,.08), '#F4F1EA', {pos:new THREE.Vector3(-.72,2.3,.72), rot:[0,0,0.2], ow:.025});
+  const arms = [];
+  for(const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.9,2.2,.05); g.add(a);
+    blob(a, new THREE.Vector3(s*.12,-.35,0), [.22,.22,.5], SK, {rot:[0,0,s*0.35]}); blob(a, new THREE.Vector3(s*.3,-.82,.1), .2, SK); arms.push(a); }
+  const head = new THREE.Group(); g.add(head);
+  blob(head, new THREE.Vector3(0,3.3,0), [.7,.7,.68], SK);
+  mesh(head, new THREE.SphereGeometry(.73,24,12,0,Math.PI*2,0,Math.PI/2), '#2E8C86', {pos:new THREE.Vector3(0,3.55,-.04)});
+  mesh(head, new THREE.CylinderGeometry(.5,.5,.06,20,1,false,-Math.PI/2,Math.PI), '#2E8C86', {pos:new THREE.Vector3(0,3.62,.42), scl:[1,1,1.1], rot:[0.12,0,0]});
+  eyes(head, 0, 3.42, .64, .19, .22, .6, .26);
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.2,3.06,.63), [.24,.07,.07], '#1E1A22', {small:true, rot:[0,0,s*-0.3]});
+  blob(head, new THREE.Vector3(0,3.18,.68), [.13,.11,.11], '#C98E68', {ow:.025});
+  smile(head, 0, 2.92, .6, .1);
+  for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.7,3.3,0), [.1,.1,.14], SK, {ow:.025});
+  return {head, belly, arms};
 }
 
 
@@ -497,7 +577,17 @@ function skyUpdate(){
   sun.color.set('#FFFFFF').lerp(LIGHT.sun, k);
   sun.intensity = LIGHT.sunK[0] + (LIGHT.sunK[1]-LIGHT.sunK[0])*k; fill.intensity = LIGHT.fillK[0] + (LIGHT.fillK[1]-LIGHT.fillK[0])*k;
   if(hemi) hemi.intensity = LIGHT.hemiK[0] + (LIGHT.hemiK[1]-LIGHT.hemiK[0])*k;
+  // night: the sky, fog and sun slide toward a blue evening; lanterns and fireflies become the light
+  const n = NIGHT.k;
+  if(n > 0){
+    for(const c of ['top','mid','bot']) skyU[c].value.lerp(skyTmp.copy(NIGHT[c]).convertSRGBToLinear(), n);
+    scene.background.lerp(NIGHT.bot, n); scene.fog.color.lerp(NIGHT.fog, n);
+    sun.color.lerp(skyTmp.set('#9FB4FF'), n); sun.intensity *= 1 - .75*n; fill.intensity *= 1 - .3*n;
+    if(hemi) hemi.intensity *= 1 - .5*n;
+  }
+  if(hemi){ hemi.color.set('#FFF6EA').lerp(skyTmp.set('#8C9BE0'), n); hemi.groundColor.set('#B9AFA6').lerp(skyTmp.set('#4A4870'), n); }
 }
+const NIGHT = {k:0, top:new THREE.Color('#0F1530'), mid:new THREE.Color('#25356E'), bot:new THREE.Color('#3E4680'), fog:new THREE.Color('#2B3163')};
 function clouds(x0, x1){
   ZONE = 'sky';
   for(let x = x0; x < x1; x += 14 + trnd()*6){
@@ -684,14 +774,18 @@ const LV = {start:{x:0, y:0}, bounds:[-5, 100], cam:[4, 96], sky:[], hint:()=>''
 
 // ---------- HUD, shared by every level ----------
 stage.insertAdjacentHTML('beforeend', `
-<div class="hud"><span class="pill" id="title"></span><span class="hudR"><span class="pill" id="ffly">Đom đóm 0/5</span><span class="pill" id="relic" title="Con tò he cũ giấu trong màn">Tò he cũ 0/1</span><span class="pill tray" title="Khay tò he của bà Năm">Khay của bà <i id="t1"></i><i id="t2"></i><i id="t3"></i></span></span></div>
+<div class="hud"><span class="hudL"><button class="menuB" id="menuB" title="Tạm dừng (Esc)" aria-label="Tạm dừng">❚❚</button><span class="pill" id="title"></span></span><span class="hudR"><span class="pill" id="hand" style="display:none"></span><span class="pill" id="ffly">Đom đóm 0/5</span><span class="pill" id="relic" title="Con tò he cũ giấu trong màn">Tò he cũ 0/1</span><span class="pill tray" title="Khay tò he của bà Năm">Khay của bà <i id="t1"></i><i id="t2"></i><i id="t3"></i></span></span></div>
 <div class="bars t off" id="barT"></div><div class="bars b off" id="barB"></div>
 <div class="cap" id="cap"></div><div class="skip" id="skip" style="opacity:0">Space hoặc chạm để bỏ qua</div>
 <div class="hint" id="hint"></div>
 <div class="pad l"><button data-k="left">◀</button><button data-k="right">▶</button><button data-k="hint" class="sm">?</button></div>
-<div class="pad r"><button data-k="back" class="sm">R</button><button class="grab" data-k="grab">Bóc</button><button data-k="jump">⤒</button></div>
+<div class="pad r"><button data-k="back" class="sm">R</button><button data-k="fold" class="sm">Gấp</button><button class="grab" data-k="grab">Bóc</button><button data-k="jump">⤒</button></div>
 <div class="memo" id="memo"><canvas id="memoC" width="480" height="360"></canvas></div>
-<div class="win" id="win"><div class="card"><h2 id="winH"></h2><p id="winP"></p><div class="memory" id="memory"></div><p class="next" id="winNext"></p><button class="btn" id="again">Chơi lại</button></div></div>`);
+<div class="win" id="win"><div class="card"><h2 id="winH"></h2><p id="winP"></p><div class="memory" id="memory"></div><p class="next" id="winNext"></p><div class="btns" id="winB"></div></div></div>
+<div class="over" id="pause"><div class="card"><h2>Tạm dừng</h2><div class="btns"><button class="btn" id="pGo">Chơi tiếp</button><button class="btn alt" id="pAgain">Chơi lại màn này</button><button class="btn alt" id="pFull">Toàn màn hình</button><a class="btn alt" href="../index.html" id="pHome">Về màn hình chính</a></div>
+<ul class="keyl"><li><b>←</b> <b>→</b> đi · <b>↑</b> hoặc <b>Space</b> nhảy</li><li><b>E</b> nắm mép sáng rồi đi lùi để bóc · <b>E</b> lần nữa để buông</li><li>Đang cầm tờ lịch: <b>E</b> để dán, thả, phóng, phẩy · <b>Q</b> gấp</li><li><b>R</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>H</b> gợi ý · <b>Esc</b> tạm dừng</li><li>Tiến độ tự lưu sau mỗi màn.</li></ul></div></div>
+<div class="toast" id="toast" style="opacity:0"></div><div class="endT" id="endT"></div>`);
+document.body.insertAdjacentHTML('beforeend', '<div class="fade" id="fade"></div>');
 const $ = id => document.getElementById(id);
 const titleEl = $('title'), fflyEl = $('ffly'), relicEl = $('relic'), capEl = $('cap'), skipEl = $('skip'), barT = $('barT'), barB = $('barB'), hintEl = $('hint'), memoEl = $('memo');
 const TRAY_C = ['#C23A28', '#E9A23B', '#2E9C93'];
@@ -699,6 +793,24 @@ function trayLoad(){ try { return JSON.parse(localStorage.getItem('phocu.tray') 
 function trayShow(){ const tr = trayLoad(); for(let i=0;i<3;i++) $('t'+(i+1)).style.background = tr.includes(i+1) ? TRAY_C[i] : ''; }
 function traySet(n){ const tr = trayLoad(); if(!tr.includes(n)) tr.push(n); try { localStorage.setItem('phocu.tray', JSON.stringify(tr)); } catch(e){} trayShow(); }
 trayShow();
+// ---------- progress: one save for the whole game, so the title screen can offer "Chơi tiếp" ----------
+const LEVEL_URL = [null, '../man-1/index.html', '../man-2/index.html', '../man-3/index.html'];
+function saveGet(){ try { return JSON.parse(localStorage.getItem('phocu.save') || '{}') || {}; } catch(e){ return {}; } }
+function savePut(o){ try { localStorage.setItem('phocu.save', JSON.stringify(Object.assign(saveGet(), o))); } catch(e){} }
+function relicSave(n){ try { const r = JSON.parse(localStorage.getItem('phocu.relic') || '[]'); if(!r.includes(n)) r.push(n); localStorage.setItem('phocu.relic', JSON.stringify(r)); } catch(e){} }
+function relicLoad(){ try { return JSON.parse(localStorage.getItem('phocu.relic') || '[]'); } catch(e){ return []; } }
+let leaving = false;
+addEventListener('pageshow', e=>{ if(e.persisted){ leaving = false; $('fade').classList.add('out'); } });
+function goTo(url){ if(leaving) return; leaving = true; $('fade').classList.remove('out'); setTimeout(()=>{ location.href = url; }, 900); }
+function toast(t, sec){ const el = $('toast'); el.textContent = t; el.style.opacity = 1; setTimeout(()=>{ el.style.opacity = 0; }, (sec || 2.4)*1000); }
+// ---------- pause menu ----------
+let paused = false;
+function setPause(on){ if(P.won && on) return; paused = on; $('pause').style.display = on ? 'flex' : 'none'; if(on){ for(const k in keys) keys[k] = false; } else canvas.focus(); }
+$('menuB').onclick = ()=>setPause(!paused);
+$('pGo').onclick = ()=>setPause(false);
+$('pAgain').onclick = ()=>{ location.hash = 'choi'; location.reload(); };
+$('pFull').onclick = ()=>{ const d = document; if(d.fullscreenElement) d.exitFullscreen(); else if(d.documentElement.requestFullscreen) d.documentElement.requestFullscreen().catch(()=>{}); setPause(false); };
+$('pHome').onclick = e=>{ e.preventDefault(); goTo('../index.html'); };
 function bars(on){ barT.classList.toggle('off', !on); barB.classList.toggle('off', !on); }
 function caption(t){ if(t){ if(capEl.textContent !== t) capEl.textContent = t; capEl.style.opacity = 1; } else capEl.style.opacity = 0; }
 
@@ -780,6 +892,7 @@ function updSheet(s){
 function layerDone(s){
   const i = s.L; s.L++; s.p = 0; if(s.L >= s.layers.length) s.done = true;
   updSheet(s); lastProgT = nowT;
+  if(s.carry && s.done) takeHeld(s);
   if(s.onLayer) s.onLayer(i);
 }
 // R next to a stack puts the last peeled day back on
@@ -791,7 +904,7 @@ function restoreLayer(s){
 }
 function nearSheet(any){
   for(const s of sheets){
-    if(s.done || s.full || !s.m.visible) continue;
+    if(s.done || s.full || (!s.m.visible && !s.ghost) || intro.on) continue;
     if(s.dir === 'x'){
       const tabX = s.x0 + s.p, grip = P.y + 1.0;
       if(Math.abs(P.x - tabX) < 1.0 && grip > s.y0 - .3 && grip < s.y1 + .3) return s;
@@ -876,7 +989,10 @@ function back(){
 }
 addEventListener('keydown', e=>{
   if(intro.on && (e.code === 'Space' || e.code === 'Enter' || e.code === 'Escape')){ e.preventDefault(); endIntro(); return; }
+  if(e.code === 'Escape' || e.code === 'KeyP'){ setPause(!paused); return; }
+  if(paused) return;
   if(e.code === 'KeyR'){ back(); return; }
+  if(e.code === 'KeyQ'){ fold(); return; }
   if(e.code === 'KeyH'){ hintT = 6; return; }
   const k = KM[e.code]; if(!k) return; e.preventDefault();
   if(k === 'jump' && !keys.jump) jumpQueued = true;
@@ -886,7 +1002,7 @@ addEventListener('keydown', e=>{
 addEventListener('keyup', e=>{ const k = KM[e.code]; if(k) keys[k] = false; });
 document.querySelectorAll('.pad button').forEach(b=>{
   const k = b.dataset.k;
-  const on = e=>{ e.preventDefault(); if(intro.on){ endIntro(); return; } if(k === 'hint'){ hintT = 6; return; } if(k === 'back'){ back(); return; }
+  const on = e=>{ e.preventDefault(); if(intro.on){ endIntro(); return; } if(k === 'hint'){ hintT = 6; return; } if(k === 'back'){ back(); return; } if(k === 'fold'){ fold(); return; }
     if(k === 'jump' && !keys.jump) jumpQueued = true; if(k === 'grab' && !keys.grab) grabQueued = true; keys[k] = true; b.classList.add('on'); };
   const off = e=>{ e.preventDefault(); if(k in keys) keys[k] = false; b.classList.remove('on'); };
   b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
@@ -917,6 +1033,133 @@ function standingOn(x, yPrev, yNew){
   return best;
 }
 function respawn(msg){ say(msg, 2.4); P.x = P.check.x; P.y = P.check.y; P.vx = P.vy = 0; release(); }
+
+// ---------- hands: carry a peeled page, paste it over a dotted slot, or fold it into a boat, a plane or a fan ----------
+const FORMS = {thuyen:'thuyền', maybay:'máy bay', quat:'quạt'};
+const learned = [];
+const held = {on:false, form:null, src:null};
+const handEl = $('hand');
+const heldG = new THREE.Group(); heldG.position.set(0, 1.05, .95); toInner.add(heldG);
+ZONE = '0';
+const HELD = {paper:new THREE.Group(), thuyen:new THREE.Group(), maybay:new THREE.Group(), quat:new THREE.Group()};
+for(const k in HELD){ HELD[k].visible = false; heldG.add(HELD[k]); }
+(function(){
+  const pm = toon('#E9E4DA'); const pg = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.2), pm); pm.side = THREE.DoubleSide; HELD.paper.add(pg); HELD.paper.rotation.x = -.3;
+  const ol = new THREE.Mesh(new THREE.PlaneGeometry(1.08, 1.28), new THREE.MeshBasicMaterial({color:'#141019', side:THREE.DoubleSide})); ol.position.z = -.01; HELD.paper.add(ol);
+  const sh = new THREE.Shape(); sh.moveTo(-.75,.22); sh.lineTo(.75,.22); sh.lineTo(.45,-.18); sh.lineTo(-.45,-.18); sh.closePath();
+  mesh(HELD.thuyen, new THREE.ExtrudeGeometry(sh, {depth:.42, bevelEnabled:false}), '#F4EFE4', {pos:new THREE.Vector3(0,0,-.21), ow:.03});
+  mesh(HELD.thuyen, new THREE.CylinderGeometry(0,.34,.56,3), '#F4EFE4', {pos:new THREE.Vector3(0,.5,0), scl:[1,1,.35], ow:.03});
+  const ps = new THREE.Shape(); ps.moveTo(.8,0); ps.lineTo(-.6,.5); ps.lineTo(-.35,0); ps.lineTo(-.6,-.5); ps.closePath();
+  const pl = mesh(HELD.maybay, new THREE.ShapeGeometry(ps), '#F4EFE4', {ow:.04}); pl.material.side = THREE.DoubleSide; HELD.maybay.rotation.x = -1.2;
+  for(let i=0;i<7;i++){ const m = mesh(HELD.quat, new THREE.BoxGeometry(.16, .9, .03), i%2 ? '#F4EFE4' : '#E8C27A', {pos:new THREE.Vector3(0,.45,0), ow:.02}); const g = new THREE.Group(); g.rotation.z = (i - 3)*.22; g.add(m); HELD.quat.add(g); }
+})();
+function showHeld(){
+  for(const k in HELD) HELD[k].visible = false;
+  if(held.on) HELD[held.form || 'paper'].visible = true;
+  handEl.style.display = held.on ? '' : 'none';
+  handEl.textContent = held.on ? 'Tay: ' + (held.form ? FORMS[held.form] : 'tờ lịch') : '';
+}
+function takeHeld(s){
+  if(held.on && held.src && held.src !== s && held.src.respawn) later(1.5, ((q)=>()=>resetSheet(q))(held.src));
+  held.on = true; held.form = null; held.src = s; showHeld();
+}
+function dropHeld(){ const s = held.src; held.on = false; held.form = null; held.src = null; showHeld(); if(s && s.respawn) later(2, ()=>resetSheet(s)); }
+function fold(){
+  if(intro.on || P.won || busy()) return;
+  if(!held.on){ say('Tay không có tờ lịch nào để gấp.', 1.6); return; }
+  if(!learned.length){ say('Tò chưa biết gấp gì cả.', 1.6); return; }
+  const order = learned.concat([null]); held.form = order[(order.indexOf(held.form) + 1) % order.length]; showHeld();
+  say(held.form ? 'Gấp thành ' + FORMS[held.form] + '!' : 'Mở ra thành tờ lịch.', 1.2);
+}
+function useHeld(){
+  const f = held.form;
+  if(!f){
+    const sl = nearSlot();
+    if(sl){ sl.filled = true; sl.patch.visible = true; sl.line.visible = false; dropHeld(); say('Dán!', 1); if(sl.onPaste) sl.onPaste(sl); return; }
+    say(learned.length ? 'Bấm Q để gấp, hoặc tìm ô viền chấm để dán.' : 'Tìm ô viền chấm để dán tờ này.', 2); return;
+  }
+  if(f === 'thuyen'){
+    const c = channels.find(c=>P.x > c.x0 - 1.6 && P.x < c.x1 + 1.6 && P.y > c.level - .3);
+    if(!c){ say('Phải đứng sát chỗ có nước mới thả thuyền.', 2); return; }
+    launchBoat(c, P.x); dropHeld(); say('Thả thuyền!', 1.2); return;
+  }
+  if(f === 'maybay'){ throwPlane(); dropHeld(); return; }
+  if(f === 'quat') waveFan();
+}
+
+// dotted slots where a carried page can be pasted (a leak, a gap in the wind)
+const slots = [];
+function slot(o){
+  const s = Object.assign({filled:false, z:-.3}, o);
+  const g = new THREE.BufferGeometry().setFromPoints([[s.x0,s.y0],[s.x1,s.y0],[s.x1,s.y1],[s.x0,s.y1],[s.x0,s.y0]].map(q=>new THREE.Vector3(q[0], q[1], s.z)));
+  s.line = new THREE.Line(g, new THREE.LineDashedMaterial({color:'#FFE27A', dashSize:.2, gapSize:.12})); s.line.computeLineDistances(); scene.add(s.line);
+  s.patch = new THREE.Mesh(new THREE.PlaneGeometry(s.x1 - s.x0, s.y1 - s.y0), new THREE.MeshToonMaterial({map:dayTexture(s.x1 - s.x0, s.y1 - s.y0, '14', 77), gradientMap:ramp}));
+  s.patch.position.set((s.x0 + s.x1)/2, (s.y0 + s.y1)/2, s.z + .01); s.patch.visible = false; scene.add(s.patch);
+  slots.push(s); return s;
+}
+function nearSlot(){ for(const s of slots) if(!s.filled && P.x > s.x0 - 1.3 && P.x < s.x1 + 1.3 && P.y + 1.2 > s.y0 - 1.2 && P.y < s.y1 + .5) return s; return null; }
+function unpaste(s){ s.filled = false; s.patch.visible = false; s.line.visible = true; }
+
+// water channels whose level moves, and the one paper boat Tò rides on them
+const channels = [];
+const chanMat = new THREE.MeshToonMaterial({map:TEX.water, color:new THREE.Color('#3FA7C9').convertSRGBToLinear(), gradientMap:ramp, transparent:true, opacity:.88});
+function channel(o){
+  const c = Object.assign({z0:-1.6, z1:1.6, speed:1.1}, o); c.want = c.level;
+  c.m = new THREE.Mesh(new THREE.BoxGeometry(c.x1 - c.x0, 1, c.z1 - c.z0), chanMat); c.m.position.set((c.x0 + c.x1)/2, 0, (c.z0 + c.z1)/2); scene.add(c.m);
+  channels.push(c); return c;
+}
+const boat = {on:false, c:null, x:0, y:0, g:new THREE.Group()};
+scene.add(boat.g); boat.g.visible = false;
+(function(){
+  const sh = new THREE.Shape(); sh.moveTo(-1.1,.32); sh.lineTo(1.1,.32); sh.lineTo(.7,-.12); sh.lineTo(-.7,-.12); sh.closePath();
+  mesh(boat.g, new THREE.ExtrudeGeometry(sh, {depth:.9, bevelEnabled:false}), '#F4EFE4', {pos:new THREE.Vector3(0,0,-.45), ow:.04});
+  mesh(boat.g, new THREE.CylinderGeometry(0,.55,.8,3), '#F4EFE4', {pos:new THREE.Vector3(0,.7,-.2), scl:[1,1,.3], ow:.035});
+  mesh(boat.g, new THREE.BoxGeometry(1.8,.06,.84), '#D8382A', {pos:new THREE.Vector3(0,.2,0), outline:false});
+})();
+boat.plat = plat(0, 0, 0, true, ()=>boat.on);
+function launchBoat(c, x){ boat.on = true; boat.c = c; boat.x = Math.max(c.x0 + 1.1, Math.min(c.x1 - 1.1, x)); boat.y = Math.max(c.floor + .05, c.level); boat.g.visible = true; }
+function boatTick(dt, t){
+  for(const c of channels){
+    c.level += Math.max(-dt*c.speed, Math.min(dt*c.speed, c.want - c.level));
+    const h = Math.max(.02, c.level - c.floor); c.m.scale.y = h; c.m.position.y = c.floor + h/2; c.m.visible = c.level > c.floor + .03;
+  }
+  if(!boat.on) return;
+  const c = boat.c, floating = c.level > c.floor + .45;
+  boat.y += ((floating ? c.level : c.floor + .02) - boat.y)*Math.min(1, dt*3);
+  if(P.on === boat.plat && floating && Math.abs(P.vx) > .1) boat.x = Math.max(c.x0 + 1.1, Math.min(c.x1 - 1.1, P.x));
+  boat.plat.x0 = boat.x - 1.05; boat.plat.x1 = boat.x + 1.05; boat.plat.top = boat.y + .3;
+  boat.g.position.set(boat.x, boat.y + (floating ? Math.sin(t*2.2)*.04 : 0), .1); boat.g.rotation.z = floating ? Math.sin(t*1.7)*.04 : .08;
+}
+
+// paper plane: flies the way Tò faces and can hit a target he can't reach (a switch behind bars)
+const targets = [];
+function target(o){ const q = Object.assign({hit:false, r:.9}, o); targets.push(q); return q; }
+const plane = {on:false, x:0, y:0, vx:0, vy:0, t:0, g:new THREE.Group()};
+scene.add(plane.g); plane.g.visible = false;
+(function(){ const ps = new THREE.Shape(); ps.moveTo(.55,0); ps.lineTo(-.4,.32); ps.lineTo(-.22,0); ps.lineTo(-.4,-.32); ps.closePath();
+  const m = mesh(plane.g, new THREE.ShapeGeometry(ps), '#F4EFE4', {ow:.03}); m.material.side = THREE.DoubleSide; m.rotation.x = -1.3; })();
+function throwPlane(){ plane.on = true; plane.t = 0; plane.x = P.x + P.face*.6; plane.y = P.y + 1.3; plane.vx = P.face*7.5; plane.vy = 1.6; plane.g.visible = true; say('Bay đi!', 1); }
+function planeTick(dt){
+  if(!plane.on) return;
+  plane.t += dt; plane.vy -= 1.6*dt; plane.x += plane.vx*dt; plane.y += plane.vy*dt;
+  plane.g.position.set(plane.x, plane.y, .3); plane.g.rotation.set(0, plane.vx < 0 ? Math.PI : 0, Math.atan2(plane.vy, Math.abs(plane.vx)));
+  for(const q of targets) if(!q.hit && Math.hypot(plane.x - q.x, plane.y - q.y) < q.r){ q.hit = true; plane.on = false; plane.g.visible = false; if(q.onHit) q.onHit(q); return; }
+  if(plane.t > 2.4 || plane.y < -1){ plane.on = false; plane.g.visible = false; say('Trượt rồi… gấp lại cái khác.', 1.8); }
+}
+// paper fan: a wave sends Lũ Bụi that can be blown floating up and away
+let fanT = 0;
+function waveFan(){
+  fanT = .45; let n = 0;
+  for(const b of buis) if(b.fan && !b.gone && Math.sign(b.x - P.x) === P.face && Math.abs(b.x - P.x) < 5 && Math.abs(b.top - P.y) < 1.6){ b.gone = true; b.goneT = 0; n++; }
+  say(n ? 'Phù! Bay hết!' : 'Phẩy phẩy…', 1); if(LV.onFan) LV.onFan(n);
+}
+// timers
+const timers = [];
+function later(sec, fn){ timers.push({t:sec, fn}); }
+function timersTick(dt){ for(let i = timers.length - 1; i >= 0; i--){ timers[i].t -= dt; if(timers[i].t <= 0){ const f = timers[i].fn; timers.splice(i, 1); f(); } } }
+function resetSheet(s){ s.L = 0; s.p = 0; s.done = false; s.full = false; sheetVis(s, true); updSheet(s); }
+// Tò's star lantern: a warm light that follows him (Màn 3)
+const toLight = new THREE.PointLight('#FFD58A', 0, 11, 1.4); scene.add(toLight);
 function step(dt, t){
   let dir = (keys.right?1:0) - (keys.left?1:0);
   if(P.won || busy()){ dir = 0; jumpQueued = false; grabQueued = false; if(P.grab) release(); }
@@ -939,13 +1182,20 @@ function step(dt, t){
     }
   }
   if(!P.grab){
-    if(grabQueued && P.ground){ const s = nearSheet(); if(s) grab(s); }
+    if(grabQueued && P.ground){
+      // holding a page but standing at another edge with no slot to paste into: put the page down and take hold of the edge
+      const ns = held.on && !nearSlot() && nearSheet();
+      if(ns && !ns.locked){ dropHeld(); say('Bỏ tờ đang cầm xuống.', 1); grab(ns); }
+      else if(held.on) useHeld();
+      else { const s = nearSheet(); if(s){ if(s.locked){ if(s.onLocked) s.onLocked(s); } else grab(s); } else if(LV.use) LV.use(); }
+    }
     const target = dir*SPEED;
     if(P.knock > 0) P.knock -= dt; else P.vx += (target - P.vx)*Math.min(1, dt*14);
     if(dir) P.face = dir;
     if(jumpQueued && P.ground && !P.grab){ P.vy = JUMP; P.ground = false; }
   }
   jumpQueued = false; grabQueued = false;
+  if(P.ground && P.on && P.on.on() && P.vy <= 0 && P.x + P.w/2 - .08 >= P.on.x0 && P.x - P.w/2 + .08 <= P.on.x1) P.y = P.on.top;
   P.vy -= GRAV*dt;
   const yPrev = P.y, vyIn = P.vy, wasGround = P.ground; let ny = P.y + P.vy*dt;
   let nx = P.grab ? P.x : P.x + P.vx*dt;
@@ -957,14 +1207,16 @@ function step(dt, t){
   }
   nx = Math.max(LV.bounds[0], Math.min(LV.bounds[1], nx));
   const st = P.vy <= 0 ? standingOn(nx, yPrev, ny) : null;
+  P.on = st;
   if(st){ ny = st.top; P.vy = 0; P.ground = true; if(st.safe) P.check = {x:Math.max(st.x0 + .7, Math.min(st.x1 - .7, nx)), y:st.top}; }
   else P.ground = false;
   P.x = nx; P.y = ny;
   if(st && !wasGround && vyIn < -9) wakeNear(P.x, P.y);
   for(const h of hazards) if(P.y < h.y && P.x > h.x0 && P.x < h.x1){ respawn(h.msg); break; }
+  for(const c of channels) if(P.x > c.x0 && P.x < c.x1 && P.y < Math.max(c.floor + .5, c.level - .25) && P.on !== boat.plat){ respawn(c.level > c.floor + .45 ? 'Á! Nước! Tò sợ nước lắm!' : 'Rãnh sâu quá!'); break; }
   // Lũ Bụi bump Tò back
   for(const b of buis){
-    if(b.z < -.3) continue;
+    if(b.z < -.3 || b.gone) continue;
     const by = b.top + b.s;
     if(Math.abs(P.x - b.x) < (P.w/2 + b.s*.9) && P.y < by + b.s*.6 && P.y + P.h > b.top + .05){
       P.vx = (P.x < b.x ? -1 : 1)*9; P.vy = 7; P.knock = .35; P.ground = false; release();
@@ -979,12 +1231,15 @@ function step(dt, t){
     }
   }
   if(relicObj && !relicGot && Math.abs(P.x - relicObj.x) < .9 && P.y > relicObj.y - .5 && P.y < relicObj.y + 1.6){
-    relicGot = true; relicEl.textContent = 'Tò he cũ 1/1'; relicEl.classList.add('got'); say('Con tò he cũ của bà! ' + relicObj.name + '.', 2.8); lastProgT = nowT;
+    relicGot = true; relicSave(LV.level); relicEl.textContent = 'Tò he cũ 1/1'; relicEl.classList.add('got'); say('Con tò he cũ của bà! ' + relicObj.name + '.', 2.8); lastProgT = nowT;
   }
 }
 
 // ---------- Bụi, fireflies, sheets: per-frame motion ----------
 function actors(dt, t){
+  timersTick(dt); boatTick(dt, t); planeTick(dt);
+  if(fanT > 0){ fanT -= dt; HELD.quat.rotation.z = Math.sin(fanT*30)*.5; }
+  toLight.position.set(P.x + .3, P.y + 2.2, 1.6); toLight.intensity = LV.lantern || 0;
   for(const b of buis){
     if(b.sleep){
       if(b.awake){
@@ -997,6 +1252,7 @@ function actors(dt, t){
     } else {
       b.x += b.dir*dt*1.4; if(b.x > b.b){ b.x = b.b; b.dir = -1; } if(b.x < b.a){ b.x = b.a; b.dir = 1; }
     }
+    if(b.gone){ b.goneT += dt; b.g.position.y += dt*3.5; b.g.rotation.z += dt*6; b.g.scale.setScalar(Math.max(.01, 1 - b.goneT*.8)); b.g.visible = b.goneT < 1.3; continue; }
     const hop = (b.awake || !b.sleep) ? Math.abs(Math.sin(t*3 + b.ph))*.25 : Math.sin(t*1.5 + b.ph)*.03;
     b.g.position.set(b.x, b.top + b.s + hop, b.z); b.g.rotation.y = b.dir*.4;
     b.g.scale.set(1, (b.sleep && !b.awake) ? .9 + Math.sin(t*1.5 + b.ph)*.04 : 1, 1);
@@ -1017,11 +1273,13 @@ function actors(dt, t){
   const near = !P.grab && !busy() && nearSheet();
   const focus = sheets.find(q=>!q.done && !q.solved);
   for(const s of sheets){
-    if(s.done || !s.m.visible) continue;
+    if(s.done || (!s.m.visible && !s.ghost)) continue;
     updSheet(s);
     if(near === s){ const k = 1.15 + Math.sin(t*8)*.15; s.curl.scale.x *= k; s.curl.scale.z *= k; }
-    s.halo.material.opacity = (.55 + Math.sin(t*4 + s.x0)*.25 + (near === s ? .3 : 0))*(s === focus ? 1 : .3)*(s.full ? 0 : 1);
-    s.core.material.opacity = s.full ? 0 : 1;
+    const lit = !LV.dark || Math.abs(P.x - (s.x0 + s.x1)/2) < s.w/2 + 4 && Math.abs(P.y + 1 - (s.y0 + s.y1)/2) < s.h/2 + 3.5;
+    s.halo.material.opacity = (.55 + Math.sin(t*4 + s.x0)*.25 + (near === s ? .3 : 0))*(s === focus ? 1 : .3)*(s.full || !lit ? 0 : 1);
+    s.core.material.opacity = s.full || !lit ? 0 : 1;
+    if(s.ghost){ s.m.visible = s.back.visible = s.frame.visible = s.curl.visible = false; }
     s.arrow.visible = (near === s || P.grab === s);
     if(s.dir === 'x') s.arrow.position.set(s.x0 + s.p + 1.9 + Math.sin(t*6)*.12, Math.min(s.y1 - .3, P.y + 1.5), s.z + 1.2);
     else s.arrow.position.set(P.x - 1.6 - Math.sin(t*6)*.12, P.y + 1.4, .9);
@@ -1050,7 +1308,7 @@ function poseTo(dt, t){
   toInner.rotation.z = moving ? Math.sin(P.walkT)*.08 : 0;
   TO.legs[0].position.z = .08 + (moving ? Math.sin(P.walkT)*.25 : 0); TO.legs[1].position.z = .08 - (moving ? Math.sin(P.walkT)*.25 : 0);
   for(const [i, a] of TO.arms.entries()){
-    const target = P.grab ? (P.grab.dir === 'x' ? -1.3 : -2.6) : (P.ground ? (moving ? Math.sin(P.walkT + i*Math.PI)*.5 : 0) : -2.2);
+    const target = P.grab ? (P.grab.dir === 'x' ? -1.3 : -2.6) : held.on ? -1.2 : (P.ground ? (moving ? Math.sin(P.walkT + i*Math.PI)*.5 : 0) : -2.2);
     a.rotation.x += (target - a.rotation.x)*Math.min(1, dt*12);
   }
   TO.body.scale.y = .95*(1 + (P.ground ? 0 : .06));
@@ -1068,7 +1326,7 @@ function animate(dt, t){
   const near = actors(dt, t);
   zonesTick(dt);
   let look = Math.max(LV.cam[0], Math.min(LV.cam[1], P.x + P.face*1.5));
-  let ty = 2.8 + Math.max(0, P.y - 1)*.55, cz = 18.5, ck = 3;
+  let ty = LV.camY ? LV.camY(P.x, P.y) : 2.8 + Math.max(0, P.y - 1)*.55, cz = 18.5, ck = 3;
   if(cur && cur.cam){ look = cur.cam[0]; ty = cur.cam[1]; cz = cur.cam[2] || 18.5; ck = 2.2; }
   camTo(look, ty, cz, dt, ck);
   if(toSayT > 0) toSayT -= dt;
@@ -1080,7 +1338,8 @@ function animate(dt, t){
   let h = '';
   if(P.won || busy()) h = '';
   else if(P.grab) h = P.grab.dir === 'x' ? 'Đi lùi để kéo · E để buông' : 'Đi lùi để kéo mép lên · E để buông, mép giấy thành gờ';
-  else if(near) h = 'E để nắm mép';
+  else if(held.on) h = held.form ? (held.form === 'thuyen' ? 'E để thả thuyền xuống nước · Q đổi kiểu gấp' : held.form === 'maybay' ? 'E để phóng máy bay · Q đổi kiểu gấp' : 'E để phẩy quạt · Q đổi kiểu gấp') : (nearSlot() ? 'E để dán vào ô viền chấm' : learned.length ? 'Q để gấp tờ lịch' : 'Tìm ô viền chấm để dán');
+  else if(near) h = near.locked ? 'E để thử bóc' : 'E để nắm mép';
   else if(stackNear() && !stackNear().solved) h = 'R để dán lại tờ vừa bóc';
   else if(hintT > 0) h = LV.hint();
   hintEl.textContent = h; hintEl.style.opacity = h ? 1 : 0;
@@ -1108,12 +1367,20 @@ function runIntro(dt, t){
 
 // ---------- win ----------
 function finish(steps){ P.won = true; release(); play(steps.concat([{dur:0, start:()=>{ winReady = true; }}])); }
+// the win card leads straight on: the next level, or (after the last one) back to the title
 function showWin(){
   const w = LV.winText();
   $('winH').textContent = w.h; $('winP').textContent = w.p; $('memory').innerHTML = w.memory; $('winNext').textContent = w.next;
+  const next = LV.nextUrl || LEVEL_URL[LV.level + 1], s = saveGet();
+  savePut({man: next ? LV.level + 1 : LV.level, max: Math.max(s.max || 1, next ? LV.level + 1 : LV.level), done: !!s.done || !next});
+  const B = $('winB'); B.innerHTML = '';
+  const btn = (t, cls, fn)=>{ const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = t; b.onclick = fn; B.appendChild(b); return b; };
+  if(next) btn('Tiếp tục', '', ()=>goTo(next)).focus();
+  else btn('Về màn hình chính', '', ()=>goTo('../index.html')).focus();
+  btn('Chơi lại màn này', 'alt', ()=>{ location.hash = 'choi'; location.reload(); });
   $('win').style.display = 'flex'; traySet(LV.level);
 }
-$('again').onclick = ()=>{ location.hash = 'choi'; location.reload(); };
+addEventListener('keydown', e=>{ if($('win').style.display === 'flex' && e.code === 'Enter'){ const b = $('winB').firstChild; if(b) b.click(); } });
 
 // ---------- loop ----------
 let simT = 0;
@@ -1126,7 +1393,7 @@ addEventListener('resize', resize);
 let last = performance.now();
 function loop(now){
   const dt = Math.min(.033, (now - last)/1000); last = now; const t = now/1000;
-  if(!hook.pause){ if(intro.on) runIntro(dt, t); else { step(dt, t); animate(dt, t); } }
+  if(!hook.pause && !paused){ if(intro.on) runIntro(dt, t); else { step(dt, t); animate(dt, t); } }
   if(P.won && winReady && $('win').style.display !== 'flex') showWin();
   atmosphere(t); skyDome.position.copy(camera.position);
   renderer.render(scene, camera);
@@ -1138,8 +1405,10 @@ const hook = window.__game = {pause:false, P, keys, sheets, buis, LV, zoneK,
   skipIntro:()=>{ if(intro.on) endIntro(); }, introTick:(n)=>{ for(let i=0;i<n && intro.on;i++){ simT += 1/60; runIntro(1/60, simT); } },
   tick:(n)=>{ for(let i=0;i<n;i++){ simT += 1/60; step(1/60, simT); animate(1/60, simT); } },
   tp:(x, y)=>{ P.x = x; P.y = y; P.vx = P.vy = 0; },
-  get flies(){ return fliesGot; }, get relic(){ return relicGot; }, get info(){ return renderer.info.render; }, get busy(){ return busy(); }, get objective(){ return OBJ; }, get won(){ return P.won; }, get winReady(){ return winReady; }};
+  get flies(){ return fliesGot; }, held, learned, boat, channels, fold, slots, targets, get relic(){ return relicGot; }, get info(){ return renderer.info.render; }, get busy(){ return busy(); }, get objective(){ return OBJ; }, get won(){ return P.won; }, get winReady(){ return winReady; }};
 function startGame(){
+  savePut({man: LV.level, max: Math.max(saveGet().max || 1, LV.level)});
+  requestAnimationFrame(()=>requestAnimationFrame(()=>$('fade').classList.add('out')));
   bake();
   P.x = LV.start.x; P.y = LV.start.y; P.check = {x:LV.start.x, y:LV.start.y};
   resize();

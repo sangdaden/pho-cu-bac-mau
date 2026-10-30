@@ -42,7 +42,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .win .card{background:var(--panel);color:var(--ink);border-radius:18px;border:2.5px solid #141019;padding:20px 24px;max-width:min(420px,90%);text-align:center}
 .win h2{font-family:"Patrick Hand",cursive;font-weight:400;font-size:34px;margin:0}
 .win p{margin:8px 0 14px}
-.btn{border:2px solid #141019;background:#C23A28;color:#fff;border-radius:999px;padding:8px 18px;font:600 15px "Be Vietnam Pro",sans-serif;cursor:pointer}
+.btn{border:2px solid #141019;background:#C23A28;color:#fff;border-radius:999px;padding:8px 18px;font:600 15px "Be Vietnam Pro",sans-serif;cursor:pointer;text-decoration:none;display:inline-block}
 .note{color:var(--muted);font-size:13px;margin-top:12px}
 .cap{position:absolute;left:50%;top:16%;transform:translateX(-50%);width:min(760px,90%);text-align:center;color:#fff;font-family:"Patrick Hand",cursive;font-size:clamp(20px,3.2vw,30px);line-height:1.25;text-shadow:0 2px 0 #141019,0 0 10px rgba(20,16,25,.6);pointer-events:none;transition:opacity .5s;opacity:0}
 .bars{position:absolute;left:0;right:0;height:9%;background:#1D1A22;transition:transform .6s;pointer-events:none}
@@ -50,3 +50,27 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .bars.off.t{transform:translateY(-100%)}.bars.off.b{transform:translateY(100%)}
 .skip{position:absolute;right:14px;bottom:2.5%;color:#fff;font-size:13px;pointer-events:none;transition:opacity .4s}
 .memory{background:#FFF4D6;border:2px dashed #C99A52;border-radius:12px;padding:8px 12px;margin:0 0 14px;color:#4A3B34;font-size:14px;text-align:left}
+/* full-screen game: one stage fills the window, no page around it */
+body.game{overflow:hidden;background:#141019;overscroll-behavior:none}
+body.game .stage{position:fixed;inset:0;height:auto;min-height:0;border:0;border-radius:0}
+.hudL{display:flex;gap:8px;align-items:flex-start;min-width:0}
+.menuB{pointer-events:auto;width:36px;height:36px;flex:none;border-radius:50%;border:2px solid #141019;background:rgba(255,255,255,.82);color:#141019;font:600 15px "Be Vietnam Pro",sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.menuB:hover{background:#FFE7A3}
+.over{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,16,25,.55);z-index:6}
+.win{z-index:6}.hud{z-index:4}
+.over .card{background:var(--panel);color:var(--ink);border-radius:18px;border:2.5px solid #141019;padding:20px 24px;max-width:min(440px,92%);max-height:92%;overflow:auto;text-align:center}
+.over h2{font-family:"Patrick Hand",cursive;font-weight:400;font-size:34px;margin:0 0 10px}
+.btns{display:flex;flex-direction:column;gap:10px;align-items:stretch;margin-top:6px}
+.btn.alt{background:var(--chip);color:var(--ink)}
+.btn.gold{background:#F6D27A;color:#141019}
+.keyl{list-style:none;padding:0;margin:14px 0 0;text-align:left;font-size:14px;color:var(--muted)}
+.keyl li{margin:4px 0}
+.keyl b{display:inline-block;border:1px solid var(--line);background:var(--chip);border-radius:6px;padding:0 6px;font-weight:600;color:var(--ink)}
+.win .btns{flex-direction:row;justify-content:center;flex-wrap:wrap}
+.fade{position:fixed;inset:0;background:#141019;pointer-events:none;opacity:1;transition:opacity .9s;z-index:9}
+.fade.out{opacity:0}
+.toast{position:absolute;left:50%;top:58px;transform:translateX(-50%);background:rgba(20,16,25,.8);color:#fff;border-radius:999px;padding:5px 14px;font-size:13px;pointer-events:none;transition:opacity .5s;white-space:nowrap}
+.endT{position:absolute;left:50%;top:13%;transform:translateX(-50%);text-align:center;pointer-events:none;opacity:0;transition:opacity 1.6s;width:92%}
+.endT h1{font-family:"Patrick Hand",cursive;font-weight:400;font-size:clamp(44px,8vw,96px);color:#FFF6E0;text-shadow:0 3px 0 #141019,0 0 24px rgba(255,200,90,.6);margin:0;line-height:1}
+.endT p{font-family:"Patrick Hand",cursive;font-size:clamp(18px,2.6vw,26px);color:#FFE7A3;text-shadow:0 2px 0 #141019;margin:6px 0 0}
+@media (max-width:640px){.menuB{width:30px;height:30px;font-size:13px}}

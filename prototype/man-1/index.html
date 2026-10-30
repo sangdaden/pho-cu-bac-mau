@@ -1,8 +1,9 @@
 <!doctype html>
 <html lang="vi">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Màn 1: Mái hiên | Phố Cũ Bạc Màu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Màn 1: Mái hiên · Phố Cũ Bạc Màu</title>
 <meta name="description" content="Chơi thử Màn 1 của Phố Cũ Bạc Màu: giúp Tò bóc lớp xám dưới mái hiên để con phố có màu trở lại. Chơi ngay trên trình duyệt, có nút bấm cho điện thoại.">
 <link rel="canonical" href="https://phocu.markhocai.com/man-1/">
 <link rel="icon" href="/favicon.ico" sizes="any">
@@ -21,20 +22,11 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Tò kéo tấm giấy xám bị xé, lỗ rách lộ ra phố cổ ven sông đầy đèn lồng">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Be+Vietnam+Pro:wght@400;600&family=Oswald:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../chung/pho.css">
-
-<div class="wrap">
-  <div class="top">
-    <h1>Phố Cũ Bạc Màu · Màn 1: Mái hiên</h1>
-    <span class="keys"><b>←</b> <b>→</b> đi · <b>↑</b> hoặc <b>Space</b> nhảy · <b>E</b> nắm mép sáng, đi lùi để kéo, <b>E</b> lần nữa để buông · <b>R</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>H</b> gợi ý</span>
-  </div>
-  <div class="stage" id="stage"><canvas id="c" tabindex="0"></canvas></div>
-  <div class="note">Màn 1 có 9 phòng dọc một con phố, từ sạp bà Năm tới con tò he xám bên kia kênh. Ô mục tiêu góc trái luôn nói việc tiếp theo. Có 5 con đom đóm (đủ thì mở trọn ký ức của cô Hai) và một con tò he cũ giấu kỹ. Buông tay giữa chừng khi bóc tờ dọc thì mép giấy cong thành gờ; đứng gần chồng lịch thì thấy lờ mờ ngày bên dưới.</div>
-</div>
-
+<body class="game">
+<div class="stage" id="stage"><canvas id="c" tabindex="0" aria-label="Màn 1: Mái hiên"></canvas></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="../chung/pho.js"></script>
 <script src="man.js"></script>
