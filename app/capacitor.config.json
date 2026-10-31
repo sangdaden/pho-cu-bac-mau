@@ -1,0 +1,11 @@
+{
+  "appId": "com.markhocai.phocu",
+  "appName": "Phố Cũ Bạc Màu",
+  "webDir": "www",
+  "backgroundColor": "#141019",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}

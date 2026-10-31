@@ -1,0 +1,19 @@
+{
+  "name": "pho-cu-bac-mau-app",
+  "private": true,
+  "description": "Bọc bản web Phố Cũ Bạc Màu (prototype/) thành app Android bằng Capacitor",
+  "scripts": {
+    "www": "node chuan-bi-www.js",
+    "sync": "npm run www && npx cap sync android",
+    "apk": "npm run sync && cd android && ./gradlew assembleDebug",
+    "aab": "npm run sync && cd android && ./gradlew bundleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "6.1.2",
+    "@capacitor/core": "6.1.2",
+    "@capacitor/haptics": "6.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "6.1.2"
+  }
+}

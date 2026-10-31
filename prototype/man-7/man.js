@@ -314,10 +314,16 @@ for(const z of ROOMS.concat(['sky'])) setZone(z, 0);
 bui({x:86.0, top:0, s:.5, a:85.0, b:87.2, fan:true}); bui({x:87.2, top:0, s:.44, a:86.2, b:87.6, fan:true});
 
 // ================= bubbles =================
+// sleep-talk: each grey sleeper mutters a line about the day they forgot
+vTi.mo = ["…diều sáo… bay cao…", "…mẹ ơi… cho con ra đê…", "…dây diều… đứt mất rồi…"];
+vMai.mo = ["…bánh trôi… còn nóng…", "…gió bấc… lạnh tay quá…", "…phơi miến… sợ mưa…"];
+vNa.mo = ["…chong chóng… quay đi…", "…gió ơi… thổi mạnh lên…"];
+vSau.mo = ["…lò bánh… đỏ lửa…", "…hơi nóng… bốc lên mái…", "…ai thả diều… trên mái nhà tôi…"];
+vDuc.mo = ["…khung tre… phải vót mỏng…", "…dán diều… bằng hồ nếp…", "…Năm ơi… gió lên rồi…"];
 for(const v of people) talker(v.g, 2.6*(v.s || 1), ()=>{
   if(P.won && !v.line) return '';
   if(v.lineT > 0) return v.line;
-  return !v.awake && Math.abs(P.x - v.g.position.x) < 6 ? '…' : '';
+  return !v.awake && Math.abs(P.x - v.g.position.x) < 6 ? (v.mo ? v.mo[Math.floor(nowT/3.4 + v.g.position.x) % v.mo.length] : '…') : '';
 });
 
 // ================= story beats =================
