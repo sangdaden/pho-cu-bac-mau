@@ -66,7 +66,16 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
 .keyl b{display:inline-block;border:1px solid var(--line);background:var(--chip);border-radius:6px;padding:0 6px;font-weight:600;color:var(--ink)}
 .fade{position:fixed;inset:0;background:#141019;opacity:1;pointer-events:none;transition:opacity .9s;z-index:9}
 .fade.out{opacity:0}
-@media (max-height:520px){.menu{bottom:14px;gap:8px}.btn{padding:8px 24px;font-size:17px}}
+@media (max-height:520px){.menu{bottom:max(10px,env(safe-area-inset-bottom));gap:7px}.btn{padding:6px 24px;font-size:17px;box-shadow:0 4px 0 #141019}.btn small{font-size:12px}
+  .sm{padding:5px 13px;font-size:13px}.tray{font-size:15px}
+  /* a wide phone screen crops the cover's title: show the whole picture over its blurred copy */
+  .bg img.main{object-fit:contain;object-position:50% 0;animation:none}
+  .foot{bottom:auto;top:max(6px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));font-size:11px}
+  .card{padding:12px 18px;max-width:600px;max-height:calc(100% - 8px)}.card h2{font-size:26px;margin:0 0 6px}.card p{margin:4px 0 8px;font-size:13px}
+  .lv{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .lv button{flex-direction:column;align-items:flex-start;gap:2px;padding:7px 12px;font-size:14px}
+  .lv button span{font-size:12px}
+  .keyl{font-size:13px;margin-bottom:8px}.keyl li{margin:4px 0}}
 </style>
 <div class="bg"><img class="blur" src="anh/bia.jpg" alt=""><img class="main" src="anh/bia.jpg" alt="Tò, con tò he bột gạo, bóc tờ lịch xám để lộ con phố có màu"></div>
 
@@ -85,7 +94,7 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
 <div class="over" id="levels"><div class="card"><h2>Chọn màn</h2><div class="lv" id="lvList"></div><button class="sm" data-close>Đóng</button></div></div>
 <div class="over" id="help"><div class="card"><h2>Cách chơi</h2>
   <p>Cả con phố bị phủ những tờ lịch xám, những ngày đã sống qua mà chẳng ai để ý. Tò bóc chúng ra để màu và người quay lại.</p>
-  <ul class="keyl">
+  <ul class="keyl" id="keysHelp">
     <li><b>←</b> <b>→</b> đi · <b>↑</b> hoặc <b>Space</b> nhảy</li>
     <li><b>E</b> nắm mép sáng, rồi đi lùi để bóc · <b>E</b> lần nữa để buông</li>
     <li>Đang cầm tờ lịch: <b>E</b> để dán, thả thuyền, phóng máy bay, phẩy quạt · <b>Q</b> để gấp</li>
@@ -135,6 +144,8 @@ addEventListener('keydown', e=>{
 requestAnimationFrame(()=>requestAnimationFrame(()=>$('fade').classList.add('out')));
 addEventListener('pageshow', e=>{ if(e.persisted){ leaving = false; $('fade').classList.add('out'); } });
 $('play').focus();
+// on a phone the help names the on-screen buttons, not keys
+if(matchMedia('(pointer:coarse)').matches) $('keysHelp').innerHTML = '<li><b>◀</b> <b>▶</b> đi, trượt ngón để đổi hướng · <b>⤒</b> nhảy</li><li><b>Bóc</b> nắm mép sáng, rồi đi lùi để bóc · bấm lần nữa để buông</li><li>Đang cầm tờ lịch: <b>Dùng</b> để dán, thả thuyền, phóng máy bay, phẩy quạt · <b>Gấp</b> đổi kiểu gấp</li><li><b>↺</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>?</b> gợi ý · <b>❚❚</b> tạm dừng</li><li>Chơi ngang màn hình. Cài lên điện thoại để chơi toàn màn hình.</li>';
 // install like an app: Chrome on Android offers its own prompt; iPhone and other browsers get the steps to do it by hand
 const STANDALONE = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
 const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);

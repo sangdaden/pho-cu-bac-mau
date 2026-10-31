@@ -780,19 +780,19 @@ const LV = {start:{x:0, y:0}, bounds:[-5, 100], cam:[4, 96], sky:[], hint:()=>''
 stage.insertAdjacentHTML('beforeend', `
 <div class="hud"><span class="hudL"><button class="menuB" id="menuB" title="Tạm dừng (Esc)" aria-label="Tạm dừng">❚❚</button><span class="pill" id="title"></span></span><span class="hudR"><span class="pill" id="hand" style="display:none"></span><span class="pill wet" id="wet" style="display:none" title="Tò là bột gạo, ướt quá là nhũn">Ướt <b><i id="wetB"></i></b></span><span class="pill" id="ffly">Đom đóm 0/5</span><span class="pill" id="relic" title="Con tò he cũ giấu trong màn">Tò he cũ 0/1</span><span class="pill tray" title="Khay tò he của bà Năm">Khay của bà <i id="t1"></i><i id="t2"></i><i id="t3"></i></span></span></div>
 <div class="bars t off" id="barT"></div><div class="bars b off" id="barB"></div>
-<div class="cap" id="cap"></div><div class="skip" id="skip" style="opacity:0">Space hoặc chạm để bỏ qua</div>
+<div class="cap" id="cap"></div><div class="skip" id="skip" style="opacity:0">${MOBILE ? 'Chạm để bỏ qua' : 'Space hoặc chạm để bỏ qua'}</div>
 <div class="hint" id="hint"></div>
 <div class="pad l"><button data-k="left">◀</button><button data-k="right">▶</button><button data-k="hint" class="sm">?</button></div>
-<div class="pad r"><button data-k="back" class="sm">R</button><button data-k="fold" class="sm">Gấp</button><button class="grab" data-k="grab">Bóc</button><button data-k="jump">⤒</button></div>
+<div class="pad r"><button data-k="back" class="sm" aria-label="Dán lại tờ vừa bóc">↺</button><button data-k="fold" class="sm">Gấp</button><button class="grab" data-k="grab" id="grabB">Bóc</button><button data-k="jump">⤒</button></div>
 <div class="memo" id="memo"><canvas id="memoC" width="480" height="360"></canvas></div>
 <div class="win" id="win"><div class="card"><h2 id="winH"></h2><p id="winP"></p><div class="memory" id="memory"></div><p class="next" id="winNext"></p><div class="btns" id="winB"></div></div></div>
 <div class="over" id="pause"><div class="card"><h2>Tạm dừng</h2><div class="btns"><button class="btn" id="pGo">Chơi tiếp</button><button class="btn alt" id="pAgain">Chơi lại màn này</button><button class="btn alt" id="pFull">Toàn màn hình</button><a class="btn alt" href="../index.html" id="pHome">Về màn hình chính</a></div>
-<ul class="keyl"><li><b>←</b> <b>→</b> đi · <b>↑</b> hoặc <b>Space</b> nhảy</li><li><b>E</b> nắm mép sáng rồi đi lùi để bóc · <b>E</b> lần nữa để buông</li><li>Đang cầm tờ lịch: <b>E</b> để dán, thả, phóng, phẩy · <b>Q</b> gấp</li><li><b>R</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>H</b> gợi ý · <b>Esc</b> tạm dừng</li><li>Tiến độ tự lưu sau mỗi màn.</li></ul></div></div>
+${MOBILE ? `<ul class="keyl"><li><b>◀</b> <b>▶</b> đi, trượt ngón để đổi hướng · <b>⤒</b> nhảy</li><li><b>Bóc</b> nắm mép sáng rồi đi lùi để bóc · bấm lần nữa để buông</li><li>Đang cầm tờ lịch: <b>Dùng</b> để dán, thả, phóng, phẩy · <b>Gấp</b> đổi kiểu gấp</li><li><b>↺</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>?</b> gợi ý</li><li>Tiến độ tự lưu sau mỗi màn.</li></ul>` : `<ul class="keyl"><li><b>←</b> <b>→</b> đi · <b>↑</b> hoặc <b>Space</b> nhảy</li><li><b>E</b> nắm mép sáng rồi đi lùi để bóc · <b>E</b> lần nữa để buông</li><li>Đang cầm tờ lịch: <b>E</b> để dán, thả, phóng, phẩy · <b>Q</b> gấp</li><li><b>R</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>H</b> gợi ý · <b>Esc</b> tạm dừng</li><li>Tiến độ tự lưu sau mỗi màn.</li></ul>`}</div></div>
 <div class="toast" id="toast" style="opacity:0"></div><div class="endT" id="endT"></div>
 <div class="xoay" id="xoay"><div class="dt"></div><p>Xoay ngang điện thoại để chơi</p></div>`);
 document.body.insertAdjacentHTML('beforeend', '<div class="fade" id="fade"></div>');
 const $ = id => document.getElementById(id);
-const titleEl = $('title'), fflyEl = $('ffly'), relicEl = $('relic'), capEl = $('cap'), skipEl = $('skip'), barT = $('barT'), barB = $('barB'), hintEl = $('hint'), memoEl = $('memo');
+const grabB = $('grabB'), titleEl = $('title'), fflyEl = $('ffly'), relicEl = $('relic'), capEl = $('cap'), skipEl = $('skip'), barT = $('barT'), barB = $('barB'), hintEl = $('hint'), memoEl = $('memo');
 const TRAY_C = ['#C23A28', '#E9A23B', '#2E9C93'];
 function trayLoad(){ try { return JSON.parse(localStorage.getItem('phocu.tray') || '[]'); } catch(e){ return []; } }
 function trayShow(){ const tr = trayLoad(); for(let i=0;i<3;i++) $('t'+(i+1)).style.background = tr.includes(i+1) ? TRAY_C[i] : ''; }
@@ -814,9 +814,10 @@ function setPause(on){ if(P.won && on) return; paused = on; $('pause').style.dis
 $('menuB').onclick = ()=>setPause(!paused);
 $('pGo').onclick = ()=>setPause(false);
 $('pAgain').onclick = ()=>{ location.hash = 'choi'; location.reload(); };
+if(!document.documentElement.requestFullscreen || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true) $('pFull').style.display = 'none';
 $('pFull').onclick = ()=>{ const d = document; if(d.fullscreenElement) d.exitFullscreen(); else if(d.documentElement.requestFullscreen) d.documentElement.requestFullscreen().catch(()=>{}); setPause(false); };
 $('pHome').onclick = e=>{ e.preventDefault(); goTo('../index.html'); };
-function bars(on){ barT.classList.toggle('off', !on); barB.classList.toggle('off', !on); }
+function bars(on){ barT.classList.toggle('off', !on); barB.classList.toggle('off', !on); stage.classList.toggle('cine', on); }
 function caption(t){ if(t){ if(capEl.textContent !== t) capEl.textContent = t; capEl.style.opacity = 1; } else capEl.style.opacity = 0; }
 
 // ---------- colour zones: each room fades from grey to colour when it is solved; the sky follows the share of rooms in colour ----------
@@ -958,7 +959,12 @@ let toSay = '', toSayT = 0, sayNext = null;
 function say(t, dur){ toSay = t; toSayT = dur || 2.2; }
 // story beats: an objective line, and short locked camera moves that show what changed and what comes next
 let OBJ = '', nowT = 0, lastProgT = 0, hintT = 0;
-function objective(t){ lastProgT = nowT; if(OBJ === t) return; OBJ = t; titleEl.textContent = t; titleEl.classList.remove('pop'); void titleEl.offsetWidth; titleEl.classList.add('pop'); }
+// on a phone there is no keyboard: hints and goals name the on-screen buttons instead (E is the yellow button, whose label follows what it does)
+function grabLabel(){ return P.grab ? 'Buông' : held.on ? 'Dùng' : 'Bóc'; }
+// a key is a lone capital letter: \b would also match the R of "Rãnh", so look for letters on either side, Vietnamese ones included
+const KEY_RE = /(?<!\p{L})[EQRH](?!\p{L})/gu, KEY_BTN = {Q:'Gấp', R:'↺', H:'?'};
+function keysTxt(t){ return MOBILE && t ? t.replace(KEY_RE, k=>KEY_BTN[k] || grabLabel()) : t; }
+function objective(t){ lastProgT = nowT; if(OBJ === t) return; OBJ = t; titleEl.textContent = keysTxt(t); titleEl.classList.remove('pop'); void titleEl.offsetWidth; titleEl.classList.add('pop'); }
 const seq = []; let cur = null, winReady = false;
 function play(steps){ for(const st of steps) seq.push(st); }
 function busy(){ return !!cur || seq.length > 0; }
@@ -1411,6 +1417,16 @@ function place(el, obj, dy, text){
   el.style.left = ((tmpV.x + 1)/2*stage.clientWidth) + 'px'; el.style.top = ((1 - tmpV.y)/2*stage.clientHeight) + 'px';
   if(el.textContent !== text) el.textContent = text; el.style.opacity = 1;
 }
+// two people talking side by side: lift the higher bubble clear of the lower one instead of drawing them on top of each other
+function unstack(){
+  const on = talkers.filter(k=>k.d.style.opacity === '1').map(k=>({d:k.d, y:parseFloat(k.d.style.top)})).sort((a, b)=>b.y - a.y);
+  const done = [];
+  for(const b of on){
+    let r = b.d.getBoundingClientRect();
+    for(const o of done) if(r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top){ b.d.style.top = (parseFloat(b.d.style.top) - (r.bottom - o.top) - 4) + 'px'; r = b.d.getBoundingClientRect(); }
+    done.push(r);
+  }
+}
 function animate(dt, t){
   nowT = t; runSeq(dt);
   if(LV.update) LV.update(dt, t);
@@ -1424,6 +1440,7 @@ function animate(dt, t){
   if(toSayT > 0) toSayT -= dt;
   if(toSayT <= 0 && sayNext){ say(sayNext[0], sayNext[1]); sayNext = null; }
   for(const k of talkers) place(k.d, k.obj, k.dy, k.fn());
+  unstack();
   if(!P.won && !busy() && hintT <= 0 && t - lastProgT > 25){ hintT = 6; lastProgT = t; }
   // short control prompts always; the fuller hint only when H is pressed or Tò has been stuck a while
   if(hintT > 0) hintT -= dt;
@@ -1434,7 +1451,8 @@ function animate(dt, t){
   else if(near) h = near.locked ? 'E để thử bóc' : 'E để nắm mép';
   else if(stackNear() && !stackNear().solved) h = 'R để dán lại tờ vừa bóc';
   else if(hintT > 0) h = LV.hint();
-  hintEl.textContent = h; hintEl.style.opacity = h ? 1 : 0;
+  h = keysTxt(h); if(hintEl.textContent !== h) hintEl.textContent = h; hintEl.style.opacity = h ? 1 : 0;
+  if(MOBILE){ const g = grabLabel(); if(grabB.textContent !== g) grabB.textContent = g; }
 }
 
 // ---------- intro (each level writes its own; this runs the captions and the skip) ----------
