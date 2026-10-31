@@ -774,7 +774,7 @@ const LV = {start:{x:0, y:0}, bounds:[-5, 100], cam:[4, 96], sky:[], hint:()=>''
 
 // ---------- HUD, shared by every level ----------
 stage.insertAdjacentHTML('beforeend', `
-<div class="hud"><span class="hudL"><button class="menuB" id="menuB" title="Tạm dừng (Esc)" aria-label="Tạm dừng">❚❚</button><span class="pill" id="title"></span></span><span class="hudR"><span class="pill" id="hand" style="display:none"></span><span class="pill" id="ffly">Đom đóm 0/5</span><span class="pill" id="relic" title="Con tò he cũ giấu trong màn">Tò he cũ 0/1</span><span class="pill tray" title="Khay tò he của bà Năm">Khay của bà <i id="t1"></i><i id="t2"></i><i id="t3"></i></span></span></div>
+<div class="hud"><span class="hudL"><button class="menuB" id="menuB" title="Tạm dừng (Esc)" aria-label="Tạm dừng">❚❚</button><span class="pill" id="title"></span></span><span class="hudR"><span class="pill" id="hand" style="display:none"></span><span class="pill wet" id="wet" style="display:none" title="Tò là bột gạo, ướt quá là nhũn">Ướt <b><i id="wetB"></i></b></span><span class="pill" id="ffly">Đom đóm 0/5</span><span class="pill" id="relic" title="Con tò he cũ giấu trong màn">Tò he cũ 0/1</span><span class="pill tray" title="Khay tò he của bà Năm">Khay của bà <i id="t1"></i><i id="t2"></i><i id="t3"></i></span></span></div>
 <div class="bars t off" id="barT"></div><div class="bars b off" id="barB"></div>
 <div class="cap" id="cap"></div><div class="skip" id="skip" style="opacity:0">Space hoặc chạm để bỏ qua</div>
 <div class="hint" id="hint"></div>
@@ -794,7 +794,7 @@ function trayShow(){ const tr = trayLoad(); for(let i=0;i<3;i++) $('t'+(i+1)).st
 function traySet(n){ const tr = trayLoad(); if(!tr.includes(n)) tr.push(n); try { localStorage.setItem('phocu.tray', JSON.stringify(tr)); } catch(e){} trayShow(); }
 trayShow();
 // ---------- progress: one save for the whole game, so the title screen can offer "Chơi tiếp" ----------
-const LEVEL_URL = [null, '../man-1/index.html', '../man-2/index.html', '../man-3/index.html'];
+const LEVEL_URL = [null, '../man-1/index.html', '../man-2/index.html', '../man-3/index.html', '../man-4/index.html'];
 function saveGet(){ try { return JSON.parse(localStorage.getItem('phocu.save') || '{}') || {}; } catch(e){ return {}; } }
 function savePut(o){ try { localStorage.setItem('phocu.save', JSON.stringify(Object.assign(saveGet(), o))); } catch(e){} }
 function relicSave(n){ try { const r = JSON.parse(localStorage.getItem('phocu.relic') || '[]'); if(!r.includes(n)) r.push(n); localStorage.setItem('phocu.relic', JSON.stringify(r)); } catch(e){} }
@@ -826,7 +826,8 @@ function zonesTick(dt){
 // ---------- level geometry the player collides with ----------
 const solids = [], blocks = [], hazards = [], winds = [];
 // one-way top: Tò lands on it from above and walks through it from below. safe: landing here moves the "về chỗ an toàn" point
-function plat(x0, x1, top, oneway, on, o){ const p = {x0, x1, top, on:on||(()=>true), safe:!!(o && o.safe)}; solids.push(p); return p; }
+// bounce: landing on it throws Tò back up at that speed (an open umbrella)
+function plat(x0, x1, top, oneway, on, o){ const p = {x0, x1, top, on:on||(()=>true), safe:!!(o && o.safe), bounce:o && o.bounce, onBounce:o && o.onBounce}; solids.push(p); return p; }
 // a solid box: blocks walking from either side and can be stood on
 function block(x0, x1, y0, y1, on){ const b = {x0, x1, y0, y1, on:on||(()=>true)}; blocks.push(b); b.topP = plat(x0, x1, y1, false, ()=>b.on()); return b; }
 // falling below y between x0..x1 (water, a gap) puts Tò back on the last safe spot
@@ -1028,21 +1029,27 @@ function standingOn(x, yPrev, yNew){
   for(const s of solids){
     if(!s.on()) continue;
     if(x + P.w/2 - .08 < s.x0 || x - P.w/2 + .08 > s.x1) continue;
-    if(yPrev >= s.top - .02 && yNew <= s.top + .001){ if(!best || s.top > best.top) best = s; }
+    // on a tie the safe one wins, so a dry spot drawn over a longer floor still counts
+    if(yPrev >= s.top - .02 && yNew <= s.top + .001){ if(!best || s.top > best.top || (s.top === best.top && s.safe && !best.safe)) best = s; }
   }
   return best;
 }
 function respawn(msg){ say(msg, 2.4); P.x = P.check.x; P.y = P.check.y; P.vx = P.vy = 0; release(); }
 
 // ---------- hands: carry a peeled page, paste it over a dotted slot, or fold it into a boat, a plane or a fan ----------
-const FORMS = {thuyen:'thuyền', maybay:'máy bay', quat:'quạt'};
+const FORMS = {thuyen:'thuyền', maybay:'máy bay', quat:'quạt', non:'nón'};
 const learned = [];
-const held = {on:false, form:null, src:null};
+const held = {on:false, form:null, src:null, wear:1};
 const handEl = $('hand');
 const heldG = new THREE.Group(); heldG.position.set(0, 1.05, .95); toInner.add(heldG);
 ZONE = '0';
 const HELD = {paper:new THREE.Group(), thuyen:new THREE.Group(), maybay:new THREE.Group(), quat:new THREE.Group()};
 for(const k in HELD){ HELD[k].visible = false; heldG.add(HELD[k]); }
+// a paper nón sits on Tò's head, not in his hands (Màn 4: walking in the rain)
+HELD.non = new THREE.Group(); HELD.non.position.set(0, 3.95, .05); HELD.non.rotation.x = -.12; HELD.non.visible = false; toInner.add(HELD.non);
+(function(){ const m = mesh(HELD.non, new THREE.ConeGeometry(1.45, .95, 20, 1, true), '#F4EFE4', {ow:.04}); m.material.side = THREE.DoubleSide;
+  for(let i=0;i<3;i++) mesh(HELD.non, new THREE.TorusGeometry(.42 + i*.38, .025, 4, 24), '#C9B994', {pos:new THREE.Vector3(0, .26 - i*.25, 0), rot:[Math.PI/2, 0, 0], outline:false});
+  mesh(HELD.non, new THREE.TorusGeometry(1.0, .03, 4, 24, Math.PI), '#C23A28', {pos:new THREE.Vector3(0, -.4, .2), rot:[.25, 0, Math.PI], outline:false}); })();
 (function(){
   const pm = toon('#E9E4DA'); const pg = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.2), pm); pm.side = THREE.DoubleSide; HELD.paper.add(pg); HELD.paper.rotation.x = -.3;
   const ol = new THREE.Mesh(new THREE.PlaneGeometry(1.08, 1.28), new THREE.MeshBasicMaterial({color:'#141019', side:THREE.DoubleSide})); ol.position.z = -.01; HELD.paper.add(ol);
@@ -1061,7 +1068,7 @@ function showHeld(){
 }
 function takeHeld(s){
   if(held.on && held.src && held.src !== s && held.src.respawn) later(1.5, ((q)=>()=>resetSheet(q))(held.src));
-  held.on = true; held.form = null; held.src = s; showHeld();
+  held.on = true; held.form = null; held.src = s; held.wear = 1; showHeld();
 }
 function dropHeld(){ const s = held.src; held.on = false; held.form = null; held.src = null; showHeld(); if(s && s.respawn) later(2, ()=>resetSheet(s)); }
 function fold(){
@@ -1085,6 +1092,7 @@ function useHeld(){
   }
   if(f === 'maybay'){ throwPlane(); dropHeld(); return; }
   if(f === 'quat') waveFan();
+  if(f === 'non') say(held.wear > .5 ? 'Đội nón rồi, đi mưa được một lúc.' : 'Nón sắp nhũn rồi, tìm chỗ trú đi!', 1.8);
 }
 
 // dotted slots where a carried page can be pasted (a leak, a gap in the wind)
@@ -1160,6 +1168,64 @@ function timersTick(dt){ for(let i = timers.length - 1; i >= 0; i--){ timers[i].
 function resetSheet(s){ s.L = 0; s.p = 0; s.done = false; s.full = false; sheetVis(s, true); updSheet(s); }
 // Tò's star lantern: a warm light that follows him (Màn 3)
 const toLight = new THREE.PointLight('#FFD58A', 0, 11, 1.4); scene.add(toLight);
+// ---------- rain (Màn 4): open sky wets Tò and washes his colour out; anything over his head keeps him dry ----------
+// LV.rain(x, y) says where rain falls; LV.wetT = seconds in the open before he goes soggy; LV.nonT = seconds a paper nón lasts
+const rain = {k:0, wet:0, open:false};
+const wetEl = $('wet'), wetB = $('wetB');
+function covered(){
+  for(const s of solids){
+    if(!s.on() || s === P.on || P.x < s.x0 + .15 || P.x > s.x1 - .15) continue;
+    if(s.top > P.y + 1.3 && s.top < P.y + 9) return true;
+  }
+  // a calendar sheet pulled up over his head is a little roof too
+  for(const s of sheets) if(s.dir === 'y' && !s.done && s.p > .25 && P.x > s.x0 && P.x < s.x1){ const e = s.y0 + s.p; if(e > P.y + 1.1 && e < P.y + 4.5) return true; }
+  return false;
+}
+function wetTick(dt){
+  if(!LV.rain) return;
+  wetEl.style.display = '';
+  rain.open = rain.k > .3 && LV.rain(P.x, P.y) && !covered();
+  if(P.won || busy()) rain.wet = Math.max(0, rain.wet - dt);
+  else if(rain.open && held.on && held.form === 'non'){
+    held.wear -= dt/(LV.nonT || 7); rain.wet = Math.max(0, rain.wet - dt*.3);
+    if(held.wear <= 0){ say('Nón nhũn mất rồi!', 1.8); dropHeld(); }
+  }
+  else if(rain.open){ rain.wet += dt/(LV.wetT || 2.8); lastProgT = nowT; }
+  else rain.wet = Math.max(0, rain.wet - dt/1.1);
+  if(rain.wet >= 1){ rain.wet = 0; respawn('Ướt nhũn rồi! Tò là bột gạo mà…'); }
+  else if(rain.wet > .55 && toSayT <= 0 && rain.open) say('Ướt quá! Tìm chỗ trú!', 1.2);
+  wetB.style.width = Math.round(rain.wet*100) + '%'; wetEl.classList.toggle('hot', rain.wet > .55);
+  setZone('0', 1 - rain.wet*.75);
+}
+// streaks around the camera: a near band in front of the shelters and a far band behind the street
+const RAIN_N = 900, rainP = new Float32Array(RAIN_N*6), rainS = [];
+const rainGeo = new THREE.BufferGeometry(); rainGeo.setAttribute('position', new THREE.BufferAttribute(rainP, 3));
+const rainLines = new THREE.LineSegments(rainGeo, new THREE.LineBasicMaterial({color:'#DCE6F2', transparent:true, opacity:0, depthWrite:false}));
+rainLines.frustumCulled = false; rainLines.visible = false; scene.add(rainLines);
+for(let i=0;i<RAIN_N;i++) rainS.push({x:Math.random()*44, y:Math.random()*20, z:i%3 ? 1.9 + Math.random()*5 : -9 + Math.random()*5, v:16 + Math.random()*6});
+// drops that run off Tò while he is wet
+const dripP = new Float32Array(24*3), drips = []; const dripGeo = new THREE.BufferGeometry(); dripGeo.setAttribute('position', new THREE.BufferAttribute(dripP, 3));
+const dripPts = new THREE.Points(dripGeo, new THREE.PointsMaterial({map:dotTex, color:'#BFE3FF', size:.22, transparent:true, depthWrite:false})); dripPts.frustumCulled = false; scene.add(dripPts);
+for(let i=0;i<24;i++) drips.push({x:0, y:-99, vy:0});
+let rainLast = 0;
+function rainTick(t){
+  const dt = Math.min(.05, t - rainLast); rainLast = t;
+  if(!LV.rain){ return; }
+  rainLines.visible = rain.k > .01; rainLines.material.opacity = .5*rain.k;
+  const cx = camera.position.x, cy = camLook.y;
+  for(let i=0;i<RAIN_N;i++){
+    const d = rainS[i]; if(!paused && !hook.pause) d.y -= d.v*dt; if(d.y < -1) d.y += 21;
+    const x = cx - 22 + ((d.x + d.y*.12) % 44 + 44) % 44, y = cy - 7 + d.y, j = i*6;
+    rainP[j] = x; rainP[j+1] = y; rainP[j+2] = d.z; rainP[j+3] = x - .08; rainP[j+4] = y + .7; rainP[j+5] = d.z;
+  }
+  rainGeo.attributes.position.needsUpdate = true;
+  for(let i=0;i<drips.length;i++){
+    const d = drips[i];
+    if(d.y < P.y - .2 && rain.wet > .08 && Math.random() < rain.wet*.35){ d.x = P.x + (Math.random() - .5)*.9; d.y = P.y + .6 + Math.random()*1.2; d.vy = 0; }
+    d.vy -= 14*dt; d.y += d.vy*dt; dripP[i*3] = d.x; dripP[i*3+1] = d.y; dripP[i*3+2] = .7;
+  }
+  dripGeo.attributes.position.needsUpdate = true;
+}
 function step(dt, t){
   let dir = (keys.right?1:0) - (keys.left?1:0);
   if(P.won || busy()){ dir = 0; jumpQueued = false; grabQueued = false; if(P.grab) release(); }
@@ -1184,9 +1250,10 @@ function step(dt, t){
   if(!P.grab){
     if(grabQueued && P.ground){
       // holding a page but standing at another edge with no slot to paste into: put the page down and take hold of the edge
-      const ns = held.on && !nearSlot() && nearSheet();
+      // a nón stays on his head, so his hands are free to peel
+      const hands = held.on && held.form !== 'non', ns = hands && !nearSlot() && nearSheet();
       if(ns && !ns.locked){ dropHeld(); say('Bỏ tờ đang cầm xuống.', 1); grab(ns); }
-      else if(held.on) useHeld();
+      else if(hands || (held.on && !nearSheet())) useHeld();
       else { const s = nearSheet(); if(s){ if(s.locked){ if(s.onLocked) s.onLocked(s); } else grab(s); } else if(LV.use) LV.use(); }
     }
     const target = dir*SPEED;
@@ -1210,8 +1277,10 @@ function step(dt, t){
   P.on = st;
   if(st){ ny = st.top; P.vy = 0; P.ground = true; if(st.safe) P.check = {x:Math.max(st.x0 + .7, Math.min(st.x1 - .7, nx)), y:st.top}; }
   else P.ground = false;
+  if(st && st.bounce && vyIn < -3){ P.vy = st.bounce; P.ground = false; P.on = null; ny = st.top + .02; if(st.onBounce) st.onBounce(); }
   P.x = nx; P.y = ny;
   if(st && !wasGround && vyIn < -9) wakeNear(P.x, P.y);
+  wetTick(dt);
   for(const h of hazards) if(P.y < h.y && P.x > h.x0 && P.x < h.x1){ respawn(h.msg); break; }
   for(const c of channels) if(P.x > c.x0 && P.x < c.x1 && P.y < Math.max(c.floor + .5, c.level - .25) && P.on !== boat.plat){ respawn(c.level > c.floor + .45 ? 'Á! Nước! Tò sợ nước lắm!' : 'Rãnh sâu quá!'); break; }
   // Lũ Bụi bump Tò back
@@ -1308,10 +1377,10 @@ function poseTo(dt, t){
   toInner.rotation.z = moving ? Math.sin(P.walkT)*.08 : 0;
   TO.legs[0].position.z = .08 + (moving ? Math.sin(P.walkT)*.25 : 0); TO.legs[1].position.z = .08 - (moving ? Math.sin(P.walkT)*.25 : 0);
   for(const [i, a] of TO.arms.entries()){
-    const target = P.grab ? (P.grab.dir === 'x' ? -1.3 : -2.6) : held.on ? -1.2 : (P.ground ? (moving ? Math.sin(P.walkT + i*Math.PI)*.5 : 0) : -2.2);
+    const target = P.grab ? (P.grab.dir === 'x' ? -1.3 : -2.6) : held.on && held.form !== 'non' ? -1.2 : (P.ground ? (moving ? Math.sin(P.walkT + i*Math.PI)*.5 : 0) : -2.2);
     a.rotation.x += (target - a.rotation.x)*Math.min(1, dt*12);
   }
-  TO.body.scale.y = .95*(1 + (P.ground ? 0 : .06));
+  TO.body.scale.y = .95*(1 + (P.ground ? 0 : .06))*(1 - rain.wet*.14);
 }
 function place(el, obj, dy, text){
   if(!text){ el.style.opacity = 0; return; }
@@ -1338,7 +1407,7 @@ function animate(dt, t){
   let h = '';
   if(P.won || busy()) h = '';
   else if(P.grab) h = P.grab.dir === 'x' ? 'Đi lùi để kéo · E để buông' : 'Đi lùi để kéo mép lên · E để buông, mép giấy thành gờ';
-  else if(held.on) h = held.form ? (held.form === 'thuyen' ? 'E để thả thuyền xuống nước · Q đổi kiểu gấp' : held.form === 'maybay' ? 'E để phóng máy bay · Q đổi kiểu gấp' : 'E để phẩy quạt · Q đổi kiểu gấp') : (nearSlot() ? 'E để dán vào ô viền chấm' : learned.length ? 'Q để gấp tờ lịch' : 'Tìm ô viền chấm để dán');
+  else if(held.on) h = held.form ? (held.form === 'thuyen' ? 'E để thả thuyền xuống nước · Q đổi kiểu gấp' : held.form === 'maybay' ? 'E để phóng máy bay · Q đổi kiểu gấp' : held.form === 'non' ? 'Đang đội nón giấy, đi mưa được một lúc · Q đổi kiểu gấp' : 'E để phẩy quạt · Q đổi kiểu gấp') : (nearSlot() ? 'E để dán vào ô viền chấm' : learned.length ? 'Q để gấp tờ lịch' : 'Tìm ô viền chấm để dán');
   else if(near) h = near.locked ? 'E để thử bóc' : 'E để nắm mép';
   else if(stackNear() && !stackNear().solved) h = 'R để dán lại tờ vừa bóc';
   else if(hintT > 0) h = LV.hint();
@@ -1395,7 +1464,7 @@ function loop(now){
   const dt = Math.min(.033, (now - last)/1000); last = now; const t = now/1000;
   if(!hook.pause && !paused){ if(intro.on) runIntro(dt, t); else { step(dt, t); animate(dt, t); } }
   if(P.won && winReady && $('win').style.display !== 'flex') showWin();
-  atmosphere(t); skyDome.position.copy(camera.position);
+  atmosphere(t); rainTick(t); skyDome.position.copy(camera.position);
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
@@ -1405,7 +1474,7 @@ const hook = window.__game = {pause:false, P, keys, sheets, buis, LV, zoneK,
   skipIntro:()=>{ if(intro.on) endIntro(); }, introTick:(n)=>{ for(let i=0;i<n && intro.on;i++){ simT += 1/60; runIntro(1/60, simT); } },
   tick:(n)=>{ for(let i=0;i<n;i++){ simT += 1/60; step(1/60, simT); animate(1/60, simT); } },
   tp:(x, y)=>{ P.x = x; P.y = y; P.vx = P.vy = 0; },
-  get flies(){ return fliesGot; }, held, learned, boat, channels, fold, slots, targets, get relic(){ return relicGot; }, get info(){ return renderer.info.render; }, get busy(){ return busy(); }, get objective(){ return OBJ; }, get won(){ return P.won; }, get winReady(){ return winReady; }};
+  get flies(){ return fliesGot; }, held, learned, boat, channels, fold, slots, targets, rain, get relic(){ return relicGot; }, get info(){ return renderer.info.render; }, get busy(){ return busy(); }, get objective(){ return OBJ; }, get won(){ return P.won; }, get winReady(){ return winReady; }};
 function startGame(){
   savePut({man: LV.level, max: Math.max(saveGet().max || 1, LV.level)});
   requestAnimationFrame(()=>requestAnimationFrame(()=>$('fade').classList.add('out')));

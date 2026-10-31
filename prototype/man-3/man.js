@@ -748,13 +748,13 @@ LV.hint = ()=>{
 LV.winText = ()=>{
   const r = relicsAll();
   return {
-    h:'Hết rồi. Cảm ơn bạn đã chơi!',
+    h:'Hết chương 1. Cảm ơn bạn đã chơi!',
     p:'Đêm Rằm, đồng hồ chạy lại, bà Năm có màu trở lại, khay tò he của bà đủ ba màu.',
     memory:(fliesGot === 5
       ? '<b>Ký ức mở khoá.</b> Năm 1985, thằng Tư mười tuổi ăn chè không tiền ở quán cô Hai, rồi chạy ra sạp bà Năm xin nặn con rồng. Bà nặn cho, dặn: “Giữ giờ cho cả phố nghe con.” Từ đó Tư lên dây cót tháp đồng hồ mỗi tuần.'
       : 'Còn ' + (5 - fliesGot) + ' con đom đóm ở Màn 3 chưa tìm thấy.')
       + '<br><b>Tò he cũ tìm được:</b> ' + r + '/3. ' + (r === 3 ? 'Bà Năm gọi được tên cả ba người.' : 'Tìm đủ cả ba con thì bà Năm gọi được tên cả ba người.'),
-    next:'Phố Cũ Bạc Màu · một game của Mark học AI'
+    next:'Chương 2 · Mưa phố (bản thử) đang chờ bên kia sông'
   };
 };
 
