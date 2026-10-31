@@ -1,12 +1,14 @@
 {
   "name": "Phố Cũ Bạc Màu",
   "short_name": "Phố Cũ",
+  "id": "/",
   "description": "Bóc lớp xám khỏi một con phố Việt để trả lại màu. Bản chơi thử.",
   "lang": "vi",
   "start_url": "/",
   "scope": "/",
   "display": "fullscreen",
   "orientation": "landscape",
+  "categories": ["games"],
   "background_color": "#e9e4dc",
   "theme_color": "#c8553d",
   "icons": [
