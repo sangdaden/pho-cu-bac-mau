@@ -2,9 +2,13 @@
 // ================= renderer & scene =================
 const stage = document.getElementById('stage');
 const canvas = document.getElementById('c');
+// phones get a lighter start (smaller canvas, smaller shadow map); quality() trims the canvas further if frames run slow
+const MOBILE = matchMedia('(pointer:coarse)').matches;
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+let DPR_MAX = Math.min(window.devicePixelRatio, MOBILE ? 1.5 : 2);
+try { const d = +localStorage.getItem('phocu.dpr'); if(d) DPR_MAX = Math.min(DPR_MAX, d); } catch(e){}
+renderer.setPixelRatio(DPR_MAX);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = MOBILE ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
 const scene = new THREE.Scene();
 const SKY_GREY = new THREE.Color('#CFCBC7'), SKY_COL = new THREE.Color('#F2C9A0');
@@ -13,7 +17,7 @@ scene.fog = new THREE.Fog(SKY_GREY.clone(), 34, 120);
 const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 200);
 scene.add(new THREE.HemisphereLight('#FFF6EA', '#B9AFA6', 0.62));
 const sun = new THREE.DirectionalLight('#FFFFFF', 0.62);
-sun.castShadow = true; sun.shadow.mapSize.set(2048,2048);
+sun.castShadow = true; sun.shadow.mapSize.setScalar(MOBILE ? 1024 : 2048);
 const sc = sun.shadow.camera; sc.left=-16; sc.right=16; sc.top=12; sc.bottom=-6; sc.near=1; sc.far=60;
 sun.shadow.bias = -0.0008; scene.add(sun); scene.add(sun.target);
 
@@ -784,7 +788,8 @@ stage.insertAdjacentHTML('beforeend', `
 <div class="win" id="win"><div class="card"><h2 id="winH"></h2><p id="winP"></p><div class="memory" id="memory"></div><p class="next" id="winNext"></p><div class="btns" id="winB"></div></div></div>
 <div class="over" id="pause"><div class="card"><h2>Tạm dừng</h2><div class="btns"><button class="btn" id="pGo">Chơi tiếp</button><button class="btn alt" id="pAgain">Chơi lại màn này</button><button class="btn alt" id="pFull">Toàn màn hình</button><a class="btn alt" href="../index.html" id="pHome">Về màn hình chính</a></div>
 <ul class="keyl"><li><b>←</b> <b>→</b> đi · <b>↑</b> hoặc <b>Space</b> nhảy</li><li><b>E</b> nắm mép sáng rồi đi lùi để bóc · <b>E</b> lần nữa để buông</li><li>Đang cầm tờ lịch: <b>E</b> để dán, thả, phóng, phẩy · <b>Q</b> gấp</li><li><b>R</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>H</b> gợi ý · <b>Esc</b> tạm dừng</li><li>Tiến độ tự lưu sau mỗi màn.</li></ul></div></div>
-<div class="toast" id="toast" style="opacity:0"></div><div class="endT" id="endT"></div>`);
+<div class="toast" id="toast" style="opacity:0"></div><div class="endT" id="endT"></div>
+<div class="xoay" id="xoay"><div class="dt"></div><p>Xoay ngang điện thoại để chơi</p></div>`);
 document.body.insertAdjacentHTML('beforeend', '<div class="fade" id="fade"></div>');
 const $ = id => document.getElementById(id);
 const titleEl = $('title'), fflyEl = $('ffly'), relicEl = $('relic'), capEl = $('cap'), skipEl = $('skip'), barT = $('barT'), barB = $('barB'), hintEl = $('hint'), memoEl = $('memo');
@@ -1003,12 +1008,30 @@ addEventListener('keydown', e=>{
 addEventListener('keyup', e=>{ const k = KM[e.code]; if(k) keys[k] = false; });
 document.querySelectorAll('.pad button').forEach(b=>{
   const k = b.dataset.k;
+  if(k === 'left' || k === 'right') return;
   const on = e=>{ e.preventDefault(); if(intro.on){ endIntro(); return; } if(k === 'hint'){ hintT = 6; return; } if(k === 'back'){ back(); return; } if(k === 'fold'){ fold(); return; }
     if(k === 'jump' && !keys.jump) jumpQueued = true; if(k === 'grab' && !keys.grab) grabQueued = true; keys[k] = true; b.classList.add('on'); };
   const off = e=>{ e.preventDefault(); if(k in keys) keys[k] = false; b.classList.remove('on'); };
   b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
 });
+// ◀ ▶ share one finger: sliding across switches direction without lifting it, like a real d-pad
+const padL = document.querySelector('.pad.l'), dirB = [...padL.querySelectorAll('[data-k=left],[data-k=right]')];
+let dirId = null;
+function dirSet(k){ keys.left = k === 'left'; keys.right = k === 'right'; for(const b of dirB) b.classList.toggle('on', b.dataset.k === k); }
+function dirAt(x){ return x < (dirB[0].getBoundingClientRect().right + dirB[1].getBoundingClientRect().left)/2 ? 'left' : 'right'; }
+for(const b of dirB) b.addEventListener('pointerdown', e=>{ e.preventDefault(); if(intro.on){ endIntro(); return; } dirId = e.pointerId; try { padL.setPointerCapture(e.pointerId); } catch(_){} dirSet(b.dataset.k); });
+padL.addEventListener('pointermove', e=>{ if(e.pointerId === dirId) dirSet(dirAt(e.clientX)); });
+for(const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) padL.addEventListener(ev, e=>{ if(e.pointerId === dirId){ dirId = null; dirSet(null); } });
 canvas.addEventListener('pointerdown', ()=>{ canvas.focus(); if(intro.on) endIntro(); });
+stage.addEventListener('contextmenu', e=>e.preventDefault());
+// in a phone browser the address bar eats a big slice of a landscape screen: the first touch asks for full screen and holds it landscape
+// (an installed app already opens full screen; iPhone Safari has no full screen for pages, so there it is a no-op)
+const STANDALONE = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+function fullLandscape(){
+  const d = document.documentElement;
+  if(d.requestFullscreen && !document.fullscreenElement) d.requestFullscreen({navigationUI:'hide'}).then(()=>{ if(screen.orientation && screen.orientation.lock) return screen.orientation.lock('landscape'); }).catch(()=>{});
+}
+if(MOBILE && !STANDALONE) addEventListener('pointerdown', fullLandscape, {once:true, capture:true});
 
 // ---------- Tò ----------
 const S = 0.55;  // Tò is small: the street should feel big
@@ -1459,8 +1482,24 @@ function resize(){
   camera.fov = w < 640 ? 46 : 34; camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize);
+// held upright on a phone the street is too narrow to read and the pads cover it: pause and ask to turn the phone
+const PORTRAIT = matchMedia('(orientation:portrait) and (pointer:coarse)');
+function portraitCheck(){ if(PORTRAIT.matches && !paused) setPause(true); }
+if(PORTRAIT.addEventListener) PORTRAIT.addEventListener('change', portraitCheck); else PORTRAIT.addListener(portraitCheck);
+// frame-rate guard: every 2 s, if frames average slower than ~45 fps, render a smaller canvas (never below 0.75) and remember it for the next level
+let qT = 0, qN = 0, qWait = 3;
+function quality(ms){
+  if(ms > 250) return;  // tab was hidden or the page stalled loading: not a fair sample
+  if(qWait > 0){ qWait -= ms/1000; return; }
+  qT += ms; qN++;
+  if(qT < 2000) return;
+  const avg = qT/qN; qT = qN = 0;
+  const r = renderer.getPixelRatio();
+  if(avg > 22 && r > .76){ const n = Math.max(.75, r - .25); renderer.setPixelRatio(n); resize(); qWait = 1; try { localStorage.setItem('phocu.dpr', n); } catch(e){} }
+}
 let last = performance.now();
 function loop(now){
+  quality(now - last);
   const dt = Math.min(.033, (now - last)/1000); last = now; const t = now/1000;
   if(!hook.pause && !paused){ if(intro.on) runIntro(dt, t); else { step(dt, t); animate(dt, t); } }
   if(P.won && winReady && $('win').style.display !== 'flex') showWin();
@@ -1484,6 +1523,9 @@ function startGame(){
   camPos.set(P.x - 3, 5.7, 18.5); camLook.set(P.x, 2.8, -1);
   if(LV.intro && location.hash !== '#choi'){ intro.on = true; bars(true); skipEl.style.opacity = 1; }
   else endIntro();
+  portraitCheck();
   requestAnimationFrame(loop);
 }
 
+// works offline and installs like an app (Thêm vào màn hình chính): see /sw.js
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) addEventListener('load', ()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));

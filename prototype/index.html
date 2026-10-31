@@ -10,6 +10,10 @@
 <link rel="apple-touch-icon" href="/icon/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#c8553d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Phố Cũ">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Phố Cũ Bạc Màu">
 <meta property="og:locale" content="vi_VN">
@@ -73,6 +77,7 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
     <button class="sm" id="fresh" style="display:none">Chơi từ đầu</button>
     <button class="sm" id="pick" style="display:none">Chọn màn</button>
     <button class="sm" id="how">Cách chơi</button>
+    <button class="sm" id="install" style="display:none">Cài lên điện thoại</button>
   </div>
 </div>
 <div class="foot">Một game của <a href="https://markhocai.com">Mark học AI</a></div>
@@ -89,6 +94,10 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
   </ul>
   <button class="sm" data-close>Đóng</button></div></div>
 <div class="over" id="sure"><div class="card"><h2>Chơi từ đầu?</h2><p>Tiến độ, khay tò he và những con tò he cũ đã tìm được sẽ bị xoá.</p><div class="row"><button class="btn" id="sureY" style="min-width:0">Chơi từ đầu</button><button class="sm" data-close>Thôi</button></div></div></div>
+<div class="over" id="installH"><div class="card"><h2>Cài lên điện thoại</h2>
+  <p>Cài rồi thì game mở toàn màn hình như một app, nằm ngang sẵn, và chơi được cả khi không có mạng.</p>
+  <ul class="keyl" id="installSteps"></ul>
+  <button class="sm" data-close>Đóng</button></div></div>
 <div class="fade" id="fade"></div>
 
 <script>
@@ -126,4 +135,19 @@ addEventListener('keydown', e=>{
 requestAnimationFrame(()=>requestAnimationFrame(()=>$('fade').classList.add('out')));
 addEventListener('pageshow', e=>{ if(e.persisted){ leaving = false; $('fade').classList.add('out'); } });
 $('play').focus();
+// install like an app: Chrome on Android offers its own prompt; iPhone and other browsers get the steps to do it by hand
+const STANDALONE = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let askInstall = null;
+if(!STANDALONE && matchMedia('(pointer:coarse)').matches) $('install').style.display = '';
+addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); askInstall = e; if(!STANDALONE) $('install').style.display = ''; });
+addEventListener('appinstalled', ()=>{ $('install').style.display = 'none'; askInstall = null; });
+$('install').onclick = ()=>{
+  if(askInstall){ askInstall.prompt(); askInstall.userChoice.finally(()=>{ askInstall = null; }); return; }
+  $('installSteps').innerHTML = IOS
+    ? '<li>Mở trang này bằng <b>Safari</b>.</li><li>Bấm nút <b>Chia sẻ</b> (ô vuông có mũi tên lên).</li><li>Chọn <b>Thêm vào MH chính</b>, rồi <b>Thêm</b>.</li>'
+    : '<li>Mở menu <b>⋮</b> của trình duyệt.</li><li>Chọn <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào màn hình chính</b>.</li>';
+  $('installH').style.display = 'flex';
+};
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) addEventListener('load', ()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
 </script>

@@ -4,7 +4,7 @@ Game giải đố đi ngang: Tò, con tò he bột gạo, bóc lớp xám (nhữ
 
 ## Bản chơi thử
 
-Chơi tại https://phocu.markhocai.com. Mỗi lần push lên `main` có sửa `prototype/`, `.github/workflows/pages.yml` đăng lại thư mục này lên GitHub Pages (tên miền trong `prototype/CNAME`).
+Chơi tại https://phocu.markhocai.com. Trên điện thoại bấm "Cài lên điện thoại" ở màn hình chính để cài như app (PWA): mở toàn màn hình, nằm ngang, chơi được khi không có mạng (`prototype/sw.js`). Mỗi lần push lên `main` có sửa `prototype/`, `.github/workflows/pages.yml` đăng lại thư mục này lên GitHub Pages (tên miền trong `prototype/CNAME`).
 
 
 - `prototype/man-1/` — Màn 1 "Mái hiên", chơi trên trình duyệt (Three.js). Mở `index.html`.
