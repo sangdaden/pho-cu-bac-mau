@@ -3,7 +3,7 @@
 // three.js r128 now ships with the game (chung/three.min.js). Fonts never change, so they come from the cache first.
 // the deploy workflow stamps each push into the name, so a phone that opened an older build drops it and caches the new one whole
 const CACHE = 'phocu-__BUILD__';
-const CORE = ['/', '/index.html', '/manifest.webmanifest', '/chung/pho.js', '/chung/pho.css', '/anh/bia.jpg',
+const CORE = ['/', '/index.html', '/manifest.webmanifest', '/chung/pho.js', '/chung/am.js', '/chung/pho.css', '/anh/bia.jpg',
   '/icon/icon-192.png', '/icon/icon-512.png', '/icon/apple-touch-icon.png', '/favicon.ico',
   '/chung/three.min.js'];
 // every level that exists gets cached at install, so a level never opened still plays offline; missing ones just fail quietly

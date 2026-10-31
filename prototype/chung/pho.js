@@ -7,6 +7,9 @@ const MOBILE = matchMedia('(pointer:coarse)').matches;
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 let DPR_MAX = Math.min(window.devicePixelRatio, MOBILE ? 1.5 : 2);
 try { const d = +localStorage.getItem('phocu.dpr'); if(d) DPR_MAX = Math.min(DPR_MAX, d); } catch(e){}
+// Cài đặt → Độ nét: a fixed choice turns the automatic trimming off
+const DPR_FIX = window.AM && AM.set.net ? +AM.set.net : 0;
+if(DPR_FIX) DPR_MAX = Math.min(window.devicePixelRatio, DPR_FIX);
 renderer.setPixelRatio(DPR_MAX);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = MOBILE ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
 renderer.outputEncoding = THREE.sRGBEncoding;
@@ -39,13 +42,38 @@ function toon(hex, keep, o){
   const c = new THREE.Color(hex); const l = 0.299*c.r+0.587*c.g+0.114*c.b;
   m.userData.grey = new THREE.Color(l*0.78+0.17, l*0.76+0.17, l*0.74+0.17).convertSRGBToLinear();
   if(keep) m.color.copy(m.userData.grey);
+  if(!keep && z !== '0' && z !== 'sky') wipe(m, z);
   mats[k] = m; (zoneMats[z] = zoneMats[z] || []).push(m);
-  if(z !== '0' && z !== 'keep') m.color.copy(m.userData.grey);
+  if(z !== '0' && z !== 'keep' && !m.onBeforeCompile.isWipe) m.color.copy(m.userData.grey);
   return m;
 }
 function setZone(z, k){
   zoneK[z] = k;
+  const u = zoneU[z];
+  if(u){ u.k.value = k; return; }
   for(const m of zoneMats[z]||[]) m.color.copy(m.userData.grey).lerp(m.userData.base, k);
+}
+// colour spreads out from where the room was solved instead of fading in everywhere at once: each zone's materials share
+// an origin and a 0..1 amount; the shader keeps grey beyond a ragged circle whose radius grows with the amount.
+// With no origin (the intro, levels that set a zone directly) the amount is a plain fade, as before.
+const zoneU = {};
+const WIPE_R = 30;
+function wipe(m, z){
+  const u = zoneU[z] || (zoneU[z] = {k:{value:zoneK[z] === undefined ? 0 : zoneK[z]}, o:{value:new THREE.Vector2(1e5, 0)}});
+  const grey = {value:m.userData.grey};
+  m.color.copy(m.userData.base);
+  m.onBeforeCompile = sh=>{
+    sh.uniforms.uK = u.k; sh.uniforms.uO = u.o; sh.uniforms.uGrey = grey;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP; uniform float uK; uniform vec2 uO; uniform vec3 uGrey;')
+      .replace('vec4 diffuseColor = vec4( diffuse, opacity );',
+        'float wk = uK;\n' +
+        'if(uO.x < 9e4 && uK < .999){ float d = length(vWP.xy - uO) + sin(vWP.x*1.7 + vWP.y*.9)*.45 + sin(vWP.y*2.3 - vWP.x*.6)*.35;\n' +
+        '  float r = uK*' + WIPE_R + '.0; wk = 1.0 - smoothstep(r - 1.4, r, d); }\n' +
+        'vec4 diffuseColor = vec4( mix(uGrey, diffuse, wk), opacity );');
+  };
+  m.onBeforeCompile.isWipe = true;
 }
 const OUTLINE = new THREE.MeshBasicMaterial({color:'#141019', side:THREE.BackSide});
 const SPH = new THREE.SphereGeometry(1, 28, 20), SPH_S = new THREE.SphereGeometry(1, 14, 10);
@@ -786,8 +814,16 @@ stage.insertAdjacentHTML('beforeend', `
 <div class="pad r"><button data-k="back" class="sm" aria-label="Dán lại tờ vừa bóc">↺</button><button data-k="fold" class="sm">Gấp</button><button class="grab" data-k="grab" id="grabB">Bóc</button><button data-k="jump">⤒</button></div>
 <div class="memo" id="memo"><canvas id="memoC" width="480" height="360"></canvas></div>
 <div class="win" id="win"><div class="card"><h2 id="winH"></h2><p id="winP"></p><div class="memory" id="memory"></div><p class="next" id="winNext"></p><div class="btns" id="winB"></div></div></div>
-<div class="over" id="pause"><div class="card"><h2>Tạm dừng</h2><div class="btns"><button class="btn" id="pGo">Chơi tiếp</button><button class="btn alt" id="pAgain">Chơi lại màn này</button><button class="btn alt" id="pFull">Toàn màn hình</button><a class="btn alt" href="../index.html" id="pHome">Về màn hình chính</a></div>
+<div class="over" id="pause"><div class="card"><h2>Tạm dừng</h2><div class="btns"><button class="btn" id="pGo">Chơi tiếp</button><button class="btn alt" id="pAgain">Chơi lại màn này</button><button class="btn alt" id="pSet">Cài đặt</button><button class="btn alt" id="pFull">Toàn màn hình</button><a class="btn alt" href="../index.html" id="pHome">Về màn hình chính</a></div>
 ${MOBILE ? `<ul class="keyl"><li><b>◀</b> <b>▶</b> đi, trượt ngón để đổi hướng · <b>⤒</b> nhảy</li><li><b>Bóc</b> nắm mép sáng rồi đi lùi để bóc · bấm lần nữa để buông</li><li>Đang cầm tờ lịch: <b>Dùng</b> để dán, thả, phóng, phẩy · <b>Gấp</b> đổi kiểu gấp</li><li><b>↺</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>?</b> gợi ý</li><li>Tiến độ tự lưu sau mỗi màn.</li></ul>` : `<ul class="keyl"><li><b>←</b> <b>→</b> đi · <b>↑</b> hoặc <b>Space</b> nhảy</li><li><b>E</b> nắm mép sáng rồi đi lùi để bóc · <b>E</b> lần nữa để buông</li><li>Đang cầm tờ lịch: <b>E</b> để dán, thả, phóng, phẩy · <b>Q</b> gấp</li><li><b>R</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>H</b> gợi ý · <b>Esc</b> tạm dừng</li><li>Tiến độ tự lưu sau mỗi màn.</li></ul>`}</div></div>
+<div class="over" id="sets"><div class="card"><h2>Cài đặt</h2><div class="sets">
+<label for="sNhac">Nhạc</label><input type="range" id="sNhac" min="0" max="1" step="0.05">
+<label for="sTieng">Tiếng động</label><input type="range" id="sTieng" min="0" max="1" step="0.05">
+<label for="sNet">Độ nét</label><select id="sNet"><option value="">Tự động</option><option value="2">Cao</option><option value="1">Vừa</option><option value="0.75">Thấp (máy yếu)</option></select>
+<label for="sRung">Rung khi bóc</label><input type="checkbox" id="sRung">
+<label for="sChu">Chữ to</label><input type="checkbox" id="sChu">
+<label for="sTrai">Nút cho tay trái</label><input type="checkbox" id="sTrai">
+</div><p class="setsN" id="setsN"></p><div class="btns"><button class="btn" id="sOk">Xong</button></div></div></div>
 <div class="toast" id="toast" style="opacity:0"></div><div class="endT" id="endT"></div>
 <div class="xoay" id="xoay"><div class="dt"></div><p>Xoay ngang điện thoại để chơi</p></div>`);
 document.body.insertAdjacentHTML('beforeend', '<div class="fade" id="fade"></div>');
@@ -817,17 +853,38 @@ $('menuB').onclick = ()=>setPause(!paused);
 $('pGo').onclick = ()=>setPause(false);
 $('pAgain').onclick = ()=>{ location.hash = 'choi'; location.reload(); };
 if(!document.documentElement.requestFullscreen || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true) $('pFull').style.display = 'none';
+// ---------- settings (chung/am.js keeps them) ----------
+$('pSet').onclick = ()=>{
+  if(!window.AM){ toast('Chưa tải được phần cài đặt.'); return; }
+  const S = AM.set; $('sNhac').value = S.nhac; $('sTieng').value = S.tieng; $('sNet').value = S.net || ''; $('sRung').checked = !!S.rung; $('sChu').checked = !!S.chu; $('sTrai').checked = !!S.trai;
+  $('setsN').textContent = ''; $('sets').style.display = 'flex';
+};
+for(const [id, k, num] of [['sNhac', 'nhac', 1], ['sTieng', 'tieng', 1]]) $(id).addEventListener('input', e=>{ AM.start(); AM.change(k, +e.target.value); if(k === 'tieng') AM.play('fly'); });
+for(const [id, k] of [['sRung', 'rung'], ['sChu', 'chu'], ['sTrai', 'trai']]) $(id).addEventListener('change', e=>{ AM.change(k, e.target.checked); if(k === 'rung' && e.target.checked) AM.buzz(40); });
+$('sNet').addEventListener('change', e=>{ AM.change('net', e.target.value); $('setsN').textContent = 'Độ nét mới có hiệu lực khi mở lại màn.'; });
+$('sOk').onclick = ()=>{ $('sets').style.display = 'none'; };
 $('pFull').onclick = ()=>{ const d = document; if(d.fullscreenElement) d.exitFullscreen(); else if(d.documentElement.requestFullscreen) d.documentElement.requestFullscreen().catch(()=>{}); setPause(false); };
 $('pHome').onclick = e=>{ e.preventDefault(); goTo('../index.html'); };
 function bars(on){ barT.classList.toggle('off', !on); barB.classList.toggle('off', !on); stage.classList.toggle('cine', on); }
 function caption(t){ if(t){ if(capEl.textContent !== t) capEl.textContent = t; capEl.style.opacity = 1; } else capEl.style.opacity = 0; }
 
+// ---------- sound: chung/am.js; silent while a run is being replayed ----------
+function sfx(n, v){ if(window.AM && !JR.replay) AM.play(n, v); }
+function buzz(ms){ if(window.AM && !JR.replay) AM.buzz(ms); }
+
 // ---------- colour zones: each room fades from grey to colour when it is solved; the sky follows the share of rooms in colour ----------
 const zoneT = {};
-function colour(z, k){ zoneT[z] = Math.max(zoneT[z]||0, k === undefined ? 1 : k); }
+function colour(z, k){ k = k === undefined ? 1 : k; const was = zoneT[z]||0;
+  if(k > was + .05 && (zoneK[z]||0) < .02 && zoneU[z] ) zoneU[z].o.value.set(P.x, P.y + .6);
+  if(k >= .99 && was < .99 && !intro.on){ sfx('colour'); buzz(25); }
+  zoneT[z] = Math.max(was, k); }
 function zonesTick(dt){
-  for(const z in zoneT){ const c = zoneK[z]||0, t = zoneT[z]; if(Math.abs(t-c) > .001) setZone(z, Math.abs(t-c) < .01 ? t : c + (t-c)*Math.min(1, dt*2.5)); }
+  for(const z in zoneT){ const c = zoneK[z]||0, t = zoneT[z]; if(Math.abs(t-c) <= .001) continue;
+    // a spreading zone grows at a steady pace (about two seconds to the far end); the others ease in as before
+    if(zoneU[z] && zoneU[z].o.value.x < 9e4 && t > c) setZone(z, Math.min(t, c + dt*.5));
+    else setZone(z, Math.abs(t-c) < .01 ? t : c + (t-c)*Math.min(1, dt*2.5)); }
   if(LV.sky.length){ let s = 0; for(const z of LV.sky) s += zoneK[z]||0; const k = s/LV.sky.length, c = zoneK.sky||0; if(Math.abs(k-c) > .001) setZone('sky', c + (k-c)*Math.min(1, dt*2)); }
+  if(window.AM) AM.colour(zoneK.sky||0);
   skyUpdate();
 }
 
@@ -902,6 +959,7 @@ function updSheet(s){
   }
 }
 function layerDone(s){
+  sfx('layer'); buzz(30);
   const i = s.L; s.L++; s.p = 0; if(s.L >= s.layers.length) s.done = true;
   updSheet(s); lastProgT = nowT;
   if(s.carry && s.done) takeHeld(s);
@@ -910,7 +968,7 @@ function layerDone(s){
 // R next to a stack puts the last peeled day back on
 function restoreLayer(s){
   if(s.L <= 0) return false;
-  s.L--; s.p = 0; s.done = false; updSheet(s); sheetVis(s, true); updSheet(s);
+  s.L--; s.p = 0; s.done = false; sfx('paste'); updSheet(s); sheetVis(s, true); updSheet(s);
   if(s.onRestore) s.onRestore(s.L);
   return true;
 }
@@ -998,7 +1056,7 @@ function pageBack(lines, day){
 // ---------- input ----------
 const keys = {left:false, right:false, jump:false, grab:false};
 const KM = {ArrowLeft:'left', KeyA:'left', ArrowRight:'right', KeyD:'right', ArrowUp:'jump', KeyW:'jump', Space:'jump', KeyE:'grab', KeyJ:'grab'};
-let jumpQueued = false, grabQueued = false;
+let jumpQueued = false, grabQueued = false, stepD = 0;
 function back(){
   jrAct(64);
   if(intro.on || P.won || busy()) return;
@@ -1054,7 +1112,7 @@ const P = {x:0, y:0, vx:0, vy:0, w:.95, h:2.25, ground:true, face:1, grab:null, 
 const GRAV = 30, JUMP = 13, SPEED = 5.4, PEEL_SPEED = 2.6;
 talker(toG, 1.75, ()=> toSayT > 0 ? toSay : '');
 function grab(s){
-  P.grab = s;
+  P.grab = s; sfx('grab'); buzz(12);
   if(s.dir === 'x') P.x = s.x0 + s.p + .45;
   else { P.gx = Math.min(P.x, s.x1 - .2); P.x = P.gx; P.gp = s.p; }
 }
@@ -1069,7 +1127,7 @@ function standingOn(x, yPrev, yNew){
   }
   return best;
 }
-function respawn(msg){ say(msg, 2.4); P.x = P.check.x; P.y = P.check.y; P.vx = P.vy = 0; release(); }
+function respawn(msg){ if(/Nước|nước|Rãnh/.test(msg)) sfx('splash'); say(msg, 2.4); P.x = P.check.x; P.y = P.check.y; P.vx = P.vy = 0; release(); }
 
 // ---------- hands: carry a peeled page, paste it over a dotted slot, or fold it into a boat, a plane or a fan ----------
 const FORMS = {thuyen:'thuyền', maybay:'máy bay', quat:'quạt', non:'nón', dieu:'diều', den:'đèn'};
@@ -1127,23 +1185,23 @@ function fold(){
   if(intro.on || P.won || busy()) return;
   if(!held.on){ say('Tay không có tờ lịch nào để gấp.', 1.6); return; }
   if(!learned.length){ say('Tò chưa biết gấp gì cả.', 1.6); return; }
-  const order = learned.concat([null]); held.form = order[(order.indexOf(held.form) + 1) % order.length]; showHeld();
+  const order = learned.concat([null]); held.form = order[(order.indexOf(held.form) + 1) % order.length]; showHeld(); sfx('fold');
   say(held.form ? 'Gấp thành ' + FORMS[held.form] + '!' : 'Mở ra thành tờ lịch.', 1.2);
 }
 function useHeld(){
   const f = held.form;
   if(!f){
     const sl = nearSlot();
-    if(sl){ sl.filled = true; sl.patch.visible = true; sl.line.visible = false; dropHeld(); say('Dán!', 1); if(sl.onPaste) sl.onPaste(sl); return; }
+    if(sl){ sfx('paste'); buzz(20); sl.filled = true; sl.patch.visible = true; sl.line.visible = false; dropHeld(); say('Dán!', 1); if(sl.onPaste) sl.onPaste(sl); return; }
     say(learned.length ? 'Bấm Q để gấp, hoặc tìm ô viền chấm để dán.' : 'Tìm ô viền chấm để dán tờ này.', 2); return;
   }
   if(f === 'thuyen'){
     const c = channels.find(c=>P.x > c.x0 - 1.6 && P.x < c.x1 + 1.6 && P.y > c.level - .3);
     if(!c){ say('Phải đứng sát chỗ có nước mới thả thuyền.', 2); return; }
-    launchBoat(c, P.x); dropHeld(); say('Thả thuyền!', 1.2); return;
+    launchBoat(c, P.x); sfx('use'); dropHeld(); say('Thả thuyền!', 1.2); return;
   }
-  if(f === 'maybay'){ throwPlane(); dropHeld(); return; }
-  if(f === 'quat') waveFan();
+  if(f === 'maybay'){ throwPlane(); sfx('use'); dropHeld(); return; }
+  if(f === 'quat'){ waveFan(); sfx('use'); }
   if(f === 'den'){ if(!(LV.onDen && LV.onDen())) say('Chẳng có đèn treo nào gần để thắp.', 1.6); return; }
   if(f === 'dieu') say(P.ground ? 'Nhảy lên là lượn. Gặp luồng gió nóng thì bay lên!' : 'Lượn…', 1.8);
   if(f === 'non') say(held.wear > .5 ? 'Đội nón rồi, đi mưa được một lúc.' : 'Nón sắp nhũn rồi, tìm chỗ trú đi!', 1.8);
@@ -1265,6 +1323,7 @@ let rainLast = 0;
 function rainTick(t){
   const dt = Math.min(.05, t - rainLast); rainLast = t;
   if(!LV.rain){ return; }
+  if(window.AM) AM.rain(rain.k);
   rainLines.visible = rain.k > .01; rainLines.material.opacity = .5*rain.k;
   const cx = camera.position.x, cy = camLook.y;
   for(let i=0;i<RAIN_N;i++){
@@ -1313,8 +1372,9 @@ function step(dt, t){
     const target = dir*SPEED;
     if(P.knock > 0) P.knock -= dt; else P.vx += (target - P.vx)*Math.min(1, dt*14);
     if(dir) P.face = dir;
-    if(jumpQueued && P.ground && !P.grab){ P.vy = JUMP; P.ground = false; }
+    if(jumpQueued && P.ground && !P.grab){ P.vy = JUMP; P.ground = false; sfx('jump'); }
   }
+  if(window.AM && !JR.replay) AM.tear(P.grab && dir ? 1 : 0);
   jumpQueued = false; grabQueued = false;
   if(P.ground && P.on && P.on.on() && P.vy <= 0 && P.x + P.w/2 - .08 >= P.on.x0 && P.x - P.w/2 + .08 <= P.on.x1) P.y = P.on.top;
   P.vy -= GRAV*dt;
@@ -1340,6 +1400,8 @@ function step(dt, t){
   if(st && st.bounce && vyIn < -3){ P.vy = st.bounce; P.ground = false; P.on = null; ny = st.top + .02; if(st.onBounce) st.onBounce(); }
   P.x = nx; P.y = ny;
   if(st && !wasGround && vyIn < -9) wakeNear(P.x, P.y);
+  if(st && !wasGround && vyIn < -4){ sfx('land', -vyIn); if(vyIn < -12) buzz(20); }
+  if(P.ground && !P.grab && Math.abs(P.vx) > 1.5){ stepD += Math.abs(P.vx)*dt; if(stepD > .95){ stepD = 0; sfx('step'); } }
   wetTick(dt);
   for(const h of hazards) if(P.y < h.y && P.x > h.x0 && P.x < h.x1){ respawn(h.msg); break; }
   for(const c of channels) if(P.x > c.x0 && P.x < c.x1 && P.y < Math.max(c.floor + .5, c.level - .25) && P.on !== boat.plat){ respawn(c.level > c.floor + .45 ? 'Á! Nước! Tò sợ nước lắm!' : 'Rãnh sâu quá!'); break; }
@@ -1355,12 +1417,12 @@ function step(dt, t){
   for(const f of flies){
     if(f.got || !f.show()) continue;
     if(Math.abs(P.x - f.g.position.x) < .9 && f.g.position.y > P.y - .3 && f.g.position.y < P.y + P.h + .4){
-      f.got = true; f.gotT = 0; fliesGot++; fflyEl.textContent = 'Đom đóm ' + fliesGot + '/5';
+      f.got = true; f.gotT = 0; fliesGot++; sfx('fly'); fflyEl.textContent = 'Đom đóm ' + fliesGot + '/5';
       if(fliesGot === 5) say('Đủ 5 con đom đóm rồi!', 2);
     }
   }
   if(relicObj && !relicGot && Math.abs(P.x - relicObj.x) < .9 && P.y > relicObj.y - .5 && P.y < relicObj.y + 1.6){
-    relicGot = true; relicSave(LV.level); relicEl.textContent = 'Tò he cũ 1/1'; relicEl.classList.add('got'); say('Con tò he cũ của bà! ' + relicObj.name + '.', 2.8); lastProgT = nowT;
+    relicGot = true; sfx('relic'); buzz(40); relicSave(LV.level); relicEl.textContent = 'Tò he cũ 1/1'; relicEl.classList.add('got'); say('Con tò he cũ của bà! ' + relicObj.name + '.', 2.8); lastProgT = nowT;
   }
 }
 
@@ -1507,7 +1569,7 @@ function runIntro(dt, t){
 }
 
 // ---------- win ----------
-function finish(steps){ jrClear(); P.won = true; release(); play(steps.concat([{dur:0, start:()=>{ winReady = true; }}])); }
+function finish(steps){ jrClear(); sfx('win'); buzz(60); P.won = true; release(); play(steps.concat([{dur:0, start:()=>{ winReady = true; }}])); }
 // the win card leads straight on: the next level, or (after the last one) back to the title
 function showWin(){
   const w = LV.winText();
@@ -1538,7 +1600,7 @@ if(PORTRAIT.addEventListener) PORTRAIT.addEventListener('change', portraitCheck)
 // frame-rate guard: every 2 s, if frames average slower than ~45 fps, render a smaller canvas (never below 0.75) and remember it for the next level
 let qT = 0, qN = 0, qWait = 3;
 function quality(ms){
-  if(ms > 250) return;  // tab was hidden or the page stalled loading: not a fair sample
+  if(ms > 250 || DPR_FIX) return;  // tab was hidden or the page stalled loading: not a fair sample
   if(qWait > 0){ qWait -= ms/1000; return; }
   qT += ms; qN++;
   if(qT < 2000) return;
@@ -1573,7 +1635,7 @@ document.addEventListener('visibilitychange', ()=>{ if(document.hidden) jrSave()
 function liveStep(){ simT += STEP; if(intro.on) runIntro(STEP, simT); else { jrStep(); step(STEP, simT); animate(STEP, simT); jrTick(); } }
 // plays the journal back in slices so the page stays responsive; done(true) when Tò ends where the journal says
 function jrReplay(j, done){
-  JR.replay = true; simT = j.t0; let i = 0, n = 0; const tStart = performance.now();
+  JR.replay = true; if(window.AM) AM.mute(true); simT = j.t0; let i = 0, n = 0; const tStart = performance.now();
   const slice = ()=>{
     try {
       const end = Math.min(j.n, n + 1500);
@@ -1583,10 +1645,10 @@ function jrReplay(j, done){
           else { keys.left = !!(c&1); keys.right = !!(c&2); keys.jump = !!(c&4); keys.grab = !!(c&8); jumpQueued = !!(c&16); grabQueued = !!(c&32); } }
         simT += STEP; step(STEP, simT); animate(STEP, simT);
       }
-    } catch(e){ JR.replay = false; hook.jrResult = {x:P.x, y:P.y, ok:false, err:String(e && e.message || e), at:n}; done(false); return; }
+    } catch(e){ JR.replay = false; if(window.AM) AM.mute(false); hook.jrResult = {x:P.x, y:P.y, ok:false, err:String(e && e.message || e), at:n}; done(false); return; }
     if(n < j.n){ setTimeout(slice, 0); return; }
     for(const k in keys) keys[k] = false; jumpQueued = grabQueued = false;
-    JR.replay = false; JR.n = j.n; JR.ev = j.ev.slice(); JR.last = -1; JR.t0 = j.t0;
+    JR.replay = false; if(window.AM) AM.mute(false); JR.n = j.n; JR.ev = j.ev.slice(); JR.last = -1; JR.t0 = j.t0;
     hook.jrResult = {ms:Math.round(performance.now() - tStart), x:P.x, y:P.y, at:n, ok:Math.abs(P.x - j.x) < .05 && Math.abs(P.y - j.y) < .05 && !P.won};
     done(Math.abs(P.x - j.x) < .05 && Math.abs(P.y - j.y) < .05 && !P.won);
   };
@@ -1616,7 +1678,7 @@ function startGame(){
   P.x = LV.start.x; P.y = LV.start.y; P.check = {x:LV.start.x, y:LV.start.y};
   resize();
   camPos.set(P.x - 3, 5.7, 18.5); camLook.set(P.x, 2.8, -1);
-  trayShow();
+  trayShow(); if(window.AM) AM.level(LV.level);
   const j = location.hash === '#tiep' ? jrLoad() : null;
   if(!j) jrClear();
   if(!j) fadeIn();

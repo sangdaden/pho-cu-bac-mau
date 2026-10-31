@@ -123,3 +123,16 @@ body.game .pad.r{right:max(12px,env(safe-area-inset-right))}
 }
 .pill:empty{display:none}
 .stage.cine .hudR,.stage.cine #title{visibility:hidden}
+
+/* Cài đặt */
+.sets{display:grid;grid-template-columns:auto 1fr;gap:10px 16px;align-items:center;text-align:left;margin:4px 0 6px;font:600 15px "Be Vietnam Pro",sans-serif}
+.sets input[type=range]{width:100%;accent-color:#C23A28}
+.sets input[type=checkbox]{width:22px;height:22px;accent-color:#C23A28;justify-self:start}
+.sets select{font:15px "Be Vietnam Pro",sans-serif;border:2px solid #141019;border-radius:10px;padding:4px 8px;background:var(--chip);color:var(--ink)}
+.setsN{font-size:13px;color:var(--muted);min-height:1em;margin:4px 0}
+#sets{z-index:7}
+/* Chữ to: bubbles, hints, goal and captions grow */
+.chu-to .hint,.chu-to .cap,.chu-to .toast{font-size:125%}.chu-to #title{font-size:112%}
+/* Nút cho tay trái: action buttons on the left, the d-pad on the right */
+.tay-trai body.game .pad.l{left:auto;right:max(12px,env(safe-area-inset-right))}
+.tay-trai body.game .pad.r{right:auto;left:max(12px,env(safe-area-inset-left))}
