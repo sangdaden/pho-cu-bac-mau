@@ -799,7 +799,7 @@ function trayShow(){ const tr = trayLoad(); for(let i=0;i<3;i++) $('t'+(i+1)).st
 function traySet(n){ const tr = trayLoad(); if(!tr.includes(n)) tr.push(n); try { localStorage.setItem('phocu.tray', JSON.stringify(tr)); } catch(e){} trayShow(); }
 trayShow();
 // ---------- progress: one save for the whole game, so the title screen can offer "Chơi tiếp" ----------
-const LEVEL_URL = [null, '../man-1/index.html', '../man-2/index.html', '../man-3/index.html', '../man-4/index.html', '../man-5/index.html', '../man-6/index.html'];
+const LEVEL_URL = [null, '../man-1/index.html', '../man-2/index.html', '../man-3/index.html', '../man-4/index.html', '../man-5/index.html', '../man-6/index.html', '../man-7/index.html'];
 function saveGet(){ try { return JSON.parse(localStorage.getItem('phocu.save') || '{}') || {}; } catch(e){ return {}; } }
 function savePut(o){ try { localStorage.setItem('phocu.save', JSON.stringify(Object.assign(saveGet(), o))); } catch(e){} }
 function relicSave(n){ try { const r = JSON.parse(localStorage.getItem('phocu.relic') || '[]'); if(!r.includes(n)) r.push(n); localStorage.setItem('phocu.relic', JSON.stringify(r)); } catch(e){} }
@@ -829,7 +829,7 @@ function zonesTick(dt){
 }
 
 // ---------- level geometry the player collides with ----------
-const solids = [], blocks = [], hazards = [], winds = [];
+const solids = [], blocks = [], hazards = [], winds = [], lifts = [];
 // one-way top: Tò lands on it from above and walks through it from below. safe: landing here moves the "về chỗ an toàn" point
 // bounce: landing on it throws Tò back up at that speed (an open umbrella)
 function plat(x0, x1, top, oneway, on, o){ const p = {x0, x1, top, on:on||(()=>true), safe:!!(o && o.safe), bounce:o && o.bounce, onBounce:o && o.onBounce}; solids.push(p); return p; }
@@ -839,6 +839,9 @@ function block(x0, x1, y0, y1, on){ const b = {x0, x1, y0, y1, on:on||(()=>true)
 function hazard(x0, x1, y, msg){ hazards.push({x0, x1, y, msg}); }
 // wind pushes Tò along x while he is not holding on to anything
 function wind(x0, x1, y0, y1, force, on){ const w = {x0, x1, y0, y1, force, on:on||(()=>true)}; winds.push(w); return w; }
+// a warm updraft: only lifts Tò while he holds a paper kite
+function lift(x0, x1, y0, y1, on){ const l = {x0, x1, y0, y1, on:on||(()=>true)}; lifts.push(l); return l; }
+const GLIDE = 2.4;
 
 // ---------- calendar sheets: a stack of day-pages; peel the top one to reach the day below ----------
 const sheets = [];
@@ -1060,7 +1063,7 @@ function standingOn(x, yPrev, yNew){
 function respawn(msg){ say(msg, 2.4); P.x = P.check.x; P.y = P.check.y; P.vx = P.vy = 0; release(); }
 
 // ---------- hands: carry a peeled page, paste it over a dotted slot, or fold it into a boat, a plane or a fan ----------
-const FORMS = {thuyen:'thuyền', maybay:'máy bay', quat:'quạt', non:'nón'};
+const FORMS = {thuyen:'thuyền', maybay:'máy bay', quat:'quạt', non:'nón', dieu:'diều'};
 const learned = [];
 const held = {on:false, form:null, src:null, wear:1};
 const handEl = $('hand');
@@ -1073,6 +1076,14 @@ HELD.non = new THREE.Group(); HELD.non.position.set(0, 3.95, .05); HELD.non.rota
 (function(){ const m = mesh(HELD.non, new THREE.ConeGeometry(1.45, .95, 20, 1, true), '#F4EFE4', {ow:.04}); m.material.side = THREE.DoubleSide;
   for(let i=0;i<3;i++) mesh(HELD.non, new THREE.TorusGeometry(.42 + i*.38, .025, 4, 24), '#C9B994', {pos:new THREE.Vector3(0, .26 - i*.25, 0), rot:[Math.PI/2, 0, 0], outline:false});
   mesh(HELD.non, new THREE.TorusGeometry(1.0, .03, 4, 24, Math.PI), '#C23A28', {pos:new THREE.Vector3(0, -.4, .2), rot:[.25, 0, Math.PI], outline:false}); })();
+// a paper kite held up over his head on a short string: jump to glide, ride a warm updraft to climb
+HELD.dieu = new THREE.Group(); HELD.dieu.position.set(-.4, 5.2, -.4); HELD.dieu.scale.setScalar(1.45); HELD.dieu.visible = false; toInner.add(HELD.dieu);
+(function(){ const ks = new THREE.Shape(); ks.moveTo(0, .95); ks.lineTo(.68, .15); ks.lineTo(0, -.85); ks.lineTo(-.68, .15); ks.closePath();
+  const k = mesh(HELD.dieu, new THREE.ShapeGeometry(ks), '#F4EFE4', {ow:.04}); k.material.side = THREE.DoubleSide;
+  rod(HELD.dieu, new THREE.Vector3(0, .95, .02), new THREE.Vector3(0, -.85, .02), .025, '#B88A4A', {outline:false});
+  rod(HELD.dieu, new THREE.Vector3(-.68, .15, .02), new THREE.Vector3(.68, .15, .02), .025, '#B88A4A', {outline:false});
+  for(let i=0;i<4;i++) blob(HELD.dieu, new THREE.Vector3(Math.sin(i*1.4)*.12, -1.05 - i*.32, 0), [.1, .04, .1], '#C23A28', {small:true});
+  rod(HELD.dieu, new THREE.Vector3(0, -.85, 0), new THREE.Vector3(.5, -3.1, .9), .012, '#3B2E2A', {outline:false}); })();
 (function(){
   const pm = toon('#E9E4DA'); const pg = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.2), pm); pm.side = THREE.DoubleSide; HELD.paper.add(pg); HELD.paper.rotation.x = -.3;
   const ol = new THREE.Mesh(new THREE.PlaneGeometry(1.08, 1.28), new THREE.MeshBasicMaterial({color:'#141019', side:THREE.DoubleSide})); ol.position.z = -.01; HELD.paper.add(ol);
@@ -1115,6 +1126,7 @@ function useHeld(){
   }
   if(f === 'maybay'){ throwPlane(); dropHeld(); return; }
   if(f === 'quat') waveFan();
+  if(f === 'dieu') say(P.ground ? 'Nhảy lên là lượn. Gặp luồng gió nóng thì bay lên!' : 'Lượn…', 1.8);
   if(f === 'non') say(held.wear > .5 ? 'Đội nón rồi, đi mưa được một lúc.' : 'Nón sắp nhũn rồi, tìm chỗ trú đi!', 1.8);
 }
 
@@ -1287,6 +1299,12 @@ function step(dt, t){
   jumpQueued = false; grabQueued = false;
   if(P.ground && P.on && P.on.on() && P.vy <= 0 && P.x + P.w/2 - .08 >= P.on.x0 && P.x - P.w/2 + .08 <= P.on.x1) P.y = P.on.top;
   P.vy -= GRAV*dt;
+  if(held.on && held.form === 'dieu' && !P.grab){
+    let up = false;
+    for(const l of lifts) if(l.on() && P.x > l.x0 && P.x < l.x1 && P.y > l.y0 - .1 && P.y < l.y1){ up = true; P.vy = Math.min(7, P.vy + (GRAV + 34)*dt); }
+    if(!up && P.vy < -GLIDE) P.vy = -GLIDE;
+    HELD.dieu.rotation.z = Math.sin(t*7)*.07 + (P.ground ? 0 : up ? .12 : -.18);
+  }
   const yPrev = P.y, vyIn = P.vy, wasGround = P.ground; let ny = P.y + P.vy*dt;
   let nx = P.grab ? P.x : P.x + P.vx*dt;
   if(!P.grab) for(const w of winds) if(w.on() && P.x > w.x0 && P.x < w.x1 && P.y > w.y0 - .1 && P.y < w.y1) nx += w.force*dt;
@@ -1430,7 +1448,7 @@ function animate(dt, t){
   let h = '';
   if(P.won || busy()) h = '';
   else if(P.grab) h = P.grab.dir === 'x' ? 'Đi lùi để kéo · E để buông' : 'Đi lùi để kéo mép lên · E để buông, mép giấy thành gờ';
-  else if(held.on) h = held.form ? (held.form === 'thuyen' ? 'E để thả thuyền xuống nước · Q đổi kiểu gấp' : held.form === 'maybay' ? 'E để phóng máy bay · Q đổi kiểu gấp' : held.form === 'non' ? 'Đang đội nón giấy, đi mưa được một lúc · Q đổi kiểu gấp' : 'E để phẩy quạt · Q đổi kiểu gấp') : (nearSlot() ? 'E để dán vào ô viền chấm' : learned.length ? 'Q để gấp tờ lịch' : 'Tìm ô viền chấm để dán');
+  else if(held.on) h = held.form ? (held.form === 'thuyen' ? 'E để thả thuyền xuống nước · Q đổi kiểu gấp' : held.form === 'maybay' ? 'E để phóng máy bay · Q đổi kiểu gấp' : held.form === 'non' ? 'Đang đội nón giấy, đi mưa được một lúc · Q đổi kiểu gấp' : held.form === 'dieu' ? 'Cầm diều: nhảy là lượn, vào luồng gió nóng là bay lên · Q đổi kiểu gấp' : 'E để phẩy quạt · Q đổi kiểu gấp') : (nearSlot() ? 'E để dán vào ô viền chấm' : learned.length ? 'Q để gấp tờ lịch' : 'Tìm ô viền chấm để dán');
   else if(near) h = near.locked ? 'E để thử bóc' : 'E để nắm mép';
   else if(stackNear() && !stackNear().solved) h = 'R để dán lại tờ vừa bóc';
   else if(hintT > 0) h = LV.hint();
@@ -1513,7 +1531,7 @@ const hook = window.__game = {pause:false, P, keys, sheets, buis, LV, zoneK,
   skipIntro:()=>{ if(intro.on) endIntro(); }, introTick:(n)=>{ for(let i=0;i<n && intro.on;i++){ simT += 1/60; runIntro(1/60, simT); } },
   tick:(n)=>{ for(let i=0;i<n;i++){ simT += 1/60; step(1/60, simT); animate(1/60, simT); } },
   tp:(x, y)=>{ P.x = x; P.y = y; P.vx = P.vy = 0; },
-  get flies(){ return fliesGot; }, held, learned, boat, channels, fold, slots, targets, rain, get relic(){ return relicGot; }, get info(){ return renderer.info.render; }, get busy(){ return busy(); }, get objective(){ return OBJ; }, get won(){ return P.won; }, get winReady(){ return winReady; }};
+  get flies(){ return fliesGot; }, held, learned, boat, channels, lifts, winds, fold, slots, targets, rain, get relic(){ return relicGot; }, get info(){ return renderer.info.render; }, get busy(){ return busy(); }, get objective(){ return OBJ; }, get won(){ return P.won; }, get winReady(){ return winReady; }};
 function startGame(){
   savePut({man: LV.level, max: Math.max(saveGet().max || 1, LV.level)});
   requestAnimationFrame(()=>requestAnimationFrame(()=>$('fade').classList.add('out')));
