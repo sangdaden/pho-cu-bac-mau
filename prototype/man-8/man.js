@@ -1,4 +1,4 @@
-// ================= Màn 8 · Rước đèn: the night of the full moon, the lantern procession through the old streets =================
+// ================= Màn 8 · Rước đèn: the full moon of the first lunar month (Tết Nguyên Tiêu), the lantern procession through the old streets =================
 // rooms (x): 1 đầu phố, Bống -8..18 · 2 dây đèn qua kênh 18..42 · 3 lò bánh nướng 42..66 · 4 Lũ Bụi 66..90 · 5 đèn hoa đăng 90..114
 //            6 lịch trăng 114..138 · 7 đèn trên dây 138..162 · 8 đoàn rước đèn 162..190 · 9 sân đình 190..216
 // new here: fold the page into a star lantern; carry its flame to the lanterns hung along the street; moon steps only hold where a hung lantern shines
@@ -151,7 +151,7 @@ function poleStar(parent, c, h){
 // ================= room 1 · Đầu phố: bé Bống with an unlit star; the street is closed by a wall =================
 house(-8, 2, 7.6, '#E8A598', {roof:'#B5513A'}); house(2, 10, 7.0, '#F1DDB0'); house(10, 18, 8.0, '#9FCBC1', {roof:'#B5513A'});
 ZONE = 'r1';
-sign(W, -6.4, -1.8, 3.2, 4.1, -.5, '#C23A28', '#F2C230', 'RẰM THÁNG TÁM', 'rước đèn');
+sign(W, -6.4, -1.8, 3.2, 4.1, -.5, '#C23A28', '#F2C230', 'RẰM THÁNG GIÊNG', 'rước đèn');
 balcony(W, 11.0, 17.4, 4.4, -.5, .9, '#E9DCC8', '#2A2630');
 const bong = person({x:1.0, z:.7, zone:'bong', build:g=>{ const R = buildBong(g); R.boat.visible = false; R.mouth = R.head; return R; }, s:1.25, ry:.35});
 const bongStar = new THREE.Group(); bongStar.position.set(1.7, 0, .9); scene.add(bongStar); ZONE = 'bong'; poleStar(bongStar, '#E8442E', 1.6);
@@ -236,7 +236,7 @@ ZONE = 'r9';
 box(W, 190, 216, -2, 6.4, -6.6, -4.4, '#C98B4A', Object.assign({}, WALL, {uv:[8, 6]}));
 roof(W, 189.6, 216.4, 6.4, -4.2, 4.6, 2.2, '#B5513A');
 for(const x of [192, 198, 204, 210, 215.6]) mesh(W, new THREE.CylinderGeometry(.25, .25, 6.4, 12), '#8C3A20', {pos:new THREE.Vector3(x, 3.2, -4.0), ow:.03});
-sign(W, 199.0, 205.0, 5.0, 6.0, -4.3, '#C23A28', '#F2C230', 'ĐÌNH LÀNG', 'rằm tháng Tám');
+sign(W, 199.0, 205.0, 5.0, 6.0, -4.3, '#C23A28', '#F2C230', 'ĐÌNH LÀNG', 'rằm tháng Giêng');
 box(W, 190.4, 194.6, 0, 2.6, -1.4, -.46, '#E9C46A', Object.assign({}, WALL, {uv:[2, 2.6]}));
 const vTu = person({x:194.6, z:.9, zone:'chutu', build:g=>{ const R = buildTu(g); R.mouth = R.belly; return R; }, s:1.05, ry:.3});
 const H9 = [hang(196.6, 3.0, {c:'#F2C230', cord:3.0}), hang(201.2, 6.6, {c:'#E8442E', cord:1.6})];
@@ -285,7 +285,7 @@ function page(id, x0, y0, pic, fn){
 }
 const sheetT1 = page('T', 3.6, .4, starPic, ()=>{
   learned.unshift('den'); colour('r1');
-  play([{dur:.4, start:()=>{ bong.awake = true; colour('bong'); vSay(bong, 'Gấp đèn ông sao đi! Thắp cái đèn treo kia kìa!', 3.2); }}, {dur:2.4, cam:[7, 3.4]},
+  play([{dur:.4, start:()=>{ bong.awake = true; colour('bong'); vSay(bong, 'Gấp đèn ông sao như hồi Trung thu đó! Thắp cái đèn treo kia kìa!', 3.2); }}, {dur:2.4, cam:[7, 3.4]},
         {dur:0, start:()=>objective('Gấp đèn, thắp đèn treo, leo bậc trăng')}]);
 });
 const sheetO3 = page('O', 44.2, .4, cakePic, ()=>wakeUp(vBanh, 'Lò bánh nướng đỏ lửa rồi! Hơi nóng bốc lên đó con.', 'Thắp đèn treo, rồi gấp diều bay theo hơi lò'));
@@ -352,7 +352,7 @@ function peeledStar(){
 function drawStarMemory(x, W, H){
   x.fillStyle = '#F6EBD9'; x.fillRect(20, 20, W-40, H-40); x.strokeStyle = '#141019'; x.lineWidth = 3; x.strokeRect(20, 20, W-40, H-40);
   x.fillStyle = '#3B2E2A'; x.font = '28px "Patrick Hand", cursive'; x.textAlign = 'center';
-  x.fillText('Rằm tháng Tám năm 1990, sân đình', W/2, 62);
+  x.fillText('Rằm tháng Giêng năm 1990, sân đình', W/2, 62);
   x.strokeStyle = '#7A4E2D'; x.lineWidth = 4; x.beginPath();
   for(let i=0;i<10;i++){ const a = -Math.PI/2 + i*Math.PI/5, r = i%2 ? 30 : 70, px = 300 + Math.cos(a)*r, py = 160 + Math.sin(a)*r; if(i) x.lineTo(px, py); else x.moveTo(px, py); }
   x.closePath(); x.stroke();
@@ -424,15 +424,15 @@ LV.winText = ()=>({
   h:'Màn 8 xong!',
   p:'Đèn nào cũng sáng. Cả phố cũ rước đèn đêm Rằm.',
   memory:(fliesGot === 5
-    ? '<b>Ký ức mở khoá.</b> Rằm tháng Tám năm 1990, bà Năm dán ông sao to nhất cho sân đình bằng giấy lịch cũ. Cả xóm rước đèn theo bà.'
+    ? '<b>Ký ức mở khoá.</b> Rằm tháng Giêng năm 1990, bà Năm dán ông sao to nhất cho sân đình bằng giấy lịch cũ. Cả xóm rước đèn theo bà.'
     : 'Còn ' + (5 - fliesGot) + ' con đom đóm ở Màn 8 chưa tìm thấy.')
     + (relicGot ? '<br><b>Tìm được con thỏ ngọc của bé Bống.</b>' : '<br>Có một con tò he cũ treo trên dây đèn qua kênh.'),
-  next:'Màn 9 · Phố của bà Năm: sáng Rằm, Tò về nhà'
+  next:'Màn 9 · Phố của bà Năm: sáng đầu xuân, Tò về nhà'
 });
 
 // ================= intro: the full moon over the dark streets =================
 LV.intro = {end:12, sheetsAt:9,
-  caps:[[0.5, 4.0, 'Đêm Rằm tháng Tám. Phố cũ chờ rước đèn mà đèn chẳng sáng.'],
+  caps:[[0.5, 4.0, 'Rằm tháng Giêng. Phố cũ chờ rước đèn mà đèn chẳng sáng.'],
         [4.3, 8.0, 'Tờ lịch dán kín đèn treo, bậc trăng mờ trong bóng tối.'],
         [8.3, 11.6, 'Gấp tờ lịch thành đèn ông sao, thắp từng ngọn một.']],
   run(it, dt, t){
