@@ -1,13 +1,15 @@
 // ================= Màn 4 · Mưa phố (bản thử, mở đầu chương 2): three days after the full moon, the market street across the river, in the rain =================
-// rooms (x): 1 bến chợ, quán nước -8..18 · 2 sân chợ, nón giấy 18..44 · 3 ô ông Bảy 44..59 · 4 mái nhà, tờ dọc che mưa 59..88 · 5 đám mây xám 88..102
+// rooms (x): 1 bến chợ, quán nước -8..18 · 2 sân chợ, nón giấy 18..44 · 3 ô ông Bảy 44..59 · 4 mái nhà, tờ dọc che mưa 59..88 · 5 mái tôn dột 88..106
+//            6 dây phơi 106..122 · 7 hẻm ngập 122..143 · 8 chồng lịch mái hiên 143..162 · 9 đám mây xám 162..178
 // new here: rain wets Tò (he is rice dough) and washes his colour out; anything over his head keeps him dry
 LV.level = 4;
 LV.start = {x:-3.5, y:0};
-LV.bounds = [-7.5, 101.5];
-LV.cam = [0, 96];
-LV.sky = ['r1','r2','r3','r4','r5'];
-const ROOMS = ['r1','r2','r3','r4','r5'];
-function zoneFor(x){ return x < 18 ? 'r1' : x < 44 ? 'r2' : x < 59 ? 'r3' : x < 88 ? 'r4' : 'r5'; }
+LV.bounds = [-7.5, 177.5];
+LV.cam = [0, 172];
+const ROOMS = ['r1','r2','r3','r4','r5','r6','r7','r8','r9'];
+LV.sky = ROOMS;
+function zoneFor(x){ return x < 18 ? 'r1' : x < 44 ? 'r2' : x < 59 ? 'r3' : x < 88 ? 'r4' : x < 106 ? 'r5' : x < 122 ? 'r6' : x < 143 ? 'r7' : x < 162 ? 'r8' : 'r9'; }
+const R9 = 74;   // room 9 (the attic and the cloud) sits this far right of where the 5-room test had it
 const ROOF = 6.6;   // the rooftops of rooms 4 and 5
 // grey is a wet slate sky; the colour that comes back is the clear gold of an evening after rain
 SKY.g.top.set('#6F7784'); SKY.g.mid.set('#8C939D'); SKY.g.bot.set('#A6AAAF');
@@ -156,7 +158,7 @@ for(const c of canopy) c.bounce = 0;
 const holePlat = plat(54.8, 56.2, 3.6, true, ()=>patched, {bounce:17});
 
 // ================= rooms 4 and 5 · the rooftops: buildings to bounce up onto, high walls with long pages, a gap, a low grey cloud =================
-const TOPS = [[59, 70, '#E9C46A'], [70, 80, '#9FCBC1'], [82.5, 92, '#E8A598'], [92, 102, '#F1DDB0']];
+const TOPS = [[59, 70, '#E9C46A'], [70, 80, '#9FCBC1'], [82.5, 92, '#E8A598'], [92, 101, '#F1DDB0'], [101, 110, '#C7B8E0'], [160, 169, '#E8A598'], [169, 178, '#E9C46A']];
 for(const [x0, x1, c] of TOPS){ ZONE = zoneFor((x0 + x1)/2);
   box(W, x0, x1, -1, ROOF, -3.5, 2.6, c, Object.assign({}, WALL, {uv:[6, 8, 0, -1]}));
   box(W, x0 - .05, x1 + .05, ROOF - .1, ROOF + .05, -3.6, 2.7, '#B8A58E', {ow:.03, uv:[2,1], map:TEX.stone});
@@ -166,7 +168,7 @@ for(const [x0, x1, c] of TOPS){ ZONE = zoneFor((x0 + x1)/2);
   box(W, x0 + .3, x1 - .3, ROOF, ROOF + 5.2, -4.4, -.5, ['#F1DDB0','#E8A598','#D9A07A','#C7B8E0'][Math.floor(x0)%4], Object.assign({}, WALL, {uv:[6, 6]}));
   box(W, x0 + .1, x1 - .1, ROOF + 5.2, ROOF + 5.45, -4.6, -.3, '#C98B4A', {ow:.04});
 }
-block(59, 80, -1, ROOF); block(82.5, 102, -1, ROOF);
+block(59, 80, -1, ROOF); block(82.5, 110, -1, ROOF); block(160, 178, -1, ROOF);
 hazard(80, 82.5, ROOF - 1.2, 'Hụt chân rồi!');
 ZONE = 'r4';
 // a water tank on legs: the first dry spot up here
@@ -175,7 +177,7 @@ box(W, 59.2, 62.8, 9.5, 9.65, -.6, 1.6, '#8A7D6F', {ow:.02});
 mesh(W, new THREE.CylinderGeometry(1.0, 1.0, 3.4, 18), '#D8DCE0', {pos:new THREE.Vector3(61, 10.6, .5), rot:[0, 0, Math.PI/2], ow:.04});
 plat(59.2, 62.8, 9.6); plat(59, 63, ROOF, false, null, {safe:true});
 // the upper storeys: shuttered windows, an air conditioner, a sign, washing left out, flowers spilling over
-for(const [x, c] of [[66.4, '#2E8C86'], [73.6, '#C23A28'], [84.6, '#8E6CC0'], [101.0, '#2E8C86']]){ ZONE = zoneFor(x); win(W, x, ROOF + 1.6, 1.3, 1.6, -.5, '#F4F1EA', c, {flower:x%2 ? '#F06BAE' : '#F2C230'}); }
+for(const [x, c] of [[66.4, '#2E8C86'], [73.6, '#C23A28'], [84.6, '#8E6CC0'], [175.0, '#2E8C86']]){ ZONE = zoneFor(x); win(W, x, ROOF + 1.6, 1.3, 1.6, -.5, '#F4F1EA', c, {flower:x%2 ? '#F06BAE' : '#F2C230'}); }
 ZONE = 'r4';
 box(W, 72.6, 74.4, ROOF + 3.4, ROOF + 4.2, -.5, .1, '#E9E2D6', {ow:.03}); for(let i=0;i<5;i++) box(W, 72.75, 74.25, ROOF + 3.5 + i*.13, ROOF + 3.55 + i*.13, .1, .12, '#8A8178', {outline:false});
 sign(W, 81.0, 86.0, ROOF + 3.4, ROOF + 4.3, -.5, '#2F6FB5', '#F4F1EA', 'NHÀ TRỌ', 'phòng sạch');
@@ -186,29 +188,108 @@ ZONE = 'r4';
 mesh(W, new THREE.CylinderGeometry(.5, .5, 1.2, 12), '#2F6FB5', {pos:new THREE.Vector3(74.5, ROOF + .6, -1.6)});
 rod(W, new THREE.Vector3(71.8, ROOF + 2.6, 1.8), new THREE.Vector3(79.6, ROOF + 2.6, 1.8), .012, '#2A2530', {outline:false});
 spout(80.0, ROOF, 2.6, 'r4');
-// room 5: a little attic with a tiled roof, then the cloud
+// ================= room 5 · Mái tôn dột: a tin roof over the walkway, rain pouring through two holes hard enough to push Tò back =================
 ZONE = 'r5';
-box(W, 88, 91.6, ROOF, 9.8, -2.4, -.5, '#D9A07A', Object.assign({}, WALL, {uv:[3, 3]}));
-roof(W, 87.7, 91.9, 9.8, 1.6, 2.2, .7, '#B5513A');
-for(const x of [88.1, 91.5]) box(W, x - .08, x + .08, ROOF, 9.8, 1.3, 1.45, '#7A4E2D', {ow:.02});
-plat(87.8, 91.8, 9.8); plat(88, 91.6, ROOF, false, null, {safe:true});
-for(let i=0;i<3;i++) mesh(W, new THREE.ConeGeometry(.42, .3, 16), '#E9D9B0', {pos:new THREE.Vector3(90.6, 7.0 + i*.3, -.4), rot:[.9, 0, 0]});
-const cloudG = new THREE.Group(); cloudG.position.set(96.5, 12.4, -1.4); scene.add(cloudG);
+plat(88, 92, ROOF, false, null, {safe:true});
+for(const [a, b] of [[88, 96.0], [97.4, 101.0], [102.4, 108.6]]){
+  mesh(W, new THREE.BoxGeometry(b - a, .08, 3.4), '#7FA6B8', {pos:new THREE.Vector3((a + b)/2, 9.72, .6), rot:[.08, 0, 0], uv:[2, 1], map:TEX.tin, ow:.03});
+  plat(a, b, 9.6);
+}
+for(const x of [88.2, 92.4, 96.6, 100.8, 104.4, 108.4]){ ZONE = zoneFor(x); rod(W, new THREE.Vector3(x, ROOF, 2.1), new THREE.Vector3(x, 9.6, 2.1), .07, '#8A7D6F'); }
+ZONE = 'r5';
+for(let i=0;i<4;i++) crate(93.4 + i*.9, -1.6, .7, ['#7DBB4B','#E9C46A','#9FCBC1','#E8442E'][i], ROOF);
+const LEAKS = [[96.0, 97.4], [101.0, 102.4]].map(([x0, x1], i)=>{
+  const q = {x0, x1, patched:false};
+  plat(x0, x1, 9.6, true, ()=>q.patched);
+  wind(x0 - .5, x1 + .2, ROOF - .5, ROOF + 3, -8.5, ()=>!q.patched && rain.k > .3);
+  q.stream = new THREE.Mesh(new THREE.CylinderGeometry(.42, .55, 9.6 - ROOF, 12, 1, true), new THREE.MeshBasicMaterial({color:'#CFE3F2', transparent:true, opacity:.6, depthWrite:false, side:THREE.DoubleSide}));
+  q.stream.position.set((x0 + x1)/2, (ROOF + 9.6)/2, .6); scene.add(q.stream);
+  q.slot = slot({x0:x0 + .1, x1:x1 - .1, y0:8.95, y1:9.5, z:1.4, onPaste:()=>patchedLeak(i)});
+  return q;
+});
+// ================= room 6 · Dây phơi: a gap between the roofs, a washing line with a plank and a blanket stuck at the far pole =================
+ZONE = 'r6';
+hazard(110, 116, ROOF - 1.2, 'Hụt chân rồi!');
+for(const x of [109.6, 116.4]) rod(W, new THREE.Vector3(x, x < 112 ? ROOF : 5.0, .9), new THREE.Vector3(x, ROOF + 2.4, .9), .07, '#8A7D6F');
+rod(W, new THREE.Vector3(109.6, ROOF + 2.1, .9), new THREE.Vector3(116.4, ROOF + 2.1, .9), .015, '#2A2530', {outline:false});
+mesh(W, new THREE.TorusGeometry(.26, .07, 6, 16), '#C23A28', {pos:new THREE.Vector3(116.4, ROOF + 2.1, 1.0)});
+const pulley = target({x:116.2, y:ROOF + 2.1, r:1.0, onHit:()=>hitPulley()});
+const line = new THREE.Group(); scene.add(line);
+ZONE = 'r6';
+box(line, -3.2, 3.2, -.08, .08, -.6, .6, '#A27650', {ow:.03, uv:[.8, .8], map:TEX.wood});
+const blanket = new THREE.Group(); line.add(blanket);
+box(blanket, -3.0, 3.0, 1.5, 1.56, -.7, .7, '#E8442E', {ow:.025});
+for(let i=0;i<5;i++) box(blanket, -2.8 + i*1.3, -2.2 + i*1.3, 1.56, 1.58, -.5, .5, ['#F2C230','#2E9C93','#F4EFE4','#F2C230','#2E9C93'][i], {outline:false});
+let lineK = 0;
+plat(109.8, 116.2, ROOF, true, ()=>lineK > .95);
+plat(110, 116, ROOF + 1.6, true, ()=>lineK > .95);
+// iron stairs down to the flooded lane
+for(const [a, b, top] of [[116, 118, 5.0], [118, 120, 3.4], [120, 122, 1.8]]){ box(W, a, b, top - .2, top, -.4, 2.4, '#5E6670', {ow:.03}); block(a, b, -1, top); box(W, a + .1, b - .1, -1, top - .2, -.2, 2.2, '#C7B8E0', Object.assign({}, WALL, {uv:[3, 3]})); }
+rod(W, new THREE.Vector3(116, 6.2, 2.3), new THREE.Vector3(122, 2.8, 2.3), .05, '#2A2630', {outline:false});
+// ================= room 7 · Hẻm ngập: a dock under a tiled hood, a lane full of rainwater; a paper boat across, a nón on his head =================
+ZONE = 'r7';
+const CANAL = [125.6, 142.6];
+house(122, 133, 8.2, '#E9C46A', {roof:'#B5513A'}); house(133, 143, 7.6, '#9FCBC1');
+ZONE = 'r7';
+for(const [a, b] of [[122, CANAL[0]], [CANAL[1], 160]]) for(let x = a; x < b; x += 12){ const e = Math.min(b, x + 12); ZONE = zoneFor(x + .1);
+  box(W, x, e, -2, 0, -6, 3, '#C9C3BA', {outline:false, uv:[3.2, 3.2], map:TEX.pave}); box(W, x, e, -1.2, -.28, 3, 14, '#9A948E', {outline:false, uv:[4,4], map:TEX.road}); }
+ZONE = 'r7';
+box(W, CANAL[0], CANAL[1], -2.4, -1.4, -6, 3, '#8E857B', {outline:false, uv:[2,1], map:TEX.stone});
+box(W, CANAL[0], CANAL[1], -1.4, .08, 2.55, 3.0, '#9C8F80', {ow:.04, uv:[2,1], map:TEX.stone});
+const canal = channel({x0:CANAL[0], x1:CANAL[1], floor:-1.4, level:-.3, z0:-.5, z1:2.55});
+plat(122, CANAL[0], 0, false, null, {safe:true}); plat(CANAL[1], 160, 0);
+box(W, 121.8, 125.8, 3.4, 3.6, -.5, 2.2, '#B5513A', {ow:.03, uv:[2,2], map:TEX.tile});
+for(const x of [122.0, 125.6]) box(W, x - .1, x + .1, 0, 3.4, 1.95, 2.15, '#7A4E2D', {ow:.02});
+plat(121.8, 125.8, 3.4);
+sign(W, 126.6, 131.4, 4.0, 4.9, -.5, '#2E9C93', '#F4F1EA', 'BẾN ĐÒ', 'qua chợ');
+for(let i=0;i<3;i++) mesh(W, new THREE.CylinderGeometry(.18, .18, 1.2, 8), '#7A4E2D', {pos:new THREE.Vector3(128 + i*5, -.6, 2.2)});
+win(W, 128.4, 5.2, 1.4, 1.8, -.5, '#F4F1EA', '#2E8C86', {flower:'#F06BAE'}); win(W, 137.0, 4.8, 1.4, 1.8, -.5, '#F4F1EA', '#C23A28');
+balcony(W, 134, 140.4, 4.6, -.5, .9, '#E9DCC8', '#2A2630');
+spout(125.9, 3.4, 2.2, 'r7');
+// ================= room 8 · Chồng lịch mái hiên: a long porch roof whose state follows the day on the stack; the right day has it whole =================
+ZONE = 'r8';
+house(143, 151, 8.8, '#E8A598', {roof:'#B5513A'}); house(151, 160, 9.6, '#F1DDB0');
+ZONE = 'r8';
+box(W, 142.4, 146.6, 3.4, 3.6, -.5, 2.0, '#7FA6B8', {ow:.03, uv:[2,1], map:TEX.tin});
+plat(142.4, 146.6, 3.4); plat(142.6, 146.4, 0, false, null, {safe:true});
+for(const x of [146.4]) box(W, x - .1, x + .1, 0, 3.4, 1.8, 2.0, '#8A7D6F', {ow:.02});
+const HIEN = [146.6, 148.0, 149.4, 150.8, 152.2, 153.6, 155.0];
+const hienSegs = [];
+for(let i=0;i<6;i++){
+  const g = new THREE.Group(); scene.add(g); ZONE = 'r8';
+  box(g, HIEN[i], HIEN[i + 1], 3.4, 3.6, -.5, 2.2, '#B5513A', {ow:.03, uv:[2,2], map:TEX.tile});
+  box(g, HIEN[i + 1] - .1, HIEN[i + 1], 0, 3.4, 2.0, 2.2, '#7A4E2D', {ow:.02});
+  const q = {g, i, on:false}; q.plat = plat(HIEN[i], HIEN[i + 1], 3.4, true, ()=>q.on); hienSegs.push(q);
+}
+for(const [a, b, top] of [[155.0, 156.6, 1.6], [156.6, 158.2, 3.2], [158.2, 160.0, 4.8]]){ box(W, a, b, top - .2, top, -.4, 2.4, '#5E6670', {ow:.03}); block(a, b, -1, top); box(W, a + .1, b - .1, -1, top - .2, -.2, 2.2, '#D9A07A', Object.assign({}, WALL, {uv:[3, 3]})); }
+win(W, 148.2, 5.4, 1.4, 1.8, -.5, '#F4F1EA', '#2E8C86'); win(W, 155.6, 5.8, 1.4, 1.8, -.5, '#F4F1EA', '#8E6CC0');
+sign(W, 147.2, 151.0, 4.2, 5.0, -.5, '#C23A28', '#F2C230', 'XÔI CHÈ', 'bà Tám');
+for(let i=0;i<3;i++) stool(147.6 + i*1.6, 1.2, ['#C23A28','#2F6FB5','#4E9A4A'][i], 0);
+
+// room 9: a little attic with a tiled roof, then the cloud
+ZONE = 'r9';
+box(W, 88 + R9, 91.6 + R9, ROOF, 9.8, -2.4, -.5, '#D9A07A', Object.assign({}, WALL, {uv:[3, 3]}));
+roof(W, 87.7 + R9, 91.9 + R9, 9.8, 1.6, 2.2, .7, '#B5513A');
+for(const x of [88.1, 91.5]) box(W, x + R9 - .08, x + R9 + .08, ROOF, 9.8, 1.3, 1.45, '#7A4E2D', {ow:.02});
+plat(87.8 + R9, 91.8 + R9, 9.8); plat(88 + R9, 91.6 + R9, ROOF, false, null, {safe:true});
+for(let i=0;i<3;i++) mesh(W, new THREE.ConeGeometry(.42, .3, 16), '#E9D9B0', {pos:new THREE.Vector3(90.6 + R9, 7.0 + i*.3, -.4), rot:[.9, 0, 0]});
+const cloudG = new THREE.Group(); cloudG.position.set(96.5 + R9, 12.4, -1.4); scene.add(cloudG);
 for(const [x, y, s] of [[-3.6, 0, 1.6], [-1.6, .7, 2.2], [.6, .9, 2.4], [2.8, .4, 2.0], [4.4, -.2, 1.4], [0, -.4, 2.6]]) blob(cloudG, new THREE.Vector3(x, y, 0), [s, s*.8, s*.72], '#8E98A4', {ow:.05});
 
 // ================= background =================
-midRow(-16, 106, zoneFor, {zf:-5.4});
-farRow(-24, 130);
-clouds(-40, 150); hills(-40, 150);
+midRow(-16, 180, zoneFor, {zf:-5.4});
+farRow(-24, 200);
+clouds(-40, 220); hills(-40, 220);
 // after the rain: a rainbow over the river
 ZONE = 'sky';
-const rainbow = new THREE.Group(); rainbow.position.set(60, -6, -70); scene.add(rainbow);
+const rainbow = new THREE.Group(); rainbow.position.set(90, -6, -80); scene.add(rainbow);
 ['#E8442E','#F28C28','#F2C230','#7DBB4B','#3FA7C9','#4C6FB8','#8E6CC0'].forEach((c, i)=>{
   const m = new THREE.Mesh(new THREE.TorusGeometry(46 - i*1.4, .75, 6, 64, Math.PI), new THREE.MeshBasicMaterial({color:c, transparent:true, opacity:0, depthWrite:false, fog:false}));
   rainbow.add(m); });
 moteSpan(-10, 30);
 
 // ================= sheets =================
+const boatPic = (x, cw, ch)=>{ x.fillStyle = 'rgba(70,60,50,.3)'; x.beginPath(); x.moveTo(cw*.22, ch*.66); x.lineTo(cw*.78, ch*.66); x.lineTo(cw*.66, ch*.8); x.lineTo(cw*.34, ch*.8); x.closePath(); x.fill(); x.beginPath(); x.moveTo(cw*.4, ch*.66); x.lineTo(cw*.5, ch*.42); x.lineTo(cw*.6, ch*.66); x.fill(); };
 const awnPic = (x, cw, ch)=>{ x.strokeStyle = 'rgba(70,60,50,.4)'; x.lineWidth = 4; x.beginPath(); x.moveTo(cw*.15, ch*.4); x.lineTo(cw*.85, ch*.3); x.lineTo(cw*.85, ch*.4); x.lineTo(cw*.15, ch*.5); x.closePath(); x.stroke();
   for(const p of [.2, .8]){ x.beginPath(); x.moveTo(cw*p, ch*.45); x.lineTo(cw*p, ch*.9); x.stroke(); } };
 const nonPic = (x, cw, ch)=>{ x.strokeStyle = 'rgba(70,60,50,.42)'; x.lineWidth = 4; x.beginPath(); x.moveTo(cw*.15, ch*.72); x.lineTo(cw*.5, ch*.38); x.lineTo(cw*.85, ch*.72); x.closePath(); x.stroke();
@@ -224,9 +305,16 @@ const sheetP = sheet({id:'P', x0:44.8, x1:46.4, y0:.4, y1:2.2, z:-.44, carry:tru
 const holeSlot = slot({x0:54.9, x1:56.1, y0:3.05, y1:3.5, z:1.2, onPaste:()=>patchedHole()});
 const sheetV1 = sheet({id:'V', x0:68.4, x1:71.6, y0:ROOF + 1.0, y1:ROOF + 4.2, z:-.45, dir:'y', layers:[{n:'16'}]});
 const sheetV2 = sheet({id:'W', x0:75.8, x1:79.0, y0:ROOF + 1.0, y1:ROOF + 4.2, z:-.45, dir:'y', layers:[{n:'16'}]});
-const sheetC = sheet({id:'C', x0:88.6, x1:90.2, y0:ROOF + .4, y1:ROOF + 2.2, z:-.44, carry:true, respawn:true, layers:[{n:'17'}]});
-const sheetS = sheet({id:'S', x0:93.0, x1:100.0, y0:ROOF + .5, y1:ROOF + 4.3, z:-.5, layers:[{n:'17', pic:cloudPic}], onLayer:()=>peeledCloud()});
-sheetP.solved = sheetC.solved = true;
+const sheetT5 = sheet({id:'T', x0:89.0, x1:90.6, y0:ROOF + .4, y1:ROOF + 2.2, z:-.44, carry:true, respawn:true, layers:[{n:'17'}]});
+const sheetT6 = sheet({id:'F', x0:106.6, x1:108.2, y0:ROOF + .4, y1:ROOF + 2.2, z:-.44, carry:true, respawn:true, layers:[{n:'17'}]});
+const sheetK = sheet({id:'K', x0:122.6, x1:124.2, y0:.4, y1:2.2, z:-.44, carry:true, respawn:true, layers:[{n:'17', pic:boatPic}]});
+const roofPic = (k)=>(x, cw, ch)=>{ x.strokeStyle = 'rgba(70,60,50,.42)'; x.lineWidth = 5; x.beginPath(); x.moveTo(cw*.15, ch*.45); x.lineTo(cw*.85, ch*.45); x.stroke();
+  for(let i=0;i<4;i++){ if(k === 0 || (k === 1 && i%2)) continue; x.beginPath(); x.moveTo(cw*(.15 + i*.175), ch*.45); x.lineTo(cw*(.15 + i*.175 + .15), ch*.32); x.lineTo(cw*(.15 + i*.175 + .175), ch*.45); x.stroke(); }
+  x.beginPath(); x.moveTo(cw*.2, ch*.45); x.lineTo(cw*.2, ch*.9); x.moveTo(cw*.8, ch*.45); x.lineTo(cw*.8, ch*.9); x.stroke(); };
+const sheetH = sheet({id:'H', x0:143.6, x1:145.4, y0:.4, y1:2.4, z:-.44, layers:[{n:'17', pic:roofPic(0)}, {n:'16', pic:roofPic(1)}, {n:'15', pic:roofPic(2)}], onLayer:i=>peeledHien(i), onRestore:L=>hienState(L)});
+const sheetC = sheet({id:'C', x0:88.6 + R9, x1:90.2 + R9, y0:ROOF + .4, y1:ROOF + 2.2, z:-.44, carry:true, respawn:true, layers:[{n:'17'}]});
+const sheetS = sheet({id:'S', x0:93.0 + R9, x1:100.0 + R9, y0:ROOF + .5, y1:ROOF + 4.3, z:-.5, layers:[{n:'17', pic:cloudPic}], onLayer:()=>peeledCloud()});
+sheetP.solved = sheetC.solved = sheetT5.solved = sheetT6.solved = sheetK.solved = true;
 
 // ================= characters =================
 // ông Bảy: a thin old umbrella mender on a low stool, white beard, round glasses, a brown áo bà ba
@@ -291,6 +379,7 @@ npcTalk(bay, 'bay', 2.2, ()=>{
 talker(bay, 2.1, ()=> !bayAwake && dist(bay) > 6 ? 'z z z' : '', 'zzz');
 
 // ================= story beats =================
+let metTin = false, metLine = false, metCanal = false, metHien = false, hienL = 0;
 let metRain = false, metYard = false, metBay = false, metRoof = false, metCloud = false, wetOnce = false, bayAwake = false, stopping = false, rainbowK = 0;
 function peeledAwning(){
   sheetB.solved = true; batOpen = .001; say('Tấm bạt bung ra!', 1.6);
@@ -315,11 +404,30 @@ function patchedHole(){
     {dur:2.8, start:()=>npcSay('bay', 'Trèo lên mà nhún, lên mái nhà được đó con.', 2.8)},
     {dur:0, start:()=>objective('Nhảy lên mặt ô, nhún lên mái nhà')}]);
 }
+function patchedLeak(i){
+  LEAKS[i].patched = true;
+  if(LEAKS.every(q=>q.patched)){ colour('r5'); say('Kín hết rồi! Mái tôn khô ráo.', 2); objective('Đi tiếp sang dây phơi'); }
+  else say('Bịt được một chỗ! Còn một chỗ nữa.', 2);
+}
+function hitPulley(){
+  lineK = .001;
+  play([{dur:2.6, cam:[113, ROOF + 2.4], start:()=>say('Trúng rồi! Tấm ván trượt ra.', 2)}, {dur:0, start:()=>{ colour('r6'); objective('Qua tấm ván, xuống hẻm ngập'); }}]);
+}
+function hienState(L){
+  hienL = L; sheetH.solved = L === 2;
+  for(const q of hienSegs) q.on = L === 2 || (L === 1 && q.i === 0);
+}
+function peeledHien(i){
+  hienState(sheetH.L);
+  if(sheetH.L === 1) say('Ngày 16: mái hiên còn mà thủng lỗ chỗ.', 2.4);
+  else if(sheetH.L === 2){ colour('r8'); say('Ngày 15: mái hiên còn lành!', 2); objective('Chạy dưới mái hiên, leo cầu thang lên mái'); }
+  else { say('Bóc quá tay, mái hiên biến mất. Bấm R dán lại.', 2.6); objective('Dán lại tờ 15 (bấm R)'); }
+}
 function peeledCloud(){
   sheetS.solved = true; stopping = true; objective('Mưa tạnh rồi!');
   finish([
-    {dur:2.6, cam:[96, 10.4, 20], start:()=>say('Mây tan rồi…', 2)},
-    {dur:4.0, cam:[60, 9, 46], start:()=>{ bars(true); caption('Mưa tạnh. Nắng chiều trải khắp chợ bên sông.'); for(const z of ROOMS) colour(z); rainbowK = .001; }, end:()=>caption('')},
+    {dur:2.6, cam:[96 + R9, 10.4, 20], start:()=>say('Mây tan rồi…', 2)},
+    {dur:4.0, cam:[90, 9, 60], start:()=>{ bars(true); caption('Mưa tạnh. Nắng chiều trải khắp chợ bên sông.'); for(const z of ROOMS) colour(z); rainbowK = .001; }, end:()=>caption('')},
     {dur:3.0, cam:[56.5, 2.8, 14], start:()=>{ colour('bay'); npcSay('bay', 'Tạnh rồi! Cảm ơn con nghe.', 2.6); }},
     {dur:4.8, cam:[56.5, 2.8, 14], start:()=>memo(drawBayMemory), end:memoOff},
     {dur:3.0, cam:[56.5, 2.8, 14], start:()=>npcSay('bay', 'Ô thủng thì vá. Ngày bị quên thì… có con bóc giùm.', 3)},
@@ -372,17 +480,29 @@ LV.update = (dt, t)=>{
   if(!metYard && P.x > 18.5){ metYard = true; colour('r1'); say('Sân chợ trống trơn, chẳng có mái nào…', 2.6); objective('Bóc tờ lịch trên cột mái tôn'); }
   if(!metBay && P.x > 42.5){ metBay = true; colour('r2'); say('Bên kia có ông cụ ngủ cạnh cái ô to.', 2.4); objective('Bóc tờ lịch trên biển SỬA Ô'); }
   if(!metRoof && P.y > ROOF - .2 && P.x > 59){ metRoof = true; colour('r3'); say('Lên mái rồi! Mà mưa to quá…', 2.4); objective('Kéo tờ lịch dọc lên làm mái che'); }
-  if(!metCloud && P.x > 88.2 && P.y > ROOF - .2){ metCloud = true; colour('r4'); say('Đám mây xám dán đầy tờ lịch!', 2.6); objective('Đội nón, bóc tờ lịch dưới đám mây'); }
+  if(!metTin && P.x > 88.2 && P.y > ROOF - .2){ metTin = true; colour('r4'); say('Mái tôn dột hai chỗ, nước xối như thác!', 2.6); objective('Lấy tờ lịch dán bịt chỗ dột'); }
+  if(!metLine && P.x > 108.8 && P.y > ROOF - .2){ metLine = true; say('Khe giữa hai nhà rộng quá… ròng rọc dây phơi bị kẹt.', 2.8); objective('Phóng máy bay giấy trúng ròng rọc'); }
+  if(!metCanal && P.x > 122.2 && P.y < 1){ metCanal = true; colour('r6'); say('Hẻm ngập hết rồi! Tò sợ nước lắm…', 2.6); objective('Thả thuyền giấy, đội nón, qua hẻm ngập'); }
+  if(!metHien && P.x > CANAL[1] + .2){ metHien = true; colour('r7'); say('Mái hiên sập mất rồi. Chồng lịch trên tường…', 2.6); objective('Bóc tới ngày mái hiên còn lành'); }
+  for(const q of LEAKS) q.stream.material.opacity = q.patched ? 0 : .6*rain.k;
+  if(lineK > 0 && lineK < 1) lineK = Math.min(1, lineK + dt*.7);
+  { const e = lineK*lineK*(3 - 2*lineK); line.position.set(118.6 - e*5.6, ROOF + .02 + (1 - e)*1.2, .4); line.rotation.z = (1 - e)*1.35; blanket.visible = e > .05; }
+  for(const q of hienSegs) q.g.visible = q.on;
+  if(!metCloud && P.x > 162.2 && P.y > ROOF - .2){ metCloud = true; colour('r8'); say('Đám mây xám dán đầy tờ lịch!', 2.6); objective('Đội nón, bóc tờ lịch dưới đám mây'); }
 };
 LV.hint = ()=>{
   if(P.x < 18) return !sheetB.done ? 'Đường dài quá, đi mưa sẽ nhũn. Bóc tờ lịch dưới tấm bạt cuộn ở quán trà đá.' : 'Đứng dưới mái hay tấm bạt thì khô lại. Chạy từng đoạn ngắn.';
   if(P.x < 42) return !learned.includes('non') ? 'Bóc tờ lịch trên cột mái tôn, xem mặt sau.' : held.on ? (held.form === 'non' ? 'Đội nón rồi, chạy qua sân chợ. Nón giấy chỉ chịu được một lúc.' : 'Bấm Q cho tới khi gấp thành nón.') : 'Lấy tờ lịch trên cột để gấp nón.';
-  if(P.y < ROOF - .5){
+  if(P.y < ROOF - .5 && P.x < 59){
     if(!sheetU.done) return 'Bóc tờ lịch trên biển SỬA Ô.';
     if(!patched) return held.on ? (held.form ? 'Bấm Q để mở tờ lịch ra, rồi đứng lên hộp đồ nghề dưới lỗ thủng, bấm E để dán.' : 'Đứng lên hộp đồ nghề dưới lỗ thủng, bấm E để dán.') : 'Lấy tờ lịch trên tường dưới mái chợ, mang ra vá lỗ thủng.';
     return 'Từ hộp đồ nghề nhảy lên mặt ô, nhún rồi sang phải lên mái nhà.';
   }
-  if(P.x < 88) return 'Nắm mép dưới tờ lịch dọc, đi lùi để kéo lên trên đầu, bấm E buông. Mép giấy thành mái che.';
+  if(P.x < 88 && P.y > ROOF - .5) return 'Nắm mép dưới tờ lịch dọc, đi lùi để kéo lên trên đầu, bấm E buông. Mép giấy thành mái che.';
+  if(P.x < 108.8 && LEAKS.some(q=>!q.patched)) return held.on ? (held.form ? 'Bấm Q để mở tờ lịch ra, đứng sát chỗ dột rồi bấm E để dán lên mái.' : 'Đứng sát chỗ nước xối, bấm E để dán tờ lịch lên lỗ dột.') : 'Lấy tờ lịch trên tường đầu mái tôn, mang tới dán bịt chỗ dột.';
+  if(P.x < 116 && lineK < .95) return held.on ? (held.form === 'maybay' ? 'Đứng dưới mái tôn ở cuối, quay sang phải, bấm E phóng vào ròng rọc đỏ.' : 'Bấm Q cho tới khi gấp thành máy bay.') : 'Lấy tờ lịch trên tường cuối mái tôn, gấp máy bay.';
+  if(P.x < CANAL[1]) return boat.on ? (held.on && held.form === 'non' ? 'Đội nón rồi, bước lên thuyền, đi sang phải là thuyền trôi theo.' : 'Hẻm dài lắm, đi giữa mưa sẽ nhũn. Lấy tờ lịch dưới mái, gấp nón rồi lên thuyền.') : held.on ? (held.form === 'thuyen' ? 'Đứng sát mép nước, bấm E để thả thuyền.' : 'Bấm Q cho tới khi gấp thành thuyền.') : 'Lấy tờ lịch dưới mái hiên bến đò, gấp thuyền.';
+  if(P.x < 160 && P.y < ROOF - .5) return sheetH.L === 2 ? 'Chạy dưới mái hiên, leo cầu thang bên phải lên mái.' : sheetH.L > 2 || sheetH.done ? 'Bóc quá tay rồi. Đứng gần chồng lịch, bấm R dán lại.' : 'Chồng lịch có ba ngày. Ngày nào mái hiên còn lành?';
   if(!sheetS.done) return held.on && held.form === 'non' ? 'Đội nón rồi. Nắm mép tờ lịch dưới đám mây, đi lùi để bóc.' : 'Bóc dưới mưa lâu lắm. Lấy tờ lịch trong gác, gấp nón rồi hẵng ra.';
   return '';
 };
@@ -403,7 +523,7 @@ LV.intro = {end:12, sheetsAt:9,
         [8.3, 11.6, 'Tò là bột gạo. Dính mưa lâu là nhũn ra, bạc cả màu.']],
   run(it, dt, t){
     for(const z of ROOMS.concat(['bay','sky'])) setZone(z, 0);
-    const camX = it < 4 ? 40 - it*4 : it < 8 ? 90 - (it - 4)*4 : Math.max(-2, 12 - (it - 8)*4);
+    const camX = it < 4 ? 40 - it*4 : it < 8 ? 166 - (it - 4)*4 : Math.max(-2, 12 - (it - 8)*4);
     const camY = it >= 4 && it < 8 ? 10 : 2.6;
     camLook.lerp(tmpV.set(camX, camY, -1), Math.min(1, dt*2));
     camPos.lerp(tmpV.set(camX - 2.5, camY + 2.6, it >= 4 && it < 8 ? 26 : 17), Math.min(1, dt*2));
