@@ -420,7 +420,7 @@ LV.winText = ()=>({
     ? '<b>Ký ức mở khoá.</b> Mùa gió năm 1985, ông Đức dạy bà Năm làm diều sáo cho lũ trẻ trong phố. Bà dán đuôi diều bằng giấy lịch cũ.'
     : 'Còn ' + (5 - fliesGot) + ' con đom đóm ở Màn 7 chưa tìm thấy.')
     + (relicGot ? '<br><b>Tìm được con chuồn chuồn của ông Đức.</b>' : '<br>Có một con tò he cũ giấu trên nắp ống khói cũ.'),
-  next:'Màn 8 · Đêm Trung thu: phố cũ lên đèn'
+  next:'Màn 8 · Rước đèn: đêm Rằm trên phố cũ'
 });
 
 // ================= intro: wind over the rooftops =================
