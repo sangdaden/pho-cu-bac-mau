@@ -391,7 +391,7 @@ LV.winText = ()=>({
     ? '<b>Ký ức mở khoá.</b> Mồng Một Tết năm 1979, bà Năm học nặn tò he ở sạp ông Út. Con đầu tiên bà nặn là một chú gà trống đỏ, bà đặt tên là Tò.'
     : 'Còn ' + (5 - fliesGot) + ' con đom đóm ở Màn 6 chưa tìm thấy.')
     + (relicGot ? '<br><b>Tìm được con chim sẻ của bà Tám.</b>' : '<br>Có một con tò he cũ giấu trên bồn nước trên mái.'),
-  next:'Chương 3 · Phố cũ đang chờ Tò về'
+  next:'Chương 3 · Màn 7 Gió mùa: chiều lộng gió trên mái phố'
 });
 
 // ================= intro: dawn in the market lanes =================
