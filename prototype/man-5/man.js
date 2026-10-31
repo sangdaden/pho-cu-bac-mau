@@ -525,7 +525,7 @@ LV.winText = ()=>({
     ? '<b>Ký ức mở khoá.</b> Mùa lụt năm 1992, chú Chín chèo đò chở cả xóm qua sông, mấy chục chuyến một đêm. Bà Năm nặn tặng chú con cóc nhỏ: “Cóc kêu thì trời mưa, chú chở thì xóm yên.”'
     : 'Còn ' + (5 - fliesGot) + ' con đom đóm ở Màn 5 chưa tìm thấy.')
     + (relicGot ? '<br><b>Tìm được con cóc nhỏ của chú Chín.</b>' : '<br>Có một con tò he cũ giấu trên cột buộc đò.'),
-  next:'Chương 2 còn tiếp · Màn 6 Gánh hàng rong đang chờ'
+  next:'Màn 6 · Gánh hàng rong: sáng mai, hẻm sau chợ'
 });
 
 // ================= intro: the river after the rain =================

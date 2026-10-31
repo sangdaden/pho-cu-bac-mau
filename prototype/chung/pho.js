@@ -799,7 +799,7 @@ function trayShow(){ const tr = trayLoad(); for(let i=0;i<3;i++) $('t'+(i+1)).st
 function traySet(n){ const tr = trayLoad(); if(!tr.includes(n)) tr.push(n); try { localStorage.setItem('phocu.tray', JSON.stringify(tr)); } catch(e){} trayShow(); }
 trayShow();
 // ---------- progress: one save for the whole game, so the title screen can offer "Chơi tiếp" ----------
-const LEVEL_URL = [null, '../man-1/index.html', '../man-2/index.html', '../man-3/index.html', '../man-4/index.html', '../man-5/index.html'];
+const LEVEL_URL = [null, '../man-1/index.html', '../man-2/index.html', '../man-3/index.html', '../man-4/index.html', '../man-5/index.html', '../man-6/index.html'];
 function saveGet(){ try { return JSON.parse(localStorage.getItem('phocu.save') || '{}') || {}; } catch(e){ return {}; } }
 function savePut(o){ try { localStorage.setItem('phocu.save', JSON.stringify(Object.assign(saveGet(), o))); } catch(e){} }
 function relicSave(n){ try { const r = JSON.parse(localStorage.getItem('phocu.relic') || '[]'); if(!r.includes(n)) r.push(n); localStorage.setItem('phocu.relic', JSON.stringify(r)); } catch(e){} }

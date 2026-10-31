@@ -110,17 +110,18 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
 <div class="fade" id="fade"></div>
 
 <script>
-const LV = [null, {name:'Màn 1: Mái hiên', sub:'Chiều 14 tháng Tám, con phố của bà Năm'}, {name:'Màn 2: Rãnh nước', sub:'Hoàng hôn, con hẻm có rãnh nước'}, {name:'Màn 3: Tháp đồng hồ', sub:'Đêm, tháp đồng hồ cuối phố'}, {name:'Màn 4: Mưa phố', sub:'Chương 2, chợ bên sông trong mưa'}, {name:'Màn 5: Nước lên', sub:'Chiều tối sau mưa, con nước theo lịch âm'}];
+const LV = [null, {name:'Màn 1: Mái hiên', sub:'Chiều 14 tháng Tám, con phố của bà Năm'}, {name:'Màn 2: Rãnh nước', sub:'Hoàng hôn, con hẻm có rãnh nước'}, {name:'Màn 3: Tháp đồng hồ', sub:'Đêm, tháp đồng hồ cuối phố'}, {name:'Màn 4: Mưa phố', sub:'Chương 2, chợ bên sông trong mưa'}, {name:'Màn 5: Nước lên', sub:'Chiều tối sau mưa, con nước theo lịch âm'}, {name:'Màn 6: Gánh hàng rong', sub:'Sáng sớm, hẻm sau chợ, tiếng rao mất chữ'}];
 const $ = id => document.getElementById(id);
 const get = (k, d)=>{ try { return JSON.parse(localStorage.getItem(k) || d); } catch(e){ return JSON.parse(d); } };
 const save = get('phocu.save', '{}') || {}, tray = get('phocu.tray', '[]');
 let leaving = false;
 function go(n){ if(leaving) return; leaving = true; $('fade').classList.remove('out'); setTimeout(()=>{ location.href = 'man-' + n + '/index.html'; }, 900); }
 function wipe(){ for(const k of ['phocu.save', 'phocu.tray', 'phocu.relic']) try { localStorage.removeItem(k); } catch(e){} }
-// a save that finished chương 1 before Màn 4 existed carries on into it; one that finished Màn 4 before Màn 5 existed can open Màn 5
-const cur = Math.min(5, Math.max(1, save.done && save.man === 3 ? 4 : save.man || 1)), started = !!save.man, maxOpen = Math.max(save.max || 1, cur, save.done && save.man >= 4 ? 5 : 1);
+// a save that finished chương 1 before Màn 4 existed carries on into it; one that finished the last level before the next one existed can open the next one
+const LAST = LV.length - 1;
+const cur = Math.min(LAST, Math.max(1, save.done && save.man === 3 ? 4 : save.man || 1)), started = !!save.man, maxOpen = Math.min(LAST, Math.max(save.max || 1, cur, save.done && save.man >= 4 ? save.man + 1 : 1));
 if(started){
-  $('play').innerHTML = (save.done && save.man >= 5 ? 'Chơi lại Màn 5' : 'Chơi tiếp') + '<small>' + LV[cur].name + '</small>';
+  $('play').innerHTML = (save.done && save.man >= LAST ? 'Chơi lại ' + LV[LAST].name.split(':')[0] : 'Chơi tiếp') + '<small>' + LV[cur].name + '</small>';
   $('fresh').style.display = ''; $('pick').style.display = '';
   $('tray').style.display = '';
   const C = ['#C23A28', '#E9A23B', '#2E9C93']; document.querySelectorAll('#tray i').forEach((el, i)=>{ if(tray.includes(i+1)) el.style.background = C[i]; });
@@ -131,7 +132,7 @@ $('sureY').onclick = ()=>{ wipe(); go(1); };
 $('how').onclick = ()=>{ $('help').style.display = 'flex'; };
 $('pick').onclick = ()=>{
   const L = $('lvList'); L.innerHTML = '';
-  for(let n=1;n<=5;n++){ const b = document.createElement('button'); const open = n <= maxOpen;
+  for(let n=1;n<=LAST;n++){ const b = document.createElement('button'); const open = n <= maxOpen;
     b.innerHTML = LV[n].name + '<span>' + (open ? LV[n].sub : 'chưa mở') + '</span>'; b.disabled = !open; b.onclick = ()=>go(n); L.appendChild(b); }
   $('levels').style.display = 'flex';
 };
