@@ -513,7 +513,7 @@ LV.winText = ()=>({
     ? '<b>Ký ức mở khoá.</b> Mùa mưa năm 1992, ông Bảy vá ô cho cả chợ, chẳng lấy tiền ai. Bà Năm nặn tặng ông con trâu nhỏ, bảo: “Ông giữ cho chợ khỏi ướt, tui giữ cho ông khỏi buồn.”'
     : 'Còn ' + (5 - fliesGot) + ' con đom đóm ở Màn 4 chưa tìm thấy.')
     + (relicGot ? '<br><b>Tìm được con trâu nhỏ của ông Bảy.</b>' : '<br>Có một con tò he cũ giấu trên ban công chợ.'),
-  next:'Chương 2 còn tiếp · đây là bản thử cơ chế mưa'
+  next:'Màn 5 · Nước lên: mưa tạnh, mà nước sông cứ lên mãi'
 });
 
 // ================= intro: rain over the market across the river =================
