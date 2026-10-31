@@ -1,10 +1,11 @@
 // Phố Cũ Bạc Màu · service worker: the game installs like an app and plays offline once opened
 // Our own files go network-first so a new push shows up straight away, and fall back to the cache with no signal.
-// Versioned CDN files (three.js r128) and fonts never change, so they come from the cache first.
-const CACHE = 'phocu-1';
+// three.js r128 now ships with the game (chung/three.min.js). Fonts never change, so they come from the cache first.
+// the deploy workflow stamps each push into the name, so a phone that opened an older build drops it and caches the new one whole
+const CACHE = 'phocu-__BUILD__';
 const CORE = ['/', '/index.html', '/manifest.webmanifest', '/chung/pho.js', '/chung/pho.css', '/anh/bia.jpg',
   '/icon/icon-192.png', '/icon/icon-512.png', '/icon/apple-touch-icon.png', '/favicon.ico',
-  'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'];
+  '/chung/three.min.js'];
 // every level that exists gets cached at install, so a level never opened still plays offline; missing ones just fail quietly
 const LEVELS = [];
 for(let n=1;n<=12;n++) LEVELS.push('/man-' + n + '/index.html', '/man-' + n + '/man.js');

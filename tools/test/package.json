@@ -1,0 +1,12 @@
+{
+  "name": "pho-cu-kiem-tra",
+  "private": true,
+  "description": "Bot chơi thử 9 màn Phố Cũ Bạc Màu và thử Chơi tiếp giữa màn",
+  "scripts": {
+    "bot": "node run-all.js",
+    "tiep": "node resume.js"
+  },
+  "devDependencies": {
+    "playwright": "1.49.1"
+  }
+}

@@ -1,0 +1,34 @@
+name: Bot chơi thử 9 màn
+on:
+  pull_request:
+    paths: ["prototype/**", "tools/test/**", ".github/workflows/kiem-tra.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  choi-thu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: tools/test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Mỗi màn bot phải thắng được, không có lỗi trang
+        run: node run-all.js
+      - name: Chơi tiếp giữa màn phải trả Tò về đúng chỗ (thao tác ngẫu nhiên)
+        run: node resume.js
+      - name: Chơi tiếp sau khi bot giải gần hết màn
+        run: |
+          fail=0
+          for n in 1 2 3 4 5 6 7 8 9; do
+            out=$(JRCHECK=1 NOSHOT=1 node play$n.js ../../prototype/man-$n/index.html /tmp/pho-$n 0 2>&1 | grep JRCHECK || echo "JRCHECK không chạy")
+            echo "Màn $n: $out"
+            case "$out" in *"JRCHECK ok"*) ;; *) fail=1 ;; esac
+          done
+          exit $fail

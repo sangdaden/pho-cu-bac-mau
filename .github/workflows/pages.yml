@@ -20,6 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - name: Đóng dấu bản build vào service worker
+        run: sed -i "s/__BUILD__/${GITHUB_SHA::8}/" prototype/sw.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: prototype
