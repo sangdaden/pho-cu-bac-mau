@@ -175,9 +175,9 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>$('fade').classList.add('out
 addEventListener('pageshow', e=>{ if(e.persisted){ leaving = false; $('fade').classList.add('out'); } });
 $('play').focus();
 // on a phone the help names the on-screen buttons, not keys
-if(matchMedia('(pointer:coarse)').matches) $('keysHelp').innerHTML = '<li><b>◀</b> <b>▶</b> đi, trượt ngón để đổi hướng · <b>⤒</b> nhảy</li><li><b>Bóc</b> nắm mép sáng, rồi đi lùi để bóc · bấm lần nữa để buông</li><li>Đang cầm tờ lịch: <b>Dùng</b> để dán, thả thuyền, phóng máy bay, phẩy quạt · <b>Gấp</b> đổi kiểu gấp</li><li><b>↺</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>?</b> gợi ý · <b>❚❚</b> tạm dừng</li><li>Chơi ngang màn hình. Cài lên điện thoại để chơi toàn màn hình.</li>';
+if(matchMedia('(pointer:coarse)').matches) $('keysHelp').innerHTML = '<li><b>◀</b> <b>▶</b> đi, trượt ngón để đổi hướng · <b>⤒</b> nhảy</li><li><b>Bóc</b> nắm mép sáng, rồi đi lùi để bóc · bấm lần nữa để buông</li><li>Đang cầm tờ lịch: <b>Dùng</b> để dán, thả thuyền, phóng máy bay, phẩy quạt · <b>Gấp</b> đổi kiểu gấp</li><li><b>↺</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>?</b> gợi ý · <b>❚❚</b> tạm dừng</li><li>Chơi ngang màn hình. '+(window.PHOCU_APP ? '' : 'Cài lên điện thoại để chơi toàn màn hình.')+'</li>';
 // install like an app: Chrome on Android offers its own prompt; iPhone and other browsers get the steps to do it by hand
-const STANDALONE = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+const STANDALONE = !!window.PHOCU_APP || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
 const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 let askInstall = null;
 if(!STANDALONE && matchMedia('(pointer:coarse)').matches) $('install').style.display = '';
@@ -190,5 +190,5 @@ $('install').onclick = ()=>{
     : '<li>Mở menu <b>⋮</b> của trình duyệt.</li><li>Chọn <b>Cài đặt ứng dụng</b> hoặc <b>Thêm vào màn hình chính</b>.</li>';
   $('installH').style.display = 'flex';
 };
-if('serviceWorker' in navigator && location.protocol.startsWith('http')) addEventListener('load', ()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+if(!window.PHOCU_APP && 'serviceWorker' in navigator && location.protocol.startsWith('http')) addEventListener('load', ()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
 </script>

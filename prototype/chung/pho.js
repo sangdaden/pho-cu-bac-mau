@@ -1726,4 +1726,4 @@ function startGame(){
 }
 
 // works offline and installs like an app (Thêm vào màn hình chính): see /sw.js
-if('serviceWorker' in navigator && location.protocol.startsWith('http')) addEventListener('load', ()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+if(!window.PHOCU_APP && 'serviceWorker' in navigator && location.protocol.startsWith('http')) addEventListener('load', ()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));

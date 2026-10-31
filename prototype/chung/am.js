@@ -131,7 +131,13 @@ const AM = (()=>{
     change(k, v){ set[k] = v; save(); apply(); },
     play, tear, start,
     // short buzz on phones (Android; iPhone browsers ignore it)
-    buzz(ms){ if(set.rung && !mute && navigator.vibrate) try { navigator.vibrate(ms); } catch(e){} },
+    // in the Android app the Capacitor Haptics plugin gives a real tap; in the browser navigator.vibrate
+    buzz(ms){
+      if(!set.rung || mute) return;
+      const H = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics;
+      if(H) try { (ms >= 40 ? H.impact({style:'MEDIUM'}) : H.impact({style:'LIGHT'})).catch(()=>{}); return; } catch(e){}
+      if(navigator.vibrate) try { navigator.vibrate(ms); } catch(e){}
+    },
     level(n){ chapter = Math.min(3, Math.max(1, Math.ceil(n/3))); },
     colour(k){ colourK = k; },
     rain(k){ rainK = k; },
