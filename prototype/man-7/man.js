@@ -347,7 +347,7 @@ function peeledKite(){
     {dur:4.2, cam:[200, 12, 46], start:()=>{ bars(true); caption('Gió về trên mái phố. Diều nào cũng bay đủ màu.'); for(const z of ROOMS) colour(z); for(const v of people){ v.awake = true; colour(v.zone); } }, end:()=>caption('')},
     {dur:3.0, cam:[223, 15, 13], start:()=>vSay(vDuc, 'Mùa gió năm đó, bà Năm ngồi đây dán diều với ông.', 3)},
     {dur:4.8, cam:[223, 15, 13], start:()=>memo(drawDucMemory), end:memoOff},
-    {dur:3.0, cam:[223, 15, 13], start:()=>vSay(vDuc, 'Đêm mai Trung thu. Phố cũ lên đèn chờ con đó.', 3)},
+    {dur:3.0, cam:[223, 15, 13], start:()=>vSay(vDuc, 'Rằm tháng Giêng này phố cũ rước đèn. Về đi con.', 3)},
     {dur:.6, end:()=>bars(false)}]);
 }
 function drawDucMemory(x, W, H){
