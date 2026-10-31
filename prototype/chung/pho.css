@@ -92,3 +92,33 @@ body.game .pad.r{right:max(12px,env(safe-area-inset-right))}
 .xoay .dt:after{content:"";position:absolute;left:50%;bottom:5px;width:12px;height:4px;margin-left:-6px;border-radius:2px;background:#FFF6E0}
 @keyframes xoay{0%,25%{transform:rotate(0)}55%,100%{transform:rotate(-90deg)}}
 @media (orientation:portrait) and (pointer:coarse){.xoay{display:flex}}
+/* touch pads hide during cutscenes; the small pad buttons grow to fit their word */
+.stage.cine .pad{display:none!important}
+.pad button.sm{width:auto;min-width:44px;padding:0 12px;border-radius:22px}
+/* landscape phones (360–500px tall): smaller HUD, hint moves up under the HUD so Tò and the pads stay clear, cards fit without scrolling */
+@media (pointer:coarse) and (max-height:500px){
+  body.game .hud{gap:6px}
+  .hudR{gap:5px;flex-wrap:nowrap}
+  .pill{font-size:15px;padding:1px 9px;border-width:1.5px;white-space:nowrap}
+  .pill.tray{font-size:0;padding:5px 8px;gap:4px}
+  .pill.tray i{width:12px;height:12px}
+  #title{overflow:hidden;text-overflow:ellipsis;max-width:38vw}
+  .menuB{width:32px;height:32px;font-size:13px}
+  .bubble{font-size:16px;padding:3px 10px;max-width:210px;border-width:2px;border-radius:13px}
+  .hint{top:calc(max(10px,env(safe-area-inset-top)) + 40px);bottom:auto;white-space:normal;text-align:center;max-width:min(560px,70%);font-size:13px;line-height:1.35;border-radius:14px}
+  .toast{top:auto;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 74px)}
+  .cap{font-size:20px;top:12%;width:80%}
+  .skip{bottom:calc(9% + 6px);font-size:12px}
+  .over .card,.win .card{padding:12px 18px;max-width:min(560px,94%);max-height:calc(100% - 16px);overflow:auto}
+  .over h2{font-size:26px;margin:0 0 6px}
+  .win h2{font-size:28px}
+  .win p{margin:4px 0 8px;font-size:14px}
+  .win .next{margin:-2px 0 8px;font-size:12px}
+  .memory{font-size:13px;padding:6px 10px;margin:0 0 8px}
+  #pause .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn{padding:7px 14px;font-size:14px}
+  .keyl{margin-top:10px;font-size:12.5px}
+  .memo canvas{width:auto;height:min(70%,330px);max-width:80%}
+}
+.pill:empty{display:none}
+.stage.cine .hudR,.stage.cine #title{visibility:hidden}
