@@ -92,16 +92,17 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
 <div class="fade" id="fade"></div>
 
 <script>
-const LV = [null, {name:'Màn 1: Mái hiên', sub:'Chiều 14 tháng Tám, con phố của bà Năm'}, {name:'Màn 2: Rãnh nước', sub:'Hoàng hôn, con hẻm có rãnh nước'}, {name:'Màn 3: Tháp đồng hồ', sub:'Đêm, tháp đồng hồ cuối phố'}];
+const LV = [null, {name:'Màn 1: Mái hiên', sub:'Chiều 14 tháng Tám, con phố của bà Năm'}, {name:'Màn 2: Rãnh nước', sub:'Hoàng hôn, con hẻm có rãnh nước'}, {name:'Màn 3: Tháp đồng hồ', sub:'Đêm, tháp đồng hồ cuối phố'}, {name:'Màn 4: Mưa phố', sub:'Chương 2 (bản thử), chợ bên sông trong mưa'}];
 const $ = id => document.getElementById(id);
 const get = (k, d)=>{ try { return JSON.parse(localStorage.getItem(k) || d); } catch(e){ return JSON.parse(d); } };
 const save = get('phocu.save', '{}') || {}, tray = get('phocu.tray', '[]');
 let leaving = false;
 function go(n){ if(leaving) return; leaving = true; $('fade').classList.remove('out'); setTimeout(()=>{ location.href = 'man-' + n + '/index.html'; }, 900); }
 function wipe(){ for(const k of ['phocu.save', 'phocu.tray', 'phocu.relic']) try { localStorage.removeItem(k); } catch(e){} }
-const cur = Math.min(3, Math.max(1, save.man || 1)), started = !!save.man;
+// a save that finished chương 1 before Màn 4 existed carries on into it
+const cur = Math.min(4, Math.max(1, save.done && save.man === 3 ? 4 : save.man || 1)), started = !!save.man, maxOpen = Math.max(save.max || 1, cur);
 if(started){
-  $('play').innerHTML = (save.done ? 'Chơi lại Màn 3' : 'Chơi tiếp') + '<small>' + LV[cur].name + '</small>';
+  $('play').innerHTML = (save.done && save.man >= 4 ? 'Chơi lại Màn 4' : 'Chơi tiếp') + '<small>' + LV[cur].name + '</small>';
   $('fresh').style.display = ''; $('pick').style.display = '';
   $('tray').style.display = '';
   const C = ['#C23A28', '#E9A23B', '#2E9C93']; document.querySelectorAll('#tray i').forEach((el, i)=>{ if(tray.includes(i+1)) el.style.background = C[i]; });
@@ -112,7 +113,7 @@ $('sureY').onclick = ()=>{ wipe(); go(1); };
 $('how').onclick = ()=>{ $('help').style.display = 'flex'; };
 $('pick').onclick = ()=>{
   const L = $('lvList'); L.innerHTML = '';
-  for(let n=1;n<=3;n++){ const b = document.createElement('button'); const open = n <= (save.max || 1);
+  for(let n=1;n<=4;n++){ const b = document.createElement('button'); const open = n <= maxOpen;
     b.innerHTML = LV[n].name + '<span>' + (open ? LV[n].sub : 'chưa mở') + '</span>'; b.disabled = !open; b.onclick = ()=>go(n); L.appendChild(b); }
   $('levels').style.display = 'flex';
 };
