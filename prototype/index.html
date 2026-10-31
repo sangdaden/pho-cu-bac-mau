@@ -65,6 +65,16 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
 .keyl{list-style:none;padding:0;margin:0 0 14px;text-align:left;font-size:14px;color:var(--muted)}
 .keyl li{margin:6px 0}
 .keyl b{display:inline-block;border:1px solid var(--line);background:var(--chip);border-radius:6px;padding:0 6px;font-weight:600;color:var(--ink)}
+.card.wide{max-width:720px}
+.pages{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 14px;text-align:left}
+.pg{border:2px solid #141019;border-radius:10px;background:var(--chip);overflow:hidden;font-size:13px;color:var(--muted);min-width:0}
+.pg .top{background:#C23A28;color:#fff;font:600 12px "Be Vietnam Pro",sans-serif;padding:3px 8px;letter-spacing:.03em}
+.pg .num{font-family:"Patrick Hand",cursive;font-size:34px;line-height:1;color:var(--ink);padding:6px 8px 0}
+.pg .body{padding:2px 8px 8px}
+.pg b{color:var(--ink)}
+.pg.off{opacity:.55}.pg.off .top{background:#8C8790}
+.pg .relic{display:inline-block;margin-top:4px;border:1.5px solid #141019;border-radius:999px;padding:0 8px;background:#FFE7A3;color:#141019;font-size:12px}
+@media (max-width:640px),(max-height:520px){.pages{grid-template-columns:repeat(2,1fr)}}
 .fade{position:fixed;inset:0;background:#141019;opacity:1;pointer-events:none;transition:opacity .9s;z-index:9}
 .fade.out{opacity:0}
 @media (max-height:520px){.menu{bottom:max(10px,env(safe-area-inset-bottom));gap:7px}.btn{padding:6px 24px;font-size:17px;box-shadow:0 4px 0 #141019}.btn small{font-size:12px}
@@ -86,6 +96,7 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
   <div class="row">
     <button class="sm" id="fresh" style="display:none">Chơi từ đầu</button>
     <button class="sm" id="pick" style="display:none">Chọn màn</button>
+    <button class="sm" id="book" style="display:none">Cuốn lịch ký ức</button>
     <button class="sm" id="how">Cách chơi</button>
     <button class="sm" id="install" style="display:none">Cài lên điện thoại</button>
   </div>
@@ -93,6 +104,7 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
 <div class="foot">Một game của <a href="https://markhocai.com">Mark học AI</a></div>
 
 <div class="over" id="levels"><div class="card"><h2>Chọn màn</h2><div class="lv" id="lvList"></div><button class="sm" data-close>Đóng</button></div></div>
+<div class="over" id="bookO"><div class="card wide"><h2>Cuốn lịch ký ức</h2><p>Mỗi màn bóc xong là một tờ lịch. Tìm đủ năm con đom đóm thì tờ lịch hiện ký ức, tìm được con tò he cũ thì nó lên kệ của bà.</p><div class="pages" id="pages"></div><button class="sm" data-close>Đóng</button></div></div>
 <div class="over" id="help"><div class="card"><h2>Cách chơi</h2>
   <p>Cả con phố bị phủ những tờ lịch xám, những ngày đã sống qua mà chẳng ai để ý. Tò bóc chúng ra để màu và người quay lại.</p>
   <ul class="keyl" id="keysHelp">
@@ -117,7 +129,7 @@ const get = (k, d)=>{ try { return JSON.parse(localStorage.getItem(k) || d); } c
 const save = get('phocu.save', '{}') || {}, tray = get('phocu.tray', '[]'), jr = get('phocu.jr', 'null');
 let leaving = false;
 function go(n, hash){ if(leaving) return; leaving = true; $('fade').classList.remove('out'); setTimeout(()=>{ location.href = 'man-' + n + '/index.html' + (hash || ''); }, 900); }
-function wipe(){ for(const k of ['phocu.save', 'phocu.tray', 'phocu.relic', 'phocu.jr']) try { localStorage.removeItem(k); } catch(e){} }
+function wipe(){ for(const k of ['phocu.save', 'phocu.tray', 'phocu.relic', 'phocu.jr', 'phocu.kyuc']) try { localStorage.removeItem(k); } catch(e){} }
 // a save that finished chương 1 before Màn 4 existed carries on into it; one that finished the last level before the next one existed can open the next one
 const LAST = LV.length - 1;
 const cur = Math.min(LAST, Math.max(1, save.done && save.man === 3 ? 4 : save.man || 1)), started = !!save.man, maxOpen = Math.min(LAST, Math.max(save.max || 1, cur, save.done && save.man >= 4 ? save.man + 1 : 1));
@@ -130,6 +142,20 @@ if(started){
   const C = ['#C23A28', '#E9A23B', '#2E9C93']; document.querySelectorAll('#tray i').forEach((el, i)=>{ if(tray.includes(i+1)) el.style.background = C[i%3]; });
 }
 $('play').onclick = ()=>go(cur, midway ? '#tiep' : '');
+// Cuốn lịch ký ức: one calendar page per level
+const kyuc = get('phocu.kyuc', '{}') || {};
+if(Object.keys(kyuc).length) $('book').style.display = '';
+$('book').onclick = ()=>{
+  const W = $('pages'); W.innerHTML = '';
+  for(let n=1;n<=LAST;n++){
+    const k = kyuc[n], d = document.createElement('div'); d.className = 'pg' + (k ? '' : ' off');
+    const ch = Math.ceil(n/3);
+    d.innerHTML = '<div class="top">Chương ' + ch + ' · ' + LV[n].name.split(':')[0] + '</div><div class="num">' + (LV[n].name.split(': ')[1] || '') + '</div><div class="body">'
+      + (k ? (k.memory || '') + (k.relic ? '<br><span class="relic">Tò he cũ: ' + k.relic + '</span>' : '') : 'Tờ lịch này chưa bóc.') + '</div>';
+    W.appendChild(d);
+  }
+  $('bookO').style.display = 'flex';
+};
 $('fresh').onclick = ()=>{ $('sure').style.display = 'flex'; };
 $('sureY').onclick = ()=>{ wipe(); go(1); };
 $('how').onclick = ()=>{ $('help').style.display = 'flex'; };

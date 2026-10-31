@@ -323,10 +323,17 @@ for(const z of ROOMS.concat(['sky'])) setZone(z, 0);
 bui({x:159.0, top:0, s:.5, a:158.0, b:163.0, fan:true}); bui({x:161.0, top:0, s:.44, a:159.0, b:164.0, fan:true}); bui({x:163.0, top:0, s:.55, a:160.0, b:164.6, fan:true});
 
 // ================= bubbles =================
+// sleep-talk: each grey sleeper mutters a line about the day they forgot
+vHai.mo = ["…chè… chè đậu xanh…", "…Tò… Tò đi đâu rồi…", "…mưa bóng mây… đội nón vào…"];
+vXoi.mo = ["…xôi đỗ… xôi lạc…", "…ngày nào cũng một gánh…"];
+vMai.mo = ["…diều… gió lò…", "…mái nhà… nóng hổi…"];
+vDen.mo = ["…đèn kéo quân… quay quay…", "…giấy bóng kính… đỏ, xanh…"];
+vSang.mo = ["…bà Năm… nặn con gà…", "…tò he… cho cháu một con…"];
+vNam.mo = ["…mười bốn… tháng Tám…", "…chẳng ai nhớ nữa…", "…Tò… con đâu rồi…"];
 for(const v of people) talker(v.g, 2.6*(v.s || 1), ()=>{
   if(P.won && !v.line) return '';
   if(v.lineT > 0) return v.line;
-  if(!v.awake) return Math.abs(P.x - v.g.position.x) < 6 ? '…' : '';
+  if(!v.awake) return Math.abs(P.x - v.g.position.x) < 6 ? (v.mo ? v.mo[Math.floor(nowT/3.4 + v.g.position.x) % v.mo.length] : '…') : '';
   return v.rao && Math.abs(P.x - v.g.position.x) < 9 ? raoLine(v.rao) : '';
 });
 
@@ -339,9 +346,18 @@ function home(){
     {dur:2.4, cam:[210, 3.6, 15], start:()=>{ vNam.awake = true; colour('banam'); vSay(vNam, 'Tò… Tò đó hả con?', 2.4); }},
     {dur:3.0, cam:[208, 3.0, 12], start:()=>vSay(vNam, 'Bà ngủ một giấc dài quá. Con đi bóc lịch cả phố cho bà hả?', 3)},
     {dur:4.6, cam:[110, 8, 70], start:()=>{ bars(true); caption('Cả phố cũ có màu. Ngày nào cũng có người để ý tới.'); for(const z of ROOMS) colour(z); for(const v of people){ v.awake = true; colour(v.zone); if(v.rao) v.rao.on = true; } for(const h of hangs) h.lit = true; colour('tray0'); colour('tray1'); colour('tray2'); }, end:()=>caption('')},
+    // the people Tò woke on the way, back at their own corners of the street
+    {dur:3.0, cam:[30, 4.2, 24], start:()=>caption('Cô Hai lại bán chè đầu hẻm. Bé Bống thả thuyền giấy dưới rãnh nước.')},
+    {dur:3.0, cam:[75, 4.6, 24], start:()=>caption('Ông Bảy ngồi sửa ô, chú Chín chèo đò qua sông theo con nước.')},
+    {dur:3.0, cam:[120, 5.2, 24], start:()=>caption('Chú Tư lên dây cót đồng hồ tháp. Ông Đức thả diều sáo trên mái phố.')},
+    {dur:2.6, cam:[170, 4.6, 24], start:()=>caption('Gánh hàng rong lại rao từ sáng sớm. Không còn ngày nào bị quên.')},
+    {dur:.4, start:()=>caption('')},
     {dur:5.0, cam:[208, 3.0, 12], start:()=>memo(drawHomeMemory), end:memoOff},
     {dur:3.4, cam:[208, 3.0, 12], start:()=>vSay(vNam, 'Từ nay bà để dành giấy lịch cũ, cho con gấp diều, gấp đèn.', 3.2)},
     {dur:4.0, cam:[208, 6, 22], start:()=>caption('Phố Cũ Bạc Màu · Hết')},
+    {dur:3.0, cam:[204, 7, 26], start:()=>caption('Ý tưởng và chỉ đạo: Sang · Mark học AI')},
+    {dur:3.0, cam:[200, 8, 30], start:()=>caption('Làm cùng Claude · Nhạc và tiếng động tổng hợp ngay trong game')},
+    {dur:3.2, cam:[196, 9, 34], start:()=>caption('Cảm ơn bạn đã giúp phố cũ có màu lại.')},
     {dur:.6, end:()=>{ caption(''); bars(false); }}]);
 }
 function drawHomeMemory(x, W, H){

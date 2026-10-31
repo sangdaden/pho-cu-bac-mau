@@ -1021,13 +1021,28 @@ function talker(obj, dy, fn, cls){ const d = document.createElement('div'); d.cl
 let toSay = '', toSayT = 0, sayNext = null;
 function say(t, dur){ toSay = t; toSayT = dur || 2.2; }
 // story beats: an objective line, and short locked camera moves that show what changed and what comes next
-let OBJ = '', nowT = 0, lastProgT = 0, hintT = 0;
+let OBJ = '', nowT = 0, lastProgT = 0, hintT = 0, hintN = 0;
+// hints come in three steps: a nudge, then where to look, then the level's full hint. Each press of H (or ?) goes one step
+// further; being stuck for 25 s does the same. A new goal starts again from the nudge.
+function hintAsk(){ hintN = Math.min(3, hintN + 1); hintT = 7; }
+function hintText(focus){
+  const tag = 'Gợi ý ' + hintN + '/3: ';
+  if(hintN >= 3) return tag + LV.hint();
+  const side = s=>{ const cx = (s.x0 + s.x1)/2, d = cx - P.x; return Math.abs(d) < 2.5 ? 'ngay đây' : (d > 0 ? 'bên phải' : 'bên trái') + ', khoảng ' + Math.max(1, Math.round(Math.abs(d)/1.2)) + ' bước'; };
+  if(hintN === 2){
+    if(focus) return tag + 'Mép giấy đang nhấp nháy ở ' + side(focus) + (focus.y0 > P.y + 2 ? ', trên cao' : '') + '.';
+    return tag + LV.hint().split(/[.!?]/)[0] + '.';
+  }
+  if(held.on) return tag + (learned.length ? 'Đang cầm tờ lịch. Thử gấp kiểu khác (Q), hoặc tìm chỗ dùng nó.' : 'Đang cầm tờ lịch. Tìm ô viền chấm để dán.');
+  if(focus) return tag + 'Còn một mép giấy sáng chưa bóc ở ' + (focus.x0 + focus.x1 > 2*P.x ? 'phía trước' : 'phía sau') + '.';
+  return tag + 'Nhìn quanh xem có gì vừa đổi khác, hay có ai đang ngủ.';
+}
 // on a phone there is no keyboard: hints and goals name the on-screen buttons instead (E is the yellow button, whose label follows what it does)
 function grabLabel(){ return P.grab ? 'Buông' : held.on ? 'Dùng' : 'Bóc'; }
 // a key is a lone capital letter: \b would also match the R of "Rãnh", so look for letters on either side, Vietnamese ones included
 const KEY_RE = /(?<!\p{L})[EQRH](?!\p{L})/gu, KEY_BTN = {Q:'Gấp', R:'↺', H:'?'};
 function keysTxt(t){ return MOBILE && t ? t.replace(KEY_RE, k=>KEY_BTN[k] || grabLabel()) : t; }
-function objective(t){ lastProgT = nowT; if(OBJ === t) return; OBJ = t; titleEl.textContent = keysTxt(t); titleEl.classList.remove('pop'); void titleEl.offsetWidth; titleEl.classList.add('pop'); }
+function objective(t){ lastProgT = nowT; if(OBJ === t) return; hintN = 0; hintT = 0; OBJ = t; titleEl.textContent = keysTxt(t); titleEl.classList.remove('pop'); void titleEl.offsetWidth; titleEl.classList.add('pop'); }
 const seq = []; let cur = null, winReady = false;
 function play(steps){ for(const st of steps) seq.push(st); }
 function busy(){ return !!cur || seq.length > 0; }
@@ -1069,7 +1084,7 @@ addEventListener('keydown', e=>{
   if(paused) return;
   if(e.code === 'KeyR'){ back(); return; }
   if(e.code === 'KeyQ'){ fold(); return; }
-  if(e.code === 'KeyH'){ hintT = 6; return; }
+  if(e.code === 'KeyH'){ hintAsk(); return; }
   const k = KM[e.code]; if(!k) return; e.preventDefault();
   if(k === 'jump' && !keys.jump) jumpQueued = true;
   if(k === 'grab' && !keys.grab) grabQueued = true;
@@ -1079,7 +1094,7 @@ addEventListener('keyup', e=>{ const k = KM[e.code]; if(k) keys[k] = false; });
 document.querySelectorAll('.pad button').forEach(b=>{
   const k = b.dataset.k;
   if(k === 'left' || k === 'right') return;
-  const on = e=>{ e.preventDefault(); if(intro.on){ endIntro(); return; } if(k === 'hint'){ hintT = 6; return; } if(k === 'back'){ back(); return; } if(k === 'fold'){ fold(); return; }
+  const on = e=>{ e.preventDefault(); if(intro.on){ endIntro(); return; } if(k === 'hint'){ hintAsk(); return; } if(k === 'back'){ back(); return; } if(k === 'fold'){ fold(); return; }
     if(k === 'jump' && !keys.jump) jumpQueued = true; if(k === 'grab' && !keys.grab) grabQueued = true; keys[k] = true; b.classList.add('on'); };
   const off = e=>{ e.preventDefault(); if(k in keys) keys[k] = false; b.classList.remove('on'); };
   b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
@@ -1468,7 +1483,8 @@ function actors(dt, t){
     updSheet(s);
     if(near === s){ const k = 1.15 + Math.sin(t*8)*.15; s.curl.scale.x *= k; s.curl.scale.z *= k; }
     const lit = !LV.dark || Math.abs(P.x - (s.x0 + s.x1)/2) < s.w/2 + 4 && Math.abs(P.y + 1 - (s.y0 + s.y1)/2) < s.h/2 + 3.5;
-    s.halo.material.opacity = (.55 + Math.sin(t*4 + s.x0)*.25 + (near === s ? .3 : 0))*(s === focus ? 1 : .3)*(s.full || !lit ? 0 : 1);
+    const pt = hintT > 0 && hintN === 2 && s === focus ? .45 + Math.sin(t*14)*.45 : 0;
+    s.halo.material.opacity = (.55 + Math.sin(t*4 + s.x0)*.25 + (near === s ? .3 : 0) + pt)*(s === focus ? 1 : .3)*(s.full || !lit ? 0 : 1);
     s.core.material.opacity = s.full || !lit ? 0 : 1;
     if(s.ghost){ s.m.visible = s.back.visible = s.frame.visible = s.curl.visible = false; }
     s.arrow.visible = (near === s || P.grab === s);
@@ -1534,7 +1550,7 @@ function animate(dt, t){
   if(toSayT <= 0 && sayNext){ say(sayNext[0], sayNext[1]); sayNext = null; }
   for(const k of talkers) place(k.d, k.obj, k.dy, k.fn());
   unstack();
-  if(!P.won && !busy() && hintT <= 0 && t - lastProgT > 25){ hintT = 6; lastProgT = t; }
+  if(!P.won && !busy() && hintT <= 0 && t - lastProgT > 25){ hintAsk(); lastProgT = t; }
   // short control prompts always; the fuller hint only when H is pressed or Tò has been stuck a while
   if(hintT > 0) hintT -= dt;
   let h = '';
@@ -1543,7 +1559,7 @@ function animate(dt, t){
   else if(held.on) h = held.form ? (held.form === 'thuyen' ? 'E để thả thuyền xuống nước · Q đổi kiểu gấp' : held.form === 'maybay' ? 'E để phóng máy bay · Q đổi kiểu gấp' : held.form === 'non' ? 'Đang đội nón giấy, đi mưa được một lúc · Q đổi kiểu gấp' : held.form === 'den' ? 'Cầm đèn: E để thắp đèn treo, soi chỗ tối · Q đổi kiểu gấp' : held.form === 'dieu' ? 'Cầm diều: nhảy là lượn, vào luồng gió nóng là bay lên · Q đổi kiểu gấp' : 'E để phẩy quạt · Q đổi kiểu gấp') : (nearSlot() ? 'E để dán vào ô viền chấm' : learned.length ? 'Q để gấp tờ lịch' : 'Tìm ô viền chấm để dán');
   else if(near) h = near.locked ? 'E để thử bóc' : 'E để nắm mép';
   else if(stackNear() && !stackNear().solved) h = 'R để dán lại tờ vừa bóc';
-  else if(hintT > 0) h = LV.hint();
+  else if(hintT > 0) h = hintText(sheets.find(q=>!q.done && !q.solved));
   h = keysTxt(h); if(hintEl.textContent !== h) hintEl.textContent = h; hintEl.style.opacity = h ? 1 : 0;
   if(MOBILE){ const g = grabLabel(); if(grabB.textContent !== g) grabB.textContent = g; }
 }
@@ -1582,9 +1598,19 @@ function showWin(){
   else btn('Về màn hình chính', '', ()=>goTo('../index.html')).focus();
   btn('Chơi lại màn này', 'alt', ()=>{ location.hash = 'choi'; location.reload(); });
   $('win').style.display = 'flex'; traySet(LV.level);
+  kyucSave(LV.level, w);
 }
 addEventListener('keydown', e=>{ if($('win').style.display === 'flex' && e.code === 'Enter'){ const b = $('winB').firstChild; if(b) b.click(); } });
 
+// the title screen's "Cuốn lịch ký ức" keeps one page per level: its win text, the memory, and the old tò he found there
+function kyucSave(n, w){
+  try {
+    const k = JSON.parse(localStorage.getItem('phocu.kyuc') || '{}') || {}, o = k[n] || {};
+    const best = fliesGot >= (o.flies || 0);
+    k[n] = {h:w.h, p:w.p, memory:best ? w.memory : o.memory, flies:Math.max(fliesGot, o.flies || 0), relic:relicGot && relicObj ? relicObj.name : (o.relic || null)};
+    localStorage.setItem('phocu.kyuc', JSON.stringify(k));
+  } catch(e){}
+}
 // ---------- loop ----------
 let simT = 0;
 function resize(){

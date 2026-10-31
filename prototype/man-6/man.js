@@ -292,11 +292,20 @@ firefly(143.4, 7.4);
 for(const z of ROOMS.concat(['sky'])) setZone(z, 0);
 bui({x:155.0, top:0, s:.5, a:154.6, b:157.2, fan:true}); bui({x:156.4, top:0, s:.42, a:155.4, b:158.0, fan:true}); bui({x:157.6, top:0, s:.55, a:156.4, b:159.2, fan:true});
 
+// sleep-talk: each grey sleeper mutters a line about the day they forgot (Đợt 3)
+vXoi.mo = ["…xôi nếp… gói lá chuối…", "…sáng nay… ai ăn xôi gấc…", "…con bé nhà ai… quên lấy tiền thối…"];
+vMi.mo = ["…bánh mì… lò than còn đỏ…", "…ba chục năm… đạp xe qua hẻm này…", "…ai… ai gọi bánh mì đó…"];
+vChe.mo = ["…chè bưởi… cùi giòn…", "…mùa này… đậu đỏ đắt quá…", "…bát chè… cho thằng Cu nhà bên…"];
+vKem.mo = ["…leng keng… leng keng…", "…kem que… năm trăm một que…", "…bọn nhỏ… chạy theo xe kem…"];
+vNat.mo = ["…ai đồng nát… sắt vụn…", "…lịch cũ… bán cân được không…", "…giấy cũ… còn giữ làm gì…"];
+vBo.mo = ["…bánh bò… bánh da lợn…", "…hấp từ bốn giờ sáng…", "…mẹ dạy… phải để bột nghỉ…"];
+vUt.mo = ["…tò he… tò he đây…", "…nặn con trâu… con gà…", "…cô Năm… cô ấy nặn đẹp hơn tôi…"];
+
 // ================= bubbles =================
 for(const v of vendors) talker(v.g, 2.6, ()=>{
   if(!v.g.visible || P.won && !v.line) return '';
   if(v.lineT > 0) return v.line;
-  if(!v.awake) return Math.abs(P.x - v.g.position.x) < 6 ? '…' : '';
+  if(!v.awake) return Math.abs(P.x - v.g.position.x) < 6 ? (v.mo ? v.mo[Math.floor(nowT/3.4 + v.g.position.x) % v.mo.length] : '…') : '';
   return Math.abs(P.x - v.g.position.x) < 9 && v.rao ? raoLine(v.rao) : '';
 });
 
