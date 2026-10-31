@@ -110,7 +110,7 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
 <div class="fade" id="fade"></div>
 
 <script>
-const LV = [null, {name:'Màn 1: Mái hiên', sub:'Chiều 14 tháng Tám, con phố của bà Năm'}, {name:'Màn 2: Rãnh nước', sub:'Hoàng hôn, con hẻm có rãnh nước'}, {name:'Màn 3: Tháp đồng hồ', sub:'Đêm, tháp đồng hồ cuối phố'}, {name:'Màn 4: Mưa phố', sub:'Chương 2, chợ bên sông trong mưa'}, {name:'Màn 5: Nước lên', sub:'Chiều tối sau mưa, con nước theo lịch âm'}, {name:'Màn 6: Gánh hàng rong', sub:'Sáng sớm, hẻm sau chợ, tiếng rao mất chữ'}, {name:'Màn 7: Gió mùa', sub:'Chương 3, chiều lộng gió trên mái phố'}];
+const LV = [null, {name:'Màn 1: Mái hiên', sub:'Chiều 14 tháng Tám, con phố của bà Năm'}, {name:'Màn 2: Rãnh nước', sub:'Hoàng hôn, con hẻm có rãnh nước'}, {name:'Màn 3: Tháp đồng hồ', sub:'Đêm, tháp đồng hồ cuối phố'}, {name:'Màn 4: Mưa phố', sub:'Chương 2, chợ bên sông trong mưa'}, {name:'Màn 5: Nước lên', sub:'Chiều tối sau mưa, con nước theo lịch âm'}, {name:'Màn 6: Gánh hàng rong', sub:'Sáng sớm, hẻm sau chợ, tiếng rao mất chữ'}, {name:'Màn 7: Gió mùa', sub:'Chương 3, chiều lộng gió trên mái phố'}, {name:'Màn 8: Rước đèn', sub:'Rằm tháng Giêng, thắp đèn khắp phố cũ'}];
 const $ = id => document.getElementById(id);
 const get = (k, d)=>{ try { return JSON.parse(localStorage.getItem(k) || d); } catch(e){ return JSON.parse(d); } };
 const save = get('phocu.save', '{}') || {}, tray = get('phocu.tray', '[]');

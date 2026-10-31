@@ -799,7 +799,7 @@ function trayShow(){ const tr = trayLoad(); for(let i=0;i<3;i++) $('t'+(i+1)).st
 function traySet(n){ const tr = trayLoad(); if(!tr.includes(n)) tr.push(n); try { localStorage.setItem('phocu.tray', JSON.stringify(tr)); } catch(e){} trayShow(); }
 trayShow();
 // ---------- progress: one save for the whole game, so the title screen can offer "Chơi tiếp" ----------
-const LEVEL_URL = [null, '../man-1/index.html', '../man-2/index.html', '../man-3/index.html', '../man-4/index.html', '../man-5/index.html', '../man-6/index.html', '../man-7/index.html'];
+const LEVEL_URL = [null, '../man-1/index.html', '../man-2/index.html', '../man-3/index.html', '../man-4/index.html', '../man-5/index.html', '../man-6/index.html', '../man-7/index.html', '../man-8/index.html'];
 function saveGet(){ try { return JSON.parse(localStorage.getItem('phocu.save') || '{}') || {}; } catch(e){ return {}; } }
 function savePut(o){ try { localStorage.setItem('phocu.save', JSON.stringify(Object.assign(saveGet(), o))); } catch(e){} }
 function relicSave(n){ try { const r = JSON.parse(localStorage.getItem('phocu.relic') || '[]'); if(!r.includes(n)) r.push(n); localStorage.setItem('phocu.relic', JSON.stringify(r)); } catch(e){} }
@@ -1069,7 +1069,7 @@ function standingOn(x, yPrev, yNew){
 function respawn(msg){ say(msg, 2.4); P.x = P.check.x; P.y = P.check.y; P.vx = P.vy = 0; release(); }
 
 // ---------- hands: carry a peeled page, paste it over a dotted slot, or fold it into a boat, a plane or a fan ----------
-const FORMS = {thuyen:'thuyền', maybay:'máy bay', quat:'quạt', non:'nón', dieu:'diều'};
+const FORMS = {thuyen:'thuyền', maybay:'máy bay', quat:'quạt', non:'nón', dieu:'diều', den:'đèn'};
 const learned = [];
 const held = {on:false, form:null, src:null, wear:1};
 const handEl = $('hand');
@@ -1090,6 +1090,14 @@ HELD.dieu = new THREE.Group(); HELD.dieu.position.set(-.4, 5.2, -.4); HELD.dieu.
   rod(HELD.dieu, new THREE.Vector3(-.68, .15, .02), new THREE.Vector3(.68, .15, .02), .025, '#B88A4A', {outline:false});
   for(let i=0;i<4;i++) blob(HELD.dieu, new THREE.Vector3(Math.sin(i*1.4)*.12, -1.05 - i*.32, 0), [.1, .04, .1], '#C23A28', {small:true});
   rod(HELD.dieu, new THREE.Vector3(0, -.85, 0), new THREE.Vector3(.5, -3.1, .9), .012, '#3B2E2A', {outline:false}); })();
+// a paper star lantern on a bamboo stick, a candle inside: it carries a flame to the lanterns hung along the street
+HELD.den = new THREE.Group(); HELD.den.position.set(.3, 0, .1); HELD.den.visible = false; heldG.add(HELD.den);
+(function(){ rod(HELD.den, new THREE.Vector3(0, -.3, 0), new THREE.Vector3(.1, 1.9, 0), .03, '#C99A52', {outline:false});
+  const st = new THREE.Shape(); for(let i=0;i<10;i++){ const a = Math.PI/2 + i*Math.PI/5, r = i%2 ? .26 : .62; if(i) st.lineTo(Math.cos(a)*r, Math.sin(a)*r); else st.moveTo(Math.cos(a)*r, Math.sin(a)*r); }
+  mesh(HELD.den, new THREE.ExtrudeGeometry(st, {depth:.22, bevelEnabled:false}), '#E8442E', {pos:new THREE.Vector3(.12, 2.5, -.11), ow:.035, keep:true});
+  for(let i=0;i<3;i++) blob(HELD.den, new THREE.Vector3(.12 + (i - 1)*.12, 1.75 - i*.18, .05), [.05, .12, .03], '#F2C230', {small:true, keep:true});
+  const g = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), new THREE.MeshBasicMaterial({map:dotTex, color:'#FFC94A', transparent:true, opacity:.55, depthWrite:false, blending:THREE.AdditiveBlending}));
+  g.position.set(.12, 2.5, .2); HELD.den.add(g); })();
 (function(){
   const pm = toon('#E9E4DA'); const pg = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.2), pm); pm.side = THREE.DoubleSide; HELD.paper.add(pg); HELD.paper.rotation.x = -.3;
   const ol = new THREE.Mesh(new THREE.PlaneGeometry(1.08, 1.28), new THREE.MeshBasicMaterial({color:'#141019', side:THREE.DoubleSide})); ol.position.z = -.01; HELD.paper.add(ol);
@@ -1132,6 +1140,7 @@ function useHeld(){
   }
   if(f === 'maybay'){ throwPlane(); dropHeld(); return; }
   if(f === 'quat') waveFan();
+  if(f === 'den'){ if(!(LV.onDen && LV.onDen())) say('Chẳng có đèn treo nào gần để thắp.', 1.6); return; }
   if(f === 'dieu') say(P.ground ? 'Nhảy lên là lượn. Gặp luồng gió nóng thì bay lên!' : 'Lượn…', 1.8);
   if(f === 'non') say(held.wear > .5 ? 'Đội nón rồi, đi mưa được một lúc.' : 'Nón sắp nhũn rồi, tìm chỗ trú đi!', 1.8);
 }
@@ -1465,7 +1474,7 @@ function animate(dt, t){
   let h = '';
   if(P.won || busy()) h = '';
   else if(P.grab) h = P.grab.dir === 'x' ? 'Đi lùi để kéo · E để buông' : 'Đi lùi để kéo mép lên · E để buông, mép giấy thành gờ';
-  else if(held.on) h = held.form ? (held.form === 'thuyen' ? 'E để thả thuyền xuống nước · Q đổi kiểu gấp' : held.form === 'maybay' ? 'E để phóng máy bay · Q đổi kiểu gấp' : held.form === 'non' ? 'Đang đội nón giấy, đi mưa được một lúc · Q đổi kiểu gấp' : held.form === 'dieu' ? 'Cầm diều: nhảy là lượn, vào luồng gió nóng là bay lên · Q đổi kiểu gấp' : 'E để phẩy quạt · Q đổi kiểu gấp') : (nearSlot() ? 'E để dán vào ô viền chấm' : learned.length ? 'Q để gấp tờ lịch' : 'Tìm ô viền chấm để dán');
+  else if(held.on) h = held.form ? (held.form === 'thuyen' ? 'E để thả thuyền xuống nước · Q đổi kiểu gấp' : held.form === 'maybay' ? 'E để phóng máy bay · Q đổi kiểu gấp' : held.form === 'non' ? 'Đang đội nón giấy, đi mưa được một lúc · Q đổi kiểu gấp' : held.form === 'den' ? 'Cầm đèn: E để thắp đèn treo, soi chỗ tối · Q đổi kiểu gấp' : held.form === 'dieu' ? 'Cầm diều: nhảy là lượn, vào luồng gió nóng là bay lên · Q đổi kiểu gấp' : 'E để phẩy quạt · Q đổi kiểu gấp') : (nearSlot() ? 'E để dán vào ô viền chấm' : learned.length ? 'Q để gấp tờ lịch' : 'Tìm ô viền chấm để dán');
   else if(near) h = near.locked ? 'E để thử bóc' : 'E để nắm mép';
   else if(stackNear() && !stackNear().solved) h = 'R để dán lại tờ vừa bóc';
   else if(hintT > 0) h = LV.hint();
