@@ -427,7 +427,7 @@ LV.winText = ()=>({
     ? '<b>Ký ức mở khoá.</b> Rằm tháng Giêng năm 1990, bà Năm dán ông sao to nhất cho sân đình bằng giấy lịch cũ. Cả xóm rước đèn theo bà.'
     : 'Còn ' + (5 - fliesGot) + ' con đom đóm ở Màn 8 chưa tìm thấy.')
     + (relicGot ? '<br><b>Tìm được con thỏ ngọc của bé Bống.</b>' : '<br>Có một con tò he cũ treo trên dây đèn qua kênh.'),
-  next:'Màn 9 · Phố của bà Năm: sáng đầu xuân, Tò về nhà'
+  next:'Màn 9 · Về nhà: đầu xuân, phố của bà Năm'
 });
 
 // ================= intro: the full moon over the dark streets =================
