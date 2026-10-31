@@ -50,6 +50,7 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
 .sm{border:2px solid #141019;background:rgba(255,255,255,.88);color:#141019;border-radius:999px;padding:7px 16px;font:600 14px "Be Vietnam Pro",sans-serif;cursor:pointer}
 .sm:hover{background:#FFE7A3}
 .tray{display:flex;gap:6px;align-items:center;font-family:"Patrick Hand",cursive;font-size:18px;background:rgba(255,255,255,.88);color:#2A2230;border:2px solid #141019;border-radius:999px;padding:2px 12px}
+.tray span{display:inline-flex;gap:3px}.tray span+span{margin-left:5px}
 .tray i{width:14px;height:14px;border-radius:50%;border:2px solid #141019;background:#B8B4AF;display:inline-block}
 .foot{position:fixed;right:14px;bottom:8px;font-size:12px;color:rgba(255,255,255,.7)}
 .foot a{color:inherit}
@@ -80,7 +81,7 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
 <div class="bg"><img class="blur" src="anh/bia.jpg" alt=""><img class="main" src="anh/bia.jpg" alt="Tò, con tò he bột gạo, bóc tờ lịch xám để lộ con phố có màu"></div>
 
 <div class="menu">
-  <div class="tray" id="tray" style="display:none" title="Khay tò he của bà Năm">Khay của bà <i></i><i></i><i></i></div>
+  <div class="tray" id="tray" style="display:none" title="Khay tò he của bà Năm: mỗi chương một hàng, mỗi màn một con">Khay của bà <span><i></i><i></i><i></i></span><span><i></i><i></i><i></i></span><span><i></i><i></i><i></i></span></div>
   <button class="btn" id="play">Chơi</button>
   <div class="row">
     <button class="sm" id="fresh" style="display:none">Chơi từ đầu</button>
@@ -113,20 +114,22 @@ body{margin:0;background:#141019;color:#fff;font-family:"Be Vietnam Pro",system-
 const LV = [null, {name:'Màn 1: Mái hiên', sub:'Chiều 14 tháng Tám, con phố của bà Năm'}, {name:'Màn 2: Rãnh nước', sub:'Hoàng hôn, con hẻm có rãnh nước'}, {name:'Màn 3: Tháp đồng hồ', sub:'Đêm, tháp đồng hồ cuối phố'}, {name:'Màn 4: Mưa phố', sub:'Chương 2, chợ bên sông trong mưa'}, {name:'Màn 5: Nước lên', sub:'Chiều tối sau mưa, con nước theo lịch âm'}, {name:'Màn 6: Gánh hàng rong', sub:'Sáng sớm, hẻm sau chợ, tiếng rao mất chữ'}, {name:'Màn 7: Gió mùa', sub:'Chương 3, chiều lộng gió trên mái phố'}, {name:'Màn 8: Rước đèn', sub:'Rằm tháng Giêng, thắp đèn khắp phố cũ'}, {name:'Màn 9: Về nhà', sub:'Đầu xuân, phố của bà Năm'}];
 const $ = id => document.getElementById(id);
 const get = (k, d)=>{ try { return JSON.parse(localStorage.getItem(k) || d); } catch(e){ return JSON.parse(d); } };
-const save = get('phocu.save', '{}') || {}, tray = get('phocu.tray', '[]');
+const save = get('phocu.save', '{}') || {}, tray = get('phocu.tray', '[]'), jr = get('phocu.jr', 'null');
 let leaving = false;
-function go(n){ if(leaving) return; leaving = true; $('fade').classList.remove('out'); setTimeout(()=>{ location.href = 'man-' + n + '/index.html'; }, 900); }
-function wipe(){ for(const k of ['phocu.save', 'phocu.tray', 'phocu.relic']) try { localStorage.removeItem(k); } catch(e){} }
+function go(n, hash){ if(leaving) return; leaving = true; $('fade').classList.remove('out'); setTimeout(()=>{ location.href = 'man-' + n + '/index.html' + (hash || ''); }, 900); }
+function wipe(){ for(const k of ['phocu.save', 'phocu.tray', 'phocu.relic', 'phocu.jr']) try { localStorage.removeItem(k); } catch(e){} }
 // a save that finished chương 1 before Màn 4 existed carries on into it; one that finished the last level before the next one existed can open the next one
 const LAST = LV.length - 1;
 const cur = Math.min(LAST, Math.max(1, save.done && save.man === 3 ? 4 : save.man || 1)), started = !!save.man, maxOpen = Math.min(LAST, Math.max(save.max || 1, cur, save.done && save.man >= 4 ? save.man + 1 : 1));
+// a level left halfway keeps a journal of the run, so "Chơi tiếp" puts Tò back where he was
+const midway = !!(jr && jr.man === cur && jr.n > 0);
 if(started){
-  $('play').innerHTML = (save.done && save.man >= LAST ? 'Chơi lại ' + LV[LAST].name.split(':')[0] : 'Chơi tiếp') + '<small>' + LV[cur].name + '</small>';
+  $('play').innerHTML = (save.done && save.man >= LAST ? 'Chơi lại ' + LV[LAST].name.split(':')[0] : 'Chơi tiếp') + '<small>' + LV[cur].name + (midway ? ' · đang dở' : '') + '</small>';
   $('fresh').style.display = ''; $('pick').style.display = '';
   $('tray').style.display = '';
-  const C = ['#C23A28', '#E9A23B', '#2E9C93']; document.querySelectorAll('#tray i').forEach((el, i)=>{ if(tray.includes(i+1)) el.style.background = C[i]; });
+  const C = ['#C23A28', '#E9A23B', '#2E9C93']; document.querySelectorAll('#tray i').forEach((el, i)=>{ if(tray.includes(i+1)) el.style.background = C[i%3]; });
 }
-$('play').onclick = ()=>go(cur);
+$('play').onclick = ()=>go(cur, midway ? '#tiep' : '');
 $('fresh').onclick = ()=>{ $('sure').style.display = 'flex'; };
 $('sureY').onclick = ()=>{ wipe(); go(1); };
 $('how').onclick = ()=>{ $('help').style.display = 'flex'; };

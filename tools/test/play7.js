@@ -1,0 +1,72 @@
+// usage: node play5.js <html> <outprefix> [shots] · plays Màn 7 through and screenshots each room
+const { chromium } = require('playwright');
+const fs = require('fs'), path = require('path');
+const THREE = fs.readFileSync(path.join(__dirname,'../../prototype/chung/three.min.js'));
+(async()=>{
+  const [,, file, out, shots] = process.argv;
+  const b = await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+  const p = await b.newPage({viewport:{width:1280,height:720}});
+  if(process.env.JRCHECK) await require('./jrcheck').attach(p);
+  const errs=[]; p.on('pageerror', e=>errs.push(e.message)); p.on('console', m=>{ if(m.type()==='error' && !/ERR_FAILED/.test(m.text())) errs.push(m.text()); });
+  await p.route('**/three.min.js', r=>r.fulfill({body:THREE, contentType:'application/javascript'}));
+  await p.route('https://fonts.googleapis.com/**', r=>r.abort());
+  await p.goto('file://'+path.resolve(file));
+  await p.waitForTimeout(2500); if(errs.length){ console.log('LOAD ERRORS\n'+errs.join('\n')); }
+  const stage = await p.$('#stage');
+  const snap = async n=>{ if(process.env.NOSHOT) return; if(shots === '0') return; await p.evaluate(()=>{ __game.pause=false; }); await p.waitForTimeout(350); await p.evaluate(()=>{ __game.pause=true; }); await stage.screenshot({path:`${out}-${n}.png`}); };
+  await p.evaluate(()=>{
+    const g = window.__game; window.G = g;
+    g.pause = true;
+    window.idle = n=>{ g.keys.left = g.keys.right = false; g.tick(n||1); };
+    window.waitFree = ()=>{ let n=0; while(g.busy && n++<4000) g.tick(1); g.tick(10); };
+    window.walkTo = (x, max)=>{ let n=0; while(Math.abs(g.P.x - x) > .12 && n++ < (max||2000)){ g.keys.right = g.P.x < x; g.keys.left = g.P.x > x; g.tick(1); } g.keys.left = g.keys.right = false; g.tick(4); let m=0; while(!g.P.ground && m++<600) g.tick(1); return g.P.x; };
+    window.peel = (s)=>{ g.grab(); g.tick(2); let n=0; while(g.P.grab && n++ < 3000){ g.keys.right = true; g.tick(1); } g.keys.left = g.keys.right = false; g.tick(2); };
+    window.jump = (dir, hold)=>{ g.jump(); if(dir) g.keys[dir] = true; g.tick(hold||50); g.keys.left = g.keys.right = false; g.tick(20); };
+    window.st = (l)=>({l, x:+g.P.x.toFixed(2), y:+g.P.y.toFixed(2), obj:g.objective, flies:g.flies, relic:g.relic});
+    window.use = ()=>{ G.grab(); G.tick(3); };
+    window.fold = f=>{ let n=0; while(G.held.form !== f && n++<6){ G.fold(); } G.tick(2); };
+    window.SH = id=>G.sheets.find(s=>s.id===id);
+    window.R = ()=>{ G.back ? G.back() : null; };
+    window.lv = ()=>G.channels.map(c=>c.level.toFixed(1)).join(' ');
+    window.settle = ()=>idle(200);
+    // ride the boat to x: step on, then walk
+    window.hop = (x)=>{ jump(x > G.P.x ? 'right' : 'left', 18); return walkTo(x); };
+    window.leap = (x)=>{ G.jump(); G.tick(1); let n=0; while(n++<200){ const d = x - G.P.x; G.keys.right = d > .15; G.keys.left = d < -.15; G.tick(1); if(G.P.ground && n > 4) break; } G.keys.left = G.keys.right = false; G.tick(2); return +G.P.x.toFixed(2)+','+G.P.y.toFixed(2); };
+    window.waitRao = (r)=>{ let n=0; while(r.t > .02 && n++<2000) G.tick(1); while(r.t < .02 && n++<2000) G.tick(1); };
+    window.leaps = (xs)=>xs.map(x=>leap(x)).join(' ');
+    window.rise = (x, ytop)=>{ let n=0; while(n++<900){ const d = x - G.P.x; G.keys.right = d > .1; G.keys.left = d < -.1; G.tick(1); if(G.P.y > ytop) break; } G.keys.left = G.keys.right = false; return +G.P.y.toFixed(2); };
+    window.steer = (x, ymin)=>{ let n=0; while(n++<900){ const d = x - G.P.x; G.keys.right = d > .1; G.keys.left = d < -.1; G.tick(1); if(G.P.ground && G.P.y > ymin && n > 3) break; } G.keys.left = G.keys.right = false; G.tick(2); return +G.P.x.toFixed(2)+','+G.P.y.toFixed(2); };
+    window.face = d=>{ G.keys[d] = true; G.tick(1); G.keys[d] = false; };
+  });
+  const log = async s=>{ try { console.log(JSON.stringify(await p.evaluate(s))); } catch(e){ console.log('EVAL ERR', e.message.slice(0,300)); } };
+
+  await p.evaluate(()=>{ G.introTick(60*6); }); await snap('0-intro');
+  await p.evaluate(()=>{ G.skipIntro(); idle(30); });
+  await snap('1a');
+  await log(()=>{ walkTo(5.9); peel(SH('T')); waitFree(); fold('dieu'); walkTo(12.3); return st('r1 held='+G.held.form+' '+leap(23)+' f='+G.flies); });
+  await snap('1b');
+  await log(()=>{ walkTo(22.3); peel(SH('B')); waitFree(); fold('dieu'); const y = rise(29, 9.0); return st('r2 rose='+y+' f='+G.flies+' '+steer(36, 6)); });
+  await snap('2a');
+  await log(()=>{ walkTo(40.6); jump(null, 50); return st('r2 relic='+G.relic); });
+  await log(()=>{ walkTo(47.5); walkTo(48.1); peel(SH('C')); waitFree(); fold('dieu'); walkTo(60.8); let n=0; while(n++<600 && !(gustT % 5.2 < .05)) G.tick(1); G.keys.right=true; G.tick(10); return st('r3 '+leap(78)+' f='+G.flies); });
+  await snap('3a');
+  await log(()=>{ walkTo(78.9); peel(SH('Q')); fold('quat'); walkTo(83.0); face('right'); use(); idle(80); waitFree(); return st('r4 gone='+G.buis.filter(b=>b.gone).length+' vent='+ventClear); });
+  await log(()=>{ fold('dieu'); const a = leap(89.5); const y = rise(89.5, 10.0); return st('r4 '+a+' rose='+y+' '+steer(95, 5)); });
+  await snap('4a');
+  await log(()=>{ walkTo(99.8); steer(101, -1); walkTo(101.1); peel(SH('P')); waitFree(); fold('dieu'); const y = rise(105.2, 7.8); const a = steer(108.8, 6); let n=0; while(n++<600 && !(puffT % 4.8 < .05)) G.tick(1); const b = rise(112.8, 15.2); return st('r5 A='+y+' '+a+' B='+b+' f='+G.flies+' '+steer(123, 12)); });
+  await snap('5a');
+  await log(()=>{ walkTo(133.8); steer(134.6, -1); idle(30); walkTo(135.0); peel(SH('G')); waitFree(); const L1 = SH('G').L; walkTo(135.0); peel(SH('G')); waitFree(); const L2 = SH('G').L; walkTo(135.4); R(); idle(10); return st('r6 L='+L1+','+L2+','+SH('G').L); });
+  await log(()=>{ walkTo(137.4); peel(SH('W')); fold('dieu'); walkTo(139.5); return st('r6 '+leap(162)); });
+  await snap('6a');
+  await log(()=>{ walkTo(158.0); peel(SH('M')); fold('maybay'); walkTo(163.0); face('right'); use(); idle(120); waitFree(); return st('r7 hatch='+hatchOpen); });
+  await log(()=>{ idle(150); walkTo(158.0); peel(SH('M')); fold('dieu'); const y = rise(171.5, 11.6); return st('r7 rose='+y+' '+steer(178, 9)); });
+  await snap('7a');
+  await log(()=>{ walkTo(189.8); steer(191, -1); walkTo(191.5); peel(SH('K')); waitFree(); idle(120); const K = KITES.map(k=>k[0]); let out = leap(K[0]); for(let i=1;i<K.length;i++){ walkTo(K[i-1] + .9); out += ' ' + leap(K[i]); } walkTo(K[4] + .9); out += ' ' + leap(217); return st('r8 kites '+out+' f='+G.flies); });
+  await snap('8a');
+  await log(()=>{ walkTo(216.5); peel(SH('D')); waitFree(); fold('dieu'); const y = rise(226, 20.4); return st('r9 rose='+y+' '+steer(229.6, 17.5)); });
+  await log(()=>{ walkTo(229.1); peel(SH('S')); idle(60); return st('r9 peeled done='+SH('S').done+' won='+G.won); });
+  await snap('9a');
+  await log(()=>{ let n=0; while(!G.winReady && n++<3000) G.tick(1); idle(30); return st('end winReady='+G.winReady); });
+  await snap('9b');
+  if(errs.length) console.log('ERRORS\n'+errs.join('\n'));
+})().then(()=>process.exit(0));

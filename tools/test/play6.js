@@ -1,0 +1,67 @@
+// usage: node play5.js <html> <outprefix> [shots] · plays Màn 6 through and screenshots each room
+const { chromium } = require('playwright');
+const fs = require('fs'), path = require('path');
+const THREE = fs.readFileSync(path.join(__dirname,'../../prototype/chung/three.min.js'));
+(async()=>{
+  const [,, file, out, shots] = process.argv;
+  const b = await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+  const p = await b.newPage({viewport:{width:1280,height:720}});
+  if(process.env.JRCHECK) await require('./jrcheck').attach(p);
+  const errs=[]; p.on('pageerror', e=>errs.push(e.message)); p.on('console', m=>{ if(m.type()==='error' && !/ERR_FAILED/.test(m.text())) errs.push(m.text()); });
+  await p.route('**/three.min.js', r=>r.fulfill({body:THREE, contentType:'application/javascript'}));
+  await p.route('https://fonts.googleapis.com/**', r=>r.abort());
+  await p.goto('file://'+path.resolve(file));
+  await p.waitForTimeout(2500); if(errs.length){ console.log('LOAD ERRORS\n'+errs.join('\n')); }
+  const stage = await p.$('#stage');
+  const snap = async n=>{ if(process.env.NOSHOT) return; if(shots === '0') return; await p.evaluate(()=>{ __game.pause=false; }); await p.waitForTimeout(350); await p.evaluate(()=>{ __game.pause=true; }); await stage.screenshot({path:`${out}-${n}.png`}); };
+  await p.evaluate(()=>{
+    const g = window.__game; window.G = g;
+    g.pause = true;
+    window.idle = n=>{ g.keys.left = g.keys.right = false; g.tick(n||1); };
+    window.waitFree = ()=>{ let n=0; while(g.busy && n++<4000) g.tick(1); g.tick(10); };
+    window.walkTo = (x, max)=>{ let n=0; while(Math.abs(g.P.x - x) > .12 && n++ < (max||2000)){ g.keys.right = g.P.x < x; g.keys.left = g.P.x > x; g.tick(1); } g.keys.left = g.keys.right = false; g.tick(4); let m=0; while(!g.P.ground && m++<120) g.tick(1); return g.P.x; };
+    window.peel = (s)=>{ g.grab(); g.tick(2); let n=0; while(g.P.grab && n++ < 3000){ g.keys.right = true; g.tick(1); } g.keys.left = g.keys.right = false; g.tick(2); };
+    window.jump = (dir, hold)=>{ g.jump(); if(dir) g.keys[dir] = true; g.tick(hold||50); g.keys.left = g.keys.right = false; g.tick(20); };
+    window.st = (l)=>({l, x:+g.P.x.toFixed(2), y:+g.P.y.toFixed(2), obj:g.objective, flies:g.flies, relic:g.relic});
+    window.use = ()=>{ G.grab(); G.tick(3); };
+    window.fold = f=>{ let n=0; while(G.held.form !== f && n++<6){ G.fold(); } G.tick(2); };
+    window.SH = id=>G.sheets.find(s=>s.id===id);
+    window.R = ()=>{ G.back ? G.back() : null; };
+    window.lv = ()=>G.channels.map(c=>c.level.toFixed(1)).join(' ');
+    window.settle = ()=>idle(200);
+    // ride the boat to x: step on, then walk
+    window.hop = (x)=>{ jump(x > G.P.x ? 'right' : 'left', 18); return walkTo(x); };
+    window.leap = (x)=>{ G.jump(); G.tick(1); let n=0; while(n++<200){ const d = x - G.P.x; G.keys.right = d > .15; G.keys.left = d < -.15; G.tick(1); if(G.P.ground && n > 4) break; } G.keys.left = G.keys.right = false; G.tick(2); return +G.P.x.toFixed(2)+','+G.P.y.toFixed(2); };
+    window.waitRao = (r)=>{ let n=0; while(r.t > .02 && n++<2000) G.tick(1); while(r.t < .02 && n++<2000) G.tick(1); };
+    window.leaps = (xs)=>xs.map(x=>leap(x)).join(' ');
+  });
+  const log = async s=>{ try { console.log(JSON.stringify(await p.evaluate(s))); } catch(e){ console.log('EVAL ERR', e.message.slice(0,300)); } };
+  await p.evaluate(()=>{ G.introTick(60*6); }); await snap('0-intro');
+  await p.evaluate(()=>{ G.skipIntro(); idle(30); });
+  await snap('1a');
+  await log(()=>{ walkTo(4.8); peel(SH('X')); waitFree(); walkTo(9.6); waitRao(vXoi.rao); idle(10); return st('r1 '+leaps([10.6, 12.8, 15.0, 16.6, 18.2])); });
+  await snap('1b');
+  await log(()=>{ walkTo(20.2); peel(SH('B')); waitFree(); walkTo(23.2); waitRao(vMi.rao); idle(2); return st('r2 '+leap(24.6)+' '+walkTo(37.0)+' f='+G.flies); });
+  await snap('2a');
+  await log(()=>{ walkTo(40.8); peel(SH('C')); waitFree(); walkTo(43.6); waitRao(vChe.rao); idle(14); return st('r3 '+leaps([44.2, 46.6, 44.2, 46.6, 48.6, 50.5])); });
+  await snap('3a');
+  await log(()=>{ walkTo(55); walkTo(61.0); peel(SH('K')); waitFree(); walkTo(66.6); waitRao(vKem.rao); idle(6); const a = leap(68.0); let n=0; G.keys.right=true; while(n++<200 && !(G.P.ground && G.P.y > 8.5)){ G.tick(1); G.keys.right = G.P.x < 72.6; } G.keys.right=false; idle(10); return st('r4 '+a+' relicBefore='+G.relic); });
+  await snap('4a');
+  await log(()=>{ walkTo(78.6); jump(null, 50); return st('r4 relic='+G.relic); });
+  await log(()=>{ walkTo(83.0); idle(60); walkTo(85.0); peel(SH('N')); waitFree(); let n=0; while(n++<3000 && !(natX > 90.5)) G.tick(1); walkTo(natX); waitRao(vNat.rao); const x0 = natX; walkTo(x0 + .3); return st('r5 natX='+x0.toFixed(1)+' '+leaps(NAT.map(w=>x0 + w[1]).concat([103.5]))); });
+  await snap('5a');
+  await log(()=>{ walkTo(108.4); idle(10); peel(SH('D')); waitFree(); idle(30); waitRao(day6[1].rao); idle(10); return st('r6 L='+SH('D').L+' '+leaps([114.4, 116.8, 119.2, 121.6, 123.6])); });
+  await snap('6a');
+  await log(()=>{ leap(125.6); walkTo(128.6); walkTo(130.0); peel(SH('M')); fold('maybay'); walkTo(132.6); G.keys.right=true; G.tick(1); G.keys.right=false; use(); idle(200); waitFree(); return st('r7 loa='+loaRao.on); });
+  await log(()=>{ walkTo(133.2); waitRao(loaRao); idle(6); return st('r7 '+leaps([134.6, 136.8, 139.0, 141.2, 143.4, 145.6, 147.5])+' f='+G.flies); });
+  await snap('7a');
+  await log(()=>{ walkTo(153.0); peel(SH('Q')); fold('quat'); walkTo(153.8); G.keys.right=true; G.tick(1); G.keys.right=false; use(); idle(60); return st('r8 gone='+G.buis.filter(b=>b.gone).length); });
+  await log(()=>{ walkTo(157.2); peel(SH('O')); waitFree(); walkTo(159.4); waitRao(vBo.rao); idle(2); return st('r8 '+leap(160.6)+' '+walkTo(171.0)); });
+  await snap('8a');
+  await log(()=>{ walkTo(175.0); peel(SH('U')); waitFree(); walkTo(183.4); waitRao(vUt.rao); idle(10); return st('r9 '+leaps([184.6, 186.8, 189.0, 185.4])); });
+  await log(()=>{ walkTo(185.45); peel(SH('S')); idle(60); return st('r9 peeled done='+SH('S').done+' won='+G.won); });
+  await snap('9a');
+  await log(()=>{ let n=0; while(!G.winReady && n++<3000) G.tick(1); idle(30); return st('end winReady='+G.winReady); });
+  await snap('9b');
+  if(errs.length) console.log('ERRORS\n'+errs.join('\n'));
+})().then(()=>process.exit(0));

@@ -72,6 +72,7 @@ body.game .stage{position:fixed;inset:0;height:auto;min-height:0;border:0;border
 .win .btns{flex-direction:row;justify-content:center;flex-wrap:wrap}
 .fade{position:fixed;inset:0;background:#141019;pointer-events:none;opacity:1;transition:opacity .9s;z-index:9}
 .fade.out{opacity:0}
+.fade.wait{display:flex;align-items:center;justify-content:center;color:#F1EAE2;font:22px "Patrick Hand",cursive}
 .toast{position:absolute;left:50%;top:58px;transform:translateX(-50%);background:rgba(20,16,25,.8);color:#fff;border-radius:999px;padding:5px 14px;font-size:13px;pointer-events:none;transition:opacity .5s;white-space:nowrap}
 .endT{position:absolute;left:50%;top:13%;transform:translateX(-50%);text-align:center;pointer-events:none;opacity:0;transition:opacity 1.6s;width:92%}
 .endT h1{font-family:"Patrick Hand",cursive;font-weight:400;font-size:clamp(44px,8vw,96px);color:#FFF6E0;text-shadow:0 3px 0 #141019,0 0 24px rgba(255,200,90,.6);margin:0;line-height:1}

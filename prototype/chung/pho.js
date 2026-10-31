@@ -795,7 +795,9 @@ const $ = id => document.getElementById(id);
 const grabB = $('grabB'), titleEl = $('title'), fflyEl = $('ffly'), relicEl = $('relic'), capEl = $('cap'), skipEl = $('skip'), barT = $('barT'), barB = $('barB'), hintEl = $('hint'), memoEl = $('memo');
 const TRAY_C = ['#C23A28', '#E9A23B', '#2E9C93'];
 function trayLoad(){ try { return JSON.parse(localStorage.getItem('phocu.tray') || '[]'); } catch(e){ return []; } }
-function trayShow(){ const tr = trayLoad(); for(let i=0;i<3;i++) $('t'+(i+1)).style.background = tr.includes(i+1) ? TRAY_C[i] : ''; }
+// nine levels, three chapters: the HUD shows this chapter's row of the tray (the title screen shows all three rows)
+function trayShow(){ const tr = trayLoad(), c0 = Math.floor(((LV.level || 1) - 1)/3)*3; for(let i=0;i<3;i++) $('t'+(i+1)).style.background = tr.includes(c0+i+1) ? TRAY_C[i] : '';
+  const el = $('t1').parentNode; el.title = 'Khay tò he của bà Năm, chương ' + (c0/3 + 1); }
 function traySet(n){ const tr = trayLoad(); if(!tr.includes(n)) tr.push(n); try { localStorage.setItem('phocu.tray', JSON.stringify(tr)); } catch(e){} trayShow(); }
 trayShow();
 // ---------- progress: one save for the whole game, so the title screen can offer "Chơi tiếp" ----------
@@ -998,6 +1000,7 @@ const keys = {left:false, right:false, jump:false, grab:false};
 const KM = {ArrowLeft:'left', KeyA:'left', ArrowRight:'right', KeyD:'right', ArrowUp:'jump', KeyW:'jump', Space:'jump', KeyE:'grab', KeyJ:'grab'};
 let jumpQueued = false, grabQueued = false;
 function back(){
+  jrAct(64);
   if(intro.on || P.won || busy()) return;
   const s = stackNear(); if(s && !P.grab){ restoreLayer(s); say('Dán lại tờ ' + s.layers[s.L].n + '.', 1.4); return; }
   P.x = P.check.x; P.y = P.check.y; P.vx = P.vy = 0; release(); say('Về chỗ an toàn.', 1.2);
@@ -1120,6 +1123,7 @@ function takeHeld(s){
 }
 function dropHeld(){ const s = held.src; held.on = false; held.form = null; held.src = null; showHeld(); if(s && s.respawn) later(2, ()=>resetSheet(s)); }
 function fold(){
+  jrAct(128);
   if(intro.on || P.won || busy()) return;
   if(!held.on){ say('Tay không có tờ lịch nào để gấp.', 1.6); return; }
   if(!learned.length){ say('Tò chưa biết gấp gì cả.', 1.6); return; }
@@ -1503,7 +1507,7 @@ function runIntro(dt, t){
 }
 
 // ---------- win ----------
-function finish(steps){ P.won = true; release(); play(steps.concat([{dur:0, start:()=>{ winReady = true; }}])); }
+function finish(steps){ jrClear(); P.won = true; release(); play(steps.concat([{dur:0, start:()=>{ winReady = true; }}])); }
 // the win card leads straight on: the next level, or (after the last one) back to the title
 function showWin(){
   const w = LV.winText();
@@ -1542,13 +1546,59 @@ function quality(ms){
   const r = renderer.getPixelRatio();
   if(avg > 22 && r > .76){ const n = Math.max(.75, r - .25); renderer.setPixelRatio(n); resize(); qWait = 1; try { localStorage.setItem('phocu.dpr', n); } catch(e){} }
 }
-let last = performance.now();
+// ---------- run journal: "Chơi tiếp" picks a level up where Tò left it ----------
+// The game runs in fixed 1/60 s steps, so the same input on the same step always gives the same street. The journal keeps only
+// what the player did (button state when it changes, plus Dán lại and Gấp) and on "Chơi tiếp" the level is played back to that step
+// before the screen fades in. If the level's code changed since and the replay ends somewhere else, the level simply starts over.
+const STEP = 1/60, JR_KEY = 'phocu.jr';
+const JR = {n:0, ev:[], last:-1, t0:0, replay:false, dirty:false};
+function jrCode(){ return (keys.left?1:0)|(keys.right?2:0)|(keys.jump?4:0)|(keys.grab?8:0)|(jumpQueued?16:0)|(grabQueued?32:0); }
+function jrAct(c){ if(!JR.replay && !intro.on && !P.won){ JR.ev.push(JR.n, c); JR.dirty = true; } }
+function jrStep(){
+  if(JR.replay) return;
+  if(JR.n === 0) JR.t0 = simT - STEP;
+  const c = jrCode(); if(c !== JR.last || (c & 48)){ JR.ev.push(JR.n, c); JR.last = c; JR.dirty = true; }
+  JR.n++;
+}
+// after the step, so the saved spot is where the journal's last step leaves Tò
+function jrTick(){ if(!JR.replay && JR.n % 300 === 0) jrSave(); }
+function jrSave(){
+  if(JR.replay || !JR.dirty || P.won || intro.on || !LV.level) return; JR.dirty = false;
+  try { localStorage.setItem(JR_KEY, JSON.stringify({man:LV.level, n:JR.n, t0:+JR.t0.toFixed(4), x:+P.x.toFixed(3), y:+P.y.toFixed(3), ev:JR.ev})); } catch(e){}
+}
+function jrLoad(){ try { const j = JSON.parse(localStorage.getItem(JR_KEY) || 'null'); return j && j.man === LV.level && Array.isArray(j.ev) ? j : null; } catch(e){ return null; } }
+function jrClear(){ try { localStorage.removeItem(JR_KEY); } catch(e){} }
+addEventListener('pagehide', jrSave);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) jrSave(); });
+function liveStep(){ simT += STEP; if(intro.on) runIntro(STEP, simT); else { jrStep(); step(STEP, simT); animate(STEP, simT); jrTick(); } }
+// plays the journal back in slices so the page stays responsive; done(true) when Tò ends where the journal says
+function jrReplay(j, done){
+  JR.replay = true; simT = j.t0; let i = 0, n = 0; const tStart = performance.now();
+  const slice = ()=>{
+    try {
+      const end = Math.min(j.n, n + 1500);
+      for(; n < end; n++){
+        while(i < j.ev.length && j.ev[i] === n){ const c = j.ev[i+1]; i += 2;
+          if(c === 64) back(); else if(c === 128) fold();
+          else { keys.left = !!(c&1); keys.right = !!(c&2); keys.jump = !!(c&4); keys.grab = !!(c&8); jumpQueued = !!(c&16); grabQueued = !!(c&32); } }
+        simT += STEP; step(STEP, simT); animate(STEP, simT);
+      }
+    } catch(e){ JR.replay = false; hook.jrResult = {x:P.x, y:P.y, ok:false, err:String(e && e.message || e), at:n}; done(false); return; }
+    if(n < j.n){ setTimeout(slice, 0); return; }
+    for(const k in keys) keys[k] = false; jumpQueued = grabQueued = false;
+    JR.replay = false; JR.n = j.n; JR.ev = j.ev.slice(); JR.last = -1; JR.t0 = j.t0;
+    hook.jrResult = {ms:Math.round(performance.now() - tStart), x:P.x, y:P.y, at:n, ok:Math.abs(P.x - j.x) < .05 && Math.abs(P.y - j.y) < .05 && !P.won};
+    done(Math.abs(P.x - j.x) < .05 && Math.abs(P.y - j.y) < .05 && !P.won);
+  };
+  slice();
+}
+let last = performance.now(), acc = 0;
 function loop(now){
-  quality(now - last);
-  const dt = Math.min(.033, (now - last)/1000); last = now; const t = now/1000;
-  if(!hook.pause && !paused){ if(intro.on) runIntro(dt, t); else { step(dt, t); animate(dt, t); } }
+  const ms = now - last; quality(ms); last = now;
+  // never more than two steps a frame: a very slow frame slows the game down instead of jumping it ahead (as before)
+  if(!hook.pause && !paused && !JR.replay){ acc = Math.min(acc + ms/1000, 2*STEP); let k = 0; while(acc > STEP*.75 && k++ < 2){ acc -= STEP; liveStep(); } }
   if(P.won && winReady && $('win').style.display !== 'flex') showWin();
-  atmosphere(t); rainTick(t); skyDome.position.copy(camera.position);
+  atmosphere(simT); rainTick(simT); skyDome.position.copy(camera.position);
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
@@ -1556,16 +1606,31 @@ function loop(now){
 const hook = window.__game = {pause:false, P, keys, sheets, buis, LV, zoneK,
   jump:()=>{ jumpQueued = true; }, grab:()=>{ grabQueued = true; }, back,
   skipIntro:()=>{ if(intro.on) endIntro(); }, introTick:(n)=>{ for(let i=0;i<n && intro.on;i++){ simT += 1/60; runIntro(1/60, simT); } },
-  tick:(n)=>{ for(let i=0;i<n;i++){ simT += 1/60; step(1/60, simT); animate(1/60, simT); } },
+  tick:(n)=>{ for(let i=0;i<n;i++){ simT += STEP; if(intro.on) runIntro(STEP, simT); else { jrStep(); step(STEP, simT); animate(STEP, simT); jrTick(); } } }, jrSave, jrLoad, get jr(){ return JR; },
   tp:(x, y)=>{ P.x = x; P.y = y; P.vx = P.vy = 0; },
   get flies(){ return fliesGot; }, held, learned, boat, channels, lifts, winds, fold, slots, targets, rain, get relic(){ return relicGot; }, get info(){ return renderer.info.render; }, get busy(){ return busy(); }, get objective(){ return OBJ; }, get won(){ return P.won; }, get winReady(){ return winReady; }};
 function startGame(){
   savePut({man: LV.level, max: Math.max(saveGet().max || 1, LV.level)});
-  requestAnimationFrame(()=>requestAnimationFrame(()=>$('fade').classList.add('out')));
+  const fadeIn = ()=>requestAnimationFrame(()=>requestAnimationFrame(()=>$('fade').classList.add('out')));
   bake();
   P.x = LV.start.x; P.y = LV.start.y; P.check = {x:LV.start.x, y:LV.start.y};
   resize();
   camPos.set(P.x - 3, 5.7, 18.5); camLook.set(P.x, 2.8, -1);
+  trayShow();
+  const j = location.hash === '#tiep' ? jrLoad() : null;
+  if(!j) jrClear();
+  if(!j) fadeIn();
+  if(j){
+    endIntro();
+    const fd = $('fade'); fd.classList.add('wait'); fd.textContent = 'Tò đang về lại chỗ cũ…';
+    jrReplay(j, ok=>{
+      if(!ok){ jrClear(); location.hash = 'choi'; location.reload(); return; }
+      camPos.set(P.x - 3, 5.7, 18.5); camLook.set(P.x, 2.8, -1);
+      if(history.replaceState) history.replaceState(null, '', location.pathname);
+      fd.textContent = ''; fd.classList.remove('wait'); fadeIn(); toast('Tò về lại chỗ cũ.', 2.4); portraitCheck(); last = performance.now(); requestAnimationFrame(loop);
+    });
+    return;
+  }
   if(LV.intro && location.hash !== '#choi'){ intro.on = true; bars(true); skipEl.style.opacity = 1; }
   else endIntro();
   portraitCheck();
