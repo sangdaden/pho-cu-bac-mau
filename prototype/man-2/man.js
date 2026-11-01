@@ -511,12 +511,12 @@ LV.update = (dt, t)=>{
   // Bống: asleep with her head down; awake she bounces; she runs ahead out of sight to the yard and then the bến
   const want = P.x > 118 ? 2 : P.x > 40 ? 1 : 0;
   if(bongAwake && want !== bongAt && dist(bong) > 14){ bongAt = want; const q = BONG_AT[want]; bong.position.set(q[0], q[1], q[2]); bong.rotation.y = q[3]; }
-  bongR.head.rotation.x = bongAwake ? Math.sin(t*3)*.06 : .4 + Math.sin(t*1.4)*.04;
+  const bwk = wakeK(bong, bongAwake, dt); nod(bongR.head, Math.sin(t*3)*.06*bwk + (.4 + Math.sin(t*1.4)*.04)*(1 - bwk), bongR.neck);
   bongR.boat.visible = bongAt === 0;
   bong.position.y = BONG_AT[bongAt][1] + (bongAwake ? Math.abs(Math.sin(t*4))*.06 : 0);
   bongR.arms[1].rotation.z = bongAwake && bongLineT > 0 ? Math.sin(t*9)*.4 : 0;
-  meR.head.rotation.x = meAwake ? 0 : .38 + Math.sin(t*1.2)*.04;
-  if(meAwake){ meR.arms[0].rotation.z = -.9; meR.arms[1].rotation.z = .9; }
+  const mwk = wakeK(me, meAwake, dt); nod(meR.head, (.38 + Math.sin(t*1.2)*.04)*(1 - mwk), meR.neck);
+  const mq = wakeK(meR.arms, meAwake, dt*.6); meR.arms[0].rotation.z = -.95*mq; meR.arms[1].rotation.z = .95*mq;   // she opens her arms slowly instead of in one frame
   // room 2: arriving at the dry ditch, crossing
   if(!metDry && P.x > 10.5 && !waterOn){ metDry = true; say('Rãnh khô cong. Sâu quá, không nhảy qua được.', 2.6); objective('Làm nước chảy lại'); }
   if(!crossedA && P.x > 26.2 && P.ground && P.y > -.1){ crossedA = true; sheetB.solved = true; colour('r2'); say('Qua rồi! Thuyền giấy chở được Tò!', 2.4); objective('Qua rãnh thứ hai'); }

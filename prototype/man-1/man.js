@@ -291,8 +291,8 @@ for(const [lx, lz] of [[.34,-.14],[.34,.16],[-.34,-.14],[-.34,.16]]){
   blob(l, new THREE.Vector3(0,-.13,0), [.08,.08,.17], '#E89A3C', {ow:.02}); blob(l, new THREE.Vector3(.03,-.28,0), [.08,.07,.05], '#F4F1EA', {ow:.015});
   catLegs.push(l);
 }
-const CAT_LIFT = .3;
-let catGone = false, catT = -1, catWalk = 0;
+const CAT_LIFT = .21;   // paws (sole at -.21 below the body origin) rest right on the roof
+let catGone = false, catT = -1, catVy = 0, catLand = -1, catD = 0;
 
 // ================= room 7 · Xe chè cô Hai: the chè house, awning folded behind sheet B, the cart =================
 ZONE = 'r7';
@@ -326,7 +326,7 @@ LV.zOut = (x, y)=>awningOpen && x > 91.6 && x < 98.6 && y > 1.5 && y < 4.0 ? 1.3
 plat(92.9, 98.1, 3.1, true, ()=>awningOpen && awningT > .6, {z:1.3});   // stand out on the awning, clear of the roof slab above
 // the chè cart: wooden body, a glass case of jars, two wheels and push handles; a one-way step once it stands under the awning
 // the cart parks just left of the awning, not under it: Tò on the cart (top 1.15, Tò is 2.4 tall) would poke through the awning at 3.1
-const CART_PARK = 91.4, cartWheels = [], cartDu = new THREE.Group(), cartUm = new THREE.Group();
+const CART_PARK = 91.4, cartWheels = []; let cartLadle; const cartDu = new THREE.Group(), cartUm = new THREE.Group();
 let duT = 0, duFrom = null;
 const DU_HAND = new THREE.Vector3(-1.0, .55, .3);   // in cô Hai's own (scaled) frame: her free hand grips the folded parasol
 const cart = new THREE.Group(); cart.position.set(85.2, 0, .55); scene.add(cart);
@@ -347,6 +347,10 @@ const cart = new THREE.Group(); cart.position.set(85.2, 0, .55); scene.add(cart)
   const um = cartUm; um.position.set(0, 1.18, 0); cartDu.add(um);
   for(let i=0;i<8;i++) mesh(um, new THREE.ConeGeometry(.9, .4, 3, 1, true, i*Math.PI/4, Math.PI/4), i%2 ? '#F4F1EA' : '#2E9C93', {pos:new THREE.Vector3(0,0,0), outline:false});
   box(g, -.6, .6, .56, .86, .46, .47, '#C23A28', {outline:false});
+  // the ladle, hooked over the back of the cart while she pushes
+  cartLadle = new THREE.Group(); cartLadle.position.set(-.92, .92, .3); g.add(cartLadle); cartLadle.visible = false;
+  rod(cartLadle, new THREE.Vector3(0, .1, 0), new THREE.Vector3(-.06, -.5, 0), .022, '#8C6631', {outline:false});
+  mesh(cartLadle, new THREE.SphereGeometry(.12,12,8,0,Math.PI*2,Math.PI/2,Math.PI/2), '#9A9DA3', {pos:new THREE.Vector3(-.07,-.56,0), rot:[Math.PI,0,0]});
 })(cart);
 const cartPlat = plat(0, 0, 1.15, true);
 let cartGo = false;
@@ -354,6 +358,7 @@ let cartGo = false;
 const hai = new THREE.Group(); hai.position.set(86.9, 0, .2); hai.rotation.y = .25; hai.scale.setScalar(S*1.05); hai.rotation.order = 'YXZ'; scene.add(hai); const haiR = buildHai(hai);
 ZONE = 'r7'; stool(86.9, .2, '#2F6FB5', 0);
 let haiStep = 0, haiLean = 0;
+const HAI_BACK = 2.1, HAI_GRIP = 1.0;   // how far behind the cart she walks, and how far forward her arms reach to the handle grips
 let haiAwake = false, haiWake = 0, haiLine = '', haiLineT = 0;
 function haiSay(t, d){ haiLine = t; haiLineT = d; }
 
@@ -571,7 +576,7 @@ LV.update = (dt, t)=>{
   if(baLineT > 0) baLineT -= dt; if(haiLineT > 0) haiLineT -= dt;
   // room 1: bà half wakes with the colour
   star.rotation.z = Math.sin(t*1.1)*.1*zoneK.r1;
-  baR.head.rotation.x = .35*(1 - zoneK.r1*.7) + Math.sin(t*1.3)*.04;
+  nod(baR.head, .35*(1 - zoneK.r1*.7) + Math.sin(t*1.3)*.04, baR.neck);
   // room 2: water pours, the boxes tumble off the pavement onto the road
   waterMat.opacity += ((waterOn ? .75 : 0) - waterMat.opacity)*Math.min(1, dt*3);
   stream.visible = flood.visible = waterMat.opacity > .02;
@@ -593,20 +598,24 @@ LV.update = (dt, t)=>{
   if(!metTank && P.x > 66 && P.y > 4.4){ metTank = true; say('Bồn nước bị dán xám… mèo đang ngủ trên đó.', 2.6); }
   if(catT >= 0){
     catT += dt;
-    // pose: legs stretched out front and back in the leap, reaching down as she drops, a squash on landing, a trotting gait across the roof
-    let legA = 0, legSwing = 0, stretch = 1, squash = 1;
+    // pose: legs stretched out front and back in the leap, reaching down as she falls, a squash the moment she lands, then a trot whose paws stay planted
+    let legA = 0, stretch = 1, squash = 1, trot = false;
     if(catT < .7){ const k = catT/.7; cat.position.set(TANK_X + k*2.6, 7.06 + CAT_LIFT*k + Math.sin(k*Math.PI)*1.2 - k*.9, TANK_Z + .3 + k*.8); cat.rotation.y = -.2; ladderFall = true;
-      legA = Math.sin(Math.min(1, k*1.6)*Math.PI/2)*1.1; stretch = 1 + .18*Math.sin(k*Math.PI); }
-    else if(catT < 1.6){ const was = cat.position.y; cat.position.y = Math.max(4.68 + CAT_LIFT, cat.position.y - dt*6);
-      const land = was > cat.position.y ? 0 : Math.min(1, (catT - .7)*3); legA = was > cat.position.y ? .35 : 0; squash = 1 - .18*Math.sin(Math.min(1, land*2.5)*Math.PI); }
-    else if(ladderT >= 1 && !catGone){ cat.position.x = Math.min(81.4, cat.position.x + dt*3.2); cat.position.y = 4.68 + CAT_LIFT; cat.position.z = -.3; cat.rotation.y = 0;   // along the ladder's back rail, behind Tò rather than through him
-      catWalk += dt*11; legSwing = .55; cat.position.y += Math.abs(Math.sin(catWalk))*.05;
+      legA = Math.sin(Math.min(1, k*1.6)*Math.PI/2)*1.1; stretch = 1 + .18*Math.sin(k*Math.PI); catVy = (CAT_LIFT - 1.2*Math.PI - .9)/.7; }
+    else if(catLand < 0){ catVy -= 22*dt; cat.position.y += catVy*dt; legA = .35;
+      if(cat.position.y <= 4.68 + CAT_LIFT){ cat.position.y = 4.68 + CAT_LIFT; catLand = catT; } }
+    else if(catT - catLand > .4 && ladderT >= 1 && !catGone){ const dx = Math.min(81.4, cat.position.x + dt*3.2) - cat.position.x; cat.position.x += dx; catD += dx;
+      cat.position.y = 4.68 + CAT_LIFT; cat.position.z = -.3; cat.rotation.y = 0; trot = true;   // along the ladder's back rail, behind Tò rather than through him
       if(cat.position.x >= 81.4){ cat.rotation.y = -1.2; catGone = true; cat.position.y = 4.68; } }
+    if(catLand >= 0 && catT - catLand < .35) squash = 1 - .2*Math.sin((catT - catLand)/.35*Math.PI);
+    const CH = .33, ph = catD/(4*CH*Math.sin(.45));
     for(const [i, l] of catLegs.entries()){
       l.visible = !catGone;
-      const front = i < 2, odd = i === 0 || i === 3;
-      l.rotation.z = (front ? legA : -legA) + (legSwing ? Math.sin(catWalk + (odd ? 0 : Math.PI))*legSwing : 0);
+      const front = i < 2;
+      if(trot){ const [off, lift] = stepAt(ph, (i === 0 || i === 3) ? 0 : .5, .5, CH*Math.sin(.45)); l.rotation.z = Math.asin(off/CH); l.scale.y = 1 - lift*.25; }
+      else { l.rotation.z += ((front ? legA : -legA) - l.rotation.z)*Math.min(1, dt*14); l.scale.y = 1; }
     }
+    if(trot) cat.position.y += Math.abs(Math.sin(ph*2*Math.PI))*.025;
     cat.scale.set(stretch/Math.sqrt(squash), squash, 1/Math.sqrt(squash));
   }
   if(ladderFall && ladderT < 1){ ladderT = Math.min(1, ladderT + dt*1.3); }
@@ -616,11 +625,17 @@ LV.update = (dt, t)=>{
   if(!metStreet && P.x > 83 && P.y < .5){ metStreet = true; objective('Đánh thức cô Hai'); say('Cô Hai cũng ngủ quên rồi…', 2.2); }
   // cô Hai walks behind the cart, leaning into the handles; the wheels roll with it
   const cartMove = cartGo && cart.position.x < CART_PARK;
-  if(cartMove){ const dx = Math.min(CART_PARK, cart.position.x + dt*2.8) - cart.position.x; cart.position.x += dx; hai.position.x = cart.position.x - 1.9; hai.rotation.y = 1.3;
-    haiStep += dx*3.4; for(const w of cartWheels) w.rotation.z -= dx/.36; }
-  for(const [i, l] of haiR.legs.entries()) l.rotation.x += ((cartMove ? Math.sin(haiStep + i*Math.PI)*.5 : 0) - l.rotation.x)*Math.min(1, dt*12);
-  hai.position.y = cartMove ? Math.abs(Math.sin(haiStep))*.06 : 0;
-  haiLean += ((cartMove ? .18 : 0) - haiLean)*Math.min(1, dt*6); hai.rotation.x = haiLean;
+  // she hangs the ladle on the cart and takes both handles; her steps are measured from the distance rolled, so her soles stay put on the street
+  if(cartGo){ haiR.arm.visible = false; haiR.armR.visible = true; cartLadle.visible = true; }
+  if(cartMove){ const dx = Math.min(CART_PARK, cart.position.x + dt*2.8) - cart.position.x; cart.position.x += dx; for(const w of cartWheels) w.rotation.z -= dx/.36; haiStep += dx; }
+  haiLean += ((cartMove ? 1 : 0) - haiLean)*Math.min(1, dt*5);
+  if(cartGo){ const pk = haiLean;
+    hai.position.x = cart.position.x - HAI_BACK; hai.position.z += (.55 - hai.position.z)*Math.min(1, dt*6); hai.rotation.y += (Math.PI/2 - hai.rotation.y)*Math.min(1, dt*6);
+    const w = walkLegs(haiR.legs, haiStep/hai.scale.x, 1.33, .36*pk); hai.position.y = w.drop*hai.scale.x;
+    nod(haiR.up, .3*pk, 1.3);
+    const ga = HAI_GRIP*Math.max(pk, .35);   // still resting on the handles once the cart has stopped
+    const fr = Math.max(0, Math.min(1, (duT - .3)/.4)), gl = ga*(1 - fr);   // once parked her left hand lets go to take the folded parasol
+    haiR.armL.rotation.set(-gl, 0, .3*Math.min(1, gl)); haiR.armR.rotation.set(-ga, 0, -.3*Math.min(1, ga)); }
   cartPlat.x0 = cart.position.x - .95; cartPlat.x1 = cart.position.x + .95;
   // parked: cô Hai folds the parasol shut and takes it in her free hand, out of Tò's way
   if(cartGo && !cartMove && duT < 1){
@@ -634,7 +649,7 @@ LV.update = (dt, t)=>{
   const ea = awningT < 1 ? 1 - Math.pow(1 - awningT, 3)*Math.cos(awningT*7) : 1;
   awning.rotation.x = Math.PI/2*(1 - ea) + .06*ea;
   haiWake += ((haiAwake ? 1 : 0) - haiWake)*Math.min(1, dt*3);
-  haiR.head.rotation.x = .38*(1 - haiWake) + (haiWake < .5 ? Math.sin(t*1.2 + 1)*.05 : 0);
+  nod(haiR.head, .38*(1 - haiWake) + (haiWake < .5 ? Math.sin(t*1.2 + 1)*.05 : 0), haiR.neck);
   haiR.arm.rotation.z = Math.sin(t*2)*.12*haiWake;
   if(!metRoof7 && P.ground && P.y > 3.9 && P.x > 89 && P.x < 106){ metRoof7 = true; objective('Bóc chồng lịch trên phòng nhỏ'); say('Một chồng lịch… lờ mờ thấy hình gì bên dưới.', 2.6); }
   // room 8: the pole slides out over the canal while day 13 shows, and back in when it doesn't
@@ -705,7 +720,7 @@ LV.intro = {end:19, sheetsAt:11.8,
     const pop = (it > 5.2 && it < 6.2) ? Math.sin((it - 5.2)*Math.PI) : 0;
     toInner.scale.set(1 + pop*.12, 1 - pop*.1 + Math.sin(t*2.2)*.01, 1 + pop*.12);
     toInner.rotation.y = it < 13.5 ? .9 : .9 - Math.min(1, it - 13.5)*1.6;
-    baR.head.rotation.x = it < 13.5 ? 0 : Math.min(.35, (it - 13.5)*.3);
+    nod(baR.head, it < 13.5 ? 0 : Math.min(.35, (it - 13.5)*.3), baR.neck);
     const camX = 2.5 + Math.max(0, it - 9)*1.4*(it < 12.5 ? 1 : 0) + (it >= 12.5 ? 4.9 - Math.min(4.9, (it - 12.5)*2.4) : 0);
     camLook.lerp(tmpV.set(camX, 2.6, -1), Math.min(1, dt*2));
     camPos.lerp(tmpV.set(camX - 2.5, 5.4, 16.5), Math.min(1, dt*2));

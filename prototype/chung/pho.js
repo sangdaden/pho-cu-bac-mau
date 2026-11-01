@@ -150,6 +150,29 @@ function smile(parent, x, y, z, r, hex){
   return mesh(parent, new THREE.TorusGeometry(r, r*0.22, 8, 20, Math.PI), hex||'#7A2318', {pos:new THREE.Vector3(x,y,z), rot:[0,0,Math.PI], outline:false, shadow:false});
 }
 
+// a head group sits at the feet (y = 0); turning it about the neck instead keeps the head on the body when someone nods off
+function nod(head, ang, neck){ head.rotation.x = ang; head.position.set(0, neck*(1 - Math.cos(ang)), -neck*Math.sin(ang)); }
+// 0..1 that eases toward awake (or back to asleep) instead of snapping in one frame
+function wakeK(o, on, dt){ o._wk = (o._wk || 0) + ((on ? 1 : 0) - (o._wk || 0))*Math.min(1, dt*4); return o._wk; }
+// one step cycle: [offset along the walk, lift 0..1]; the planted foot moves back exactly as fast as the body goes forward
+function stepAt(ph, i, duty, a){
+  const u = ((ph + i) % 1 + 1) % 1;
+  if(u < duty) return [a*(1 - 2*u/duty), 0];
+  const w = (u - duty)/(1 - duty), e = .5 - .5*Math.cos(w*Math.PI);
+  return [a*(-1 + 2*e), Math.sin(w*Math.PI)];
+}
+// swing a leg hinged at the hip (length h) so its foot sits at off along the walk, shortened a little while lifted
+function swingLeg(leg, off, h, lift, k){ leg.rotation.x = -Math.asin(Math.max(-1, Math.min(1, off/h))); leg.scale.y = 1 - lift*(k === undefined ? .16 : k); }
+// walk a hinged pair of legs over dist (in the character's own units); returns how far the hips drop so the planted foot stays on the ground
+function walkLegs(legs, dist, h, A, ph0){
+  if(A < .005){ for(const l of legs){ l.rotation.x = 0; l.scale.y = 1; } return {drop:0, ph:0}; }
+  const L = 4*h*Math.sin(A), ph = dist/L + (ph0 || 0); let th = 0;
+  legs.forEach((l, i)=>{ const [off, lift] = stepAt(ph, i*.5, .5, h*Math.sin(A)); swingLeg(l, off, h, lift); if(!lift) th = Math.asin(off/h); });
+  return {drop:-h*(1 - Math.cos(th)), ph};
+}
+const _la = new THREE.Vector3(), _UP = new THREE.Vector3(0, 1, 0);
+function linkTo(m, a, b, r){ _la.subVectors(b, a); const len = _la.length(); m.position.copy(a).addScaledVector(_la, .5); m.quaternion.setFromUnitVectors(_UP, _la.normalize()); m.scale.set(r, len/2 + r*.4, r); }
+
 // ================= characters (same blocks as the approved 3D line-up) =================
 function buildTo(g){
   const R='#C23A28', R2='#B4321F', Y='#E8A41A', SK='#F3D7B4';
@@ -168,6 +191,7 @@ function buildTo(g){
     const a = new THREE.Group(); a.position.copy(B(s*.8,-.04,1.55)); g.add(a);
     blob(a, new THREE.Vector3(s*.06,-.35,0), [.2,.21,.42], R, {rot:[0,0,s*0.42]});
     blob(a, new THREE.Vector3(s*.22,-.75,-.1), .26, Y);
+    blob(a, new THREE.Vector3(-s*.1,-.02,0), .22, R, {ow:.03});   // shoulder ball: no gap when the arm swings
     arms.push(a);
   }
   const stick = new THREE.Group(); g.add(stick);
@@ -186,7 +210,9 @@ function buildTo(g){
     blob(head, new THREE.Vector3(s*.64, 2.42, .6), [.15, .05, .12], '#F2938A', {small:true});
   }
   const mouth = smile(head, 0, 2.4, .86, .07);
-  return {body, head, legs, arms, mouth};
+  // short shins from the hips to each foot, re-aimed every frame by poseTo so a lifted foot stays attached
+  const shins = [-1,1].map(()=>{ const m = new THREE.Mesh(SPH, toon(R2)); m.castShadow = true; outline(m, .03); g.add(m); return m; });
+  return {body, head, legs, arms, mouth, shins};
 }
 function buildBa(g){
   const ST='#D8382A', BR='#7A4E2D', PA='#3E3A44', SK='#E8C39E';
@@ -197,13 +223,14 @@ function buildBa(g){
     blob(g, new THREE.Vector3(s*.33,1.25,.35), [.3,.6,.27], PA, {rot:[Math.PI/2,0,0]});
     blob(g, new THREE.Vector3(s*.36,.62,.85), [.22,.24,.55], PA);
     blob(g, new THREE.Vector3(s*.36,.12,1.0), [.24,.3,.12], '#5A3B24');
+    blob(g, new THREE.Vector3(s*.35,1.17,.86), .27, PA, {ow:.03});   // knee: joins thigh and shin
   }
-  mesh(g, new THREE.CylinderGeometry(.85,.75,.12,28), '#C9A15A', {pos:new THREE.Vector3(0,1.62,.7)});
+  mesh(g, new THREE.CylinderGeometry(.85,.75,.12,28), '#C9A15A', {pos:new THREE.Vector3(0,1.54,.7)});   // the tray rests on her lap
   const tiny = [];
   [['#C23A28',-.42],['#E8A41A',0],['#2E9C93',.42]].forEach(([c,x],i)=>{
     const z0 = ZONE; ZONE = 'tray'+i;
-    tiny.push(blob(g, new THREE.Vector3(x,1.82,.75), [.13,.12,.16], c, {ow:.02}));
-    blob(g, new THREE.Vector3(x,2.05,.75), .1, '#F3D7B4', {ow:.02});
+    tiny.push(blob(g, new THREE.Vector3(x,1.74,.75), [.13,.12,.16], c, {ow:.02}));
+    blob(g, new THREE.Vector3(x,1.97,.75), .1, '#F3D7B4', {ow:.02});
     ZONE = z0;
   });
   for(const s of [-1,1]){
@@ -218,7 +245,7 @@ function buildBa(g){
   for(const s of [-1,1]) mesh(head, new THREE.TorusGeometry(.25,.035,8,24), '#3A2C24', {pos:new THREE.Vector3(s*.26,2.98,.7), outline:false});
   for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.48,2.72,.5), [.12,.04,.08], '#E79B85', {small:true});
   smile(head, 0, 2.66, .66, .12);
-  return {head};
+  return {head, neck:2.35};
 }
 function buildHai(g){
   const TE='#2E8C86', PA='#2A2630', SK='#EBC7A0';
@@ -230,16 +257,25 @@ function buildHai(g){
     blob(l, new THREE.Vector3(s*.02,-1.2,.12), [.22,.26,.13], '#B5512F');
     legs.push(l);
   }
-  blob(g, new THREE.Vector3(0,2.15,0), [.68,.55,.95], TE);
-  blob(g, new THREE.Vector3(0,1.35,0), [.62,.5,.32], TE);
-  blob(g, new THREE.Vector3(-.72,2.1,.05), [.17,.17,.5], TE, {rot:[0,0,-0.35]});
-  blob(g, new THREE.Vector3(-.92,1.6,.12), .15, SK);
-  const arm = new THREE.Group(); arm.position.set(.62,2.7,0); g.add(arm);
+  const up = new THREE.Group(); g.add(up);   // everything above the hips: nod(up, a, 1.3) leans her into the cart
+  const body = blob(up, new THREE.Vector3(0,2.15,0), [.68,.55,.95], TE);
+  blob(up, new THREE.Vector3(0,1.35,0), [.62,.5,.32], TE);
+  const armL = new THREE.Group(); armL.position.set(-.6,2.5,0); up.add(armL);
+  blob(armL, new THREE.Vector3(-.12,-.4,.05), [.17,.17,.5], TE, {rot:[0,0,-0.35]});
+  blob(armL, new THREE.Vector3(-.32,-.9,.12), .15, SK);
+  blob(armL, new THREE.Vector3(.02,-.08,0), .19, TE, {ow:.03});
+  // a right arm without the ladle, shown only while she pushes the cart (the ladle hangs on the cart then)
+  const armR = new THREE.Group(); armR.position.set(.6,2.5,0); up.add(armR); armR.visible = false;
+  blob(armR, new THREE.Vector3(.12,-.4,.05), [.17,.17,.5], TE, {rot:[0,0,0.35]});
+  blob(armR, new THREE.Vector3(.32,-.9,.12), .15, SK);
+  blob(armR, new THREE.Vector3(-.02,-.08,0), .19, TE, {ow:.03});
+  const arm = new THREE.Group(); arm.position.set(.62,2.7,0); up.add(arm);
+  blob(arm, new THREE.Vector3(0,0,0), .19, TE, {ow:.03});
   blob(arm, new THREE.Vector3(.18,.35,0), [.17,.17,.5], TE, {rot:[0,0,-0.4]});
   blob(arm, new THREE.Vector3(.38,.82,.05), .15, SK);
   rod(arm, new THREE.Vector3(.38,.6,.05), new THREE.Vector3(.38,1.7,.15), .04, '#8C6631');
   mesh(arm, new THREE.SphereGeometry(.22,16,10,0,Math.PI*2,Math.PI/2,Math.PI/2), '#9A9DA3', {pos:new THREE.Vector3(.38,1.88,.18), rot:[Math.PI,0,0]});
-  const head = new THREE.Group(); g.add(head);
+  const head = new THREE.Group(); up.add(head);
   blob(head, new THREE.Vector3(0,3.55,0), [.66,.68,.64], SK);
   blob(head, new THREE.Vector3(0,3.75,-.2), [.68,.55,.52], '#1E1A22');
   blob(head, new THREE.Vector3(0,3.4,-.62), [.3,.3,.42], '#1E1A22');
@@ -252,7 +288,7 @@ function buildHai(g){
   mesh(pot, new THREE.CylinderGeometry(.55,.48,.85,24), '#6B6F75', {pos:new THREE.Vector3(0,.43,0)});
   mesh(pot, new THREE.CylinderGeometry(.5,.5,.04,24), '#F1E4C3', {pos:new THREE.Vector3(0,.84,0), outline:false});
   [['#8CC152',-.18,.1],['#F2C230',.18,-.05],['#C0392B',0,.22],['#FFFFFF',.05,-.22]].forEach(([c,x,z])=>blob(pot,new THREE.Vector3(x,.88,z),[.12,.12,.05],c,{small:true}));
-  return {arm, head, legs};
+  return {arm, armL, armR, head, legs, up, body, hat, pot, neck:2.95};
 }
 function buildBui(g, s, seed){
   const geo = new THREE.IcosahedronGeometry(1, 1);
@@ -261,10 +297,16 @@ function buildBui(g, s, seed){
   for(let i=0;i<p.count;i++){ const k=p.getX(i).toFixed(3)+p.getY(i).toFixed(3)+p.getZ(i).toFixed(3); const f=cache[k]||(cache[k]=0.82+rnd()*0.3); p.setXYZ(i,p.getX(i)*f,p.getY(i)*f,p.getZ(i)*f); }
   geo.computeVertexNormals();
   const m = mesh(g, geo, '#8E8A86', {keep:true, scl:[s,s*.92,s], ow:.035}); m.material.flatShading = true;
+  // eyes blink (scale.y) while awake; asleep they are swapped for two shut lids
+  const eyes = [], lids = [];
   for(const sd of [-1,1]){
-    blob(g, new THREE.Vector3(sd*s*.34, s*.12, s*.82), [s*.26,s*.12,s*.3], '#FFFFFF', {keep:true, ow:.02});
-    blob(g, new THREE.Vector3(sd*s*.34 + s*.07, s*.08, s*.95), [s*.12,s*.04,s*.14], '#1E1530', {keep:true, small:true});
+    eyes.push(blob(g, new THREE.Vector3(sd*s*.34, s*.12, s*.82), [s*.26,s*.12,s*.3], '#FFFFFF', {keep:true, ow:.02}));
+    eyes.push(blob(g, new THREE.Vector3(sd*s*.34 + s*.07, s*.08, s*.95), [s*.12,s*.04,s*.14], '#1E1530', {keep:true, small:true}));
+    lids.push(blob(g, new THREE.Vector3(sd*s*.34, s*.06, s*.9), [s*.22,s*.06,s*.035], '#1E1530', {keep:true, small:true}));
   }
+  for(const e of eyes) e.userData.sy = e.scale.y;
+  for(const l of lids) l.visible = false;
+  return {eyes, lids};
 }
 function buildBong(g){
   const YE='#F2C230', TE='#2E9C93', SK='#F0CFA8';
@@ -289,7 +331,7 @@ function buildBong(g){
   for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.45,1.8,.46), [.12,.04,.08], '#EE8C78', {small:true});
   smile(head, 0, 1.74, .62, .12);
   for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.7,2.0,0), [.1,.1,.14], SK, {ow:.025});
-  return {head, boat, arms};
+  return {head, boat, arms, neck:1.4};
 }
 // Mẹ Bống: áo bà ba tím, quần đen, tóc búi, ngồi bó gối trên mạn ghe
 function buildMe(g){
@@ -303,7 +345,8 @@ function buildMe(g){
   for(let i=0;i<4;i++) blob(g, new THREE.Vector3(.18,2.5-i*.3,.5), .045, '#F4F1EA', {small:true});
   const arms = [];
   for(const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.62,2.6,0); g.add(a);
-    blob(a, new THREE.Vector3(s*.1,-.4,.05), [.17,.17,.5], AO, {rot:[0,0,s*0.3]}); blob(a, new THREE.Vector3(s*.2,-.85,.12), .15, SK); arms.push(a); }
+    blob(a, new THREE.Vector3(s*.1,-.4,.05), [.17,.17,.5], AO, {rot:[0,0,s*0.3]}); blob(a, new THREE.Vector3(s*.2,-.85,.12), .15, SK);
+    blob(a, new THREE.Vector3(-s*.02,-.08,0), .19, AO, {ow:.03}); arms.push(a); }
   const head = new THREE.Group(); g.add(head);
   blob(head, new THREE.Vector3(0,3.5,0), [.64,.66,.62], SK);
   blob(head, new THREE.Vector3(0,3.72,-.18), [.67,.56,.52], '#1E1A22');
@@ -312,7 +355,7 @@ function buildMe(g){
   eyes(head, 0, 3.55, .58, .19, .22, .2, .24);
   for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.42,3.32,.46), [.11,.04,.07], '#E79B85', {small:true});
   smile(head, 0, 3.28, .6, .1);
-  return {head, arms};
+  return {head, arms, neck:2.9};
 }
 
 
@@ -329,7 +372,8 @@ function buildTu(g){
   mesh(g, new THREE.BoxGeometry(.38,.7,.08), '#F4F1EA', {pos:new THREE.Vector3(-.72,2.3,.72), rot:[0,0,0.2], ow:.025});
   const arms = [];
   for(const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.9,2.2,.05); g.add(a);
-    blob(a, new THREE.Vector3(s*.12,-.35,0), [.22,.22,.5], SK, {rot:[0,0,s*0.35]}); blob(a, new THREE.Vector3(s*.3,-.82,.1), .2, SK); arms.push(a); }
+    blob(a, new THREE.Vector3(s*.12,-.35,0), [.22,.22,.5], SK, {rot:[0,0,s*0.35]}); blob(a, new THREE.Vector3(s*.3,-.82,.1), .2, SK);
+    blob(a, new THREE.Vector3(-s*.02,-.05,0), .23, SK, {ow:.03}); arms.push(a); }
   const head = new THREE.Group(); g.add(head);
   blob(head, new THREE.Vector3(0,3.3,0), [.7,.7,.68], SK);
   mesh(head, new THREE.SphereGeometry(.73,24,12,0,Math.PI*2,0,Math.PI/2), '#2E8C86', {pos:new THREE.Vector3(0,3.55,-.04)});
@@ -339,7 +383,7 @@ function buildTu(g){
   blob(head, new THREE.Vector3(0,3.18,.68), [.13,.11,.11], '#C98E68', {ow:.025});
   smile(head, 0, 2.92, .6, .1);
   for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.7,3.3,0), [.1,.1,.14], SK, {ow:.025});
-  return {head, belly, arms};
+  return {head, belly, arms, neck:2.65};
 }
 
 
@@ -1024,8 +1068,8 @@ function relic(g, x, y, name){ relicObj = {g, x, y, name, t:0}; relicEl.title = 
 // ---------- Lũ Bụi: patrol a stretch, or sleep behind the walkway and wake when Tò lands hard nearby ----------
 const buis = [];
 function bui(o){
-  const g = new THREE.Group(); scene.add(g); ZONE = 'keep'; buildBui(g, o.s, buis.length + 3);
-  const b = Object.assign({home:o.x, dir:1, ph:buis.length*1.7, z:o.sleep ? -.9 : .2, awake:!o.sleep, t:0, g}, o);
+  const g = new THREE.Group(); scene.add(g); ZONE = 'keep'; const R = buildBui(g, o.s, buis.length + 3);
+  const b = Object.assign({home:o.x, dir:1, ph:buis.length*1.7, z:o.sleep ? -.9 : .2, awake:!o.sleep, t:0, g, R}, o);
   g.position.set(b.x, b.top + b.s, b.z);
   buis.push(b); return b;
 }
@@ -1145,8 +1189,10 @@ if(MOBILE && !STANDALONE){ const fl = ()=>{ if(document.fullscreenElement) remov
 const S = 0.55;  // Tò is small: the street should feel big
 ZONE = '0';
 const toG = new THREE.Group(); toG.scale.setScalar(S); scene.add(toG);
-const toInner = new THREE.Group(); toG.add(toInner); const TO = buildTo(toInner);
-const P = {x:0, y:0, z:0, zWant:0, vx:0, vy:0, w:.95, h:2.25, ground:true, face:1, grab:null, gx:0, gp:0, check:{x:0, y:0}, won:false, knock:0, walkT:0};
+const toInner = new THREE.Group(); toG.add(toInner);
+// toLean holds Tò's body: lean, roll and squash happen here so toInner keeps only the facing and the bob
+const toLean = new THREE.Group(); toInner.add(toLean); const TO = buildTo(toLean);
+const P = {x:0, y:0, z:0, zWant:0, vx:0, vy:0, w:.95, h:2.25, ground:true, face:1, grab:null, gx:0, gp:0, check:{x:0, y:0}, won:false, knock:0, walkT:0, stepPh:0, airT:0, landT:0, wasGround:true};
 const GRAV = 30, JUMP = 13, SPEED = 5.4, PEEL_SPEED = 2.6;
 talker(toG, 1.75, ()=> toSayT > 0 ? toSay : '');
 function grab(s){
@@ -1181,7 +1227,8 @@ const FORMS = {thuyen:'thuyền', maybay:'máy bay', quat:'quạt', non:'nón', 
 const learned = [];
 const held = {on:false, form:null, src:null, wear:1};
 const handEl = $('hand');
-const heldG = new THREE.Group(); heldG.position.set(0, 1.05, .95); toInner.add(heldG);
+// held things sit out in front of his hands, clear of his belly (at .95 the back half of a plane sank into him)
+const heldG = new THREE.Group(); heldG.position.set(0, 1.25, 1.55); toInner.add(heldG);
 ZONE = '0';
 const HELD = {paper:new THREE.Group(), thuyen:new THREE.Group(), maybay:new THREE.Group(), quat:new THREE.Group()};
 for(const k in HELD){ HELD[k].visible = false; heldG.add(HELD[k]); }
@@ -1220,7 +1267,7 @@ HELD.vot = new THREE.Group(); HELD.vot.position.set(.25, -.1, .1); HELD.vot.scal
   mesh(HELD.thuyen, new THREE.ExtrudeGeometry(sh, {depth:.42, bevelEnabled:false}), '#F4EFE4', {pos:new THREE.Vector3(0,0,-.21), ow:.03});
   mesh(HELD.thuyen, new THREE.CylinderGeometry(0,.34,.56,3), '#F4EFE4', {pos:new THREE.Vector3(0,.5,0), scl:[1,1,.35], ow:.03});
   const ps = new THREE.Shape(); ps.moveTo(.8,0); ps.lineTo(-.6,.5); ps.lineTo(-.35,0); ps.lineTo(-.6,-.5); ps.closePath();
-  const pl = mesh(HELD.maybay, new THREE.ShapeGeometry(ps), '#F4EFE4', {ow:.04}); pl.material.side = THREE.DoubleSide; HELD.maybay.rotation.x = -1.2;
+  const pl = mesh(HELD.maybay, new THREE.ShapeGeometry(ps), '#F4EFE4', {ow:.04}); pl.material.side = THREE.DoubleSide; HELD.maybay.rotation.order = 'YXZ'; HELD.maybay.rotation.set(-1.2, -Math.PI/2, 0); HELD.maybay.scale.setScalar(.85);   // nose pointing where he walks
   for(let i=0;i<7;i++){ const m = mesh(HELD.quat, new THREE.BoxGeometry(.16, .9, .03), i%2 ? '#F4EFE4' : '#E8C27A', {pos:new THREE.Vector3(0,.45,0), ow:.02}); const g = new THREE.Group(); g.rotation.z = (i - 3)*.22; g.add(m); HELD.quat.add(g); }
 })();
 function showHeld(){
@@ -1567,6 +1614,16 @@ function step(dt, t){
   }
 }
 
+// a fanned-away Bụi bursts into a few grey dust puffs that swell and fade where it was
+const puffGeo = new THREE.IcosahedronGeometry(1, 0);
+function buiPuffs(b, dt){
+  if(!b.puffs){ b.puffs = [];
+    for(let i=0;i<6;i++){ const m = new THREE.Mesh(puffGeo, new THREE.MeshBasicMaterial({color:'#B9B4AE', transparent:true, opacity:.7, depthWrite:false}));
+      const a = i/6*Math.PI*2; m.userData.v = new THREE.Vector3(Math.cos(a)*1.6, .6 + Math.sin(a)*1.2, (i%2 ? .5 : -.5)); m.position.set(b.x, b.top + b.s, b.z); scene.add(m); b.puffs.push(m); } }
+  const k = Math.min(1, b.goneT/1.1);
+  for(const m of b.puffs){ m.position.addScaledVector(m.userData.v, dt*(1 - k)); m.scale.setScalar(b.s*(.25 + .55*k)); m.material.opacity = .7*(1 - k); m.visible = k < 1; }
+}
+
 // ---------- Bụi, fireflies, sheets: per-frame motion ----------
 function actors(dt, t){
   timersTick(dt); boatTick(dt, t); planeTick(dt); fishTick(dt, t);
@@ -1584,10 +1641,17 @@ function actors(dt, t){
     } else {
       b.x += b.dir*dt*1.4; if(b.x > b.b){ b.x = b.b; b.dir = -1; } if(b.x < b.a){ b.x = b.a; b.dir = 1; }
     }
-    if(b.gone){ b.goneT += dt; b.g.position.y += dt*3.5; b.g.rotation.z += dt*6; b.g.scale.setScalar(Math.max(.01, 1 - b.goneT*.8)); b.g.visible = b.goneT < 1.3; continue; }
-    const hop = (b.awake || !b.sleep) ? Math.abs(Math.sin(t*3 + b.ph))*.25 : Math.sin(t*1.5 + b.ph)*.03;
+    if(b.gone){ b.goneT += dt; b.g.position.y += dt*3.5; b.g.rotation.z += dt*6; b.g.scale.setScalar(Math.max(.01, 1 - b.goneT*.8)); b.g.visible = b.goneT < 1.3; buiPuffs(b, dt); continue; }
+    const up = b.awake || !b.sleep, u = Math.abs(Math.sin(t*3 + b.ph));
+    const hop = up ? u*.25 : Math.sin(t*1.5 + b.ph)*.03;
     b.g.position.set(b.x, b.top + b.s + hop, b.z); b.g.rotation.y = b.dir*.4;
-    b.g.scale.set(1, (b.sleep && !b.awake) ? .9 + Math.sin(t*1.5 + b.ph)*.04 : 1, 1);
+    // hopping: squashed flat at each touchdown, stretched tall at the top; asleep: a slow breathing swell
+    const sy = up ? .84 + .22*Math.pow(u, .5) : .9 + Math.sin(t*1.5 + b.ph)*.04, sx = up ? 1/Math.sqrt(sy) : 1;
+    b.g.scale.set(sx, sy, sx);
+    if(up) b.g.position.y -= b.s*(1 - sy)*.9;   // keep the squashed bottom on the ground
+    const shut = !up, blink = up && ((t + b.ph*1.3) % 3.1) < .13;
+    for(const e of b.R.eyes){ e.visible = !shut; e.scale.y = e.userData.sy*(blink ? .12 : 1); }
+    for(const l of b.R.lids) l.visible = shut;
   }
   for(const f of flies){
     if(f.got){ f.gotT += dt; f.g.scale.setScalar(1 + f.gotT*4); f.h.material.opacity = Math.max(0, 1 - f.gotT*2); f.g.visible = f.gotT < .5; f.g.position.y += dt*2; continue; }
@@ -1639,25 +1703,59 @@ function poseTo(dt, t){
   else if(LV.zOut){ const z = LV.zOut(P.x, P.y); if(z != null) P.zWant = z; }   // jumping up under a low roof: step out in front of it
   P.z += ((P.zWant || 0) - P.z)*Math.min(1, dt*8);
   toG.position.set(P.x, P.y, P.z);
-  const faceY = P.grab ? (P.grab.dir === 'x' ? -0.9 : 0.6) : (P.face > 0 ? 0.75 : -0.75);
-  toInner.rotation.y += (faceY - toInner.rotation.y)*Math.min(1, dt*12);
+  // walking he turns nearly side-on so his feet travel along the street, and looks back over his shoulder at the camera
+  const pullX = P.grab && P.grab.dir === 'x', holding = held.on && held.form !== 'non' && held.form !== 'den';
+  const faceY = P.grab ? (pullX ? -1.25 : 0.6) : (P.face > 0 ? 1.1 : -1.1);
+  toInner.rotation.y += (faceY - toInner.rotation.y)*Math.min(1, dt*10);
+  const k10 = Math.min(1, dt*10), k14 = Math.min(1, dt*14);
+  TO.head.rotation.y += ((P.grab ? (pullX ? .4 : 0) : -.32*Math.sign(faceY)) - TO.head.rotation.y)*Math.min(1, dt*6);
   const moving = Math.abs(P.vx) > .3 && P.ground;
+  // feet: the planted foot slides back exactly as fast as he goes, the other lifts and swings through (short heavy steps while peeling)
+  const a = P.grab ? .34 : .72;
   P.walkT += dt*(moving ? (P.grab ? 7 : 12) : 0);
-  toInner.position.y = moving ? Math.abs(Math.sin(P.walkT))*.18 : Math.sin(t*2.2)*.03;
-  toInner.rotation.z = moving ? Math.sin(P.walkT)*.08 : 0;
-  TO.legs[0].position.z = .08 + (moving ? Math.sin(P.walkT)*.25 : 0); TO.legs[1].position.z = .08 - (moving ? Math.sin(P.walkT)*.25 : 0);
-  // the lantern hand: whichever side faces the camera (Tò's +x side turns away when he faces right)
+  if(moving) P.stepPh += P.vx*dt/S/(4*a);
+  if(P.ground && !P.wasGround) P.landT = .2;
+  P.wasGround = P.ground;
+  if(P.landT > 0) P.landT -= dt;
+  P.airT = P.ground ? 0 : P.airT + dt;
+  const dir = tmpV.set(1, 0, 0).applyAxisAngle(_UP, -toInner.rotation.y);
+  const offs = [];
+  TO.legs.forEach((leg, i)=>{
+    let off = 0, lift = 0;
+    if(!P.ground){ off = P.vy > 0 ? (i ? -.22 : .32) : (i ? -.1 : .18); lift = P.vy > 0 ? 1 : .35; }
+    else if(moving) [off, lift] = stepAt(P.stepPh, i*.5, .5, a);
+    offs.push(off/a);
+    const px = (i ? .4 : -.4) + dir.x*off, py = .13 + lift*(P.grab ? .16 : .28), pz = .08 + dir.z*off;
+    const k = P.ground && !P.landT ? 1 : Math.min(1, dt*22);
+    leg.position.x += (px - leg.position.x)*k; leg.position.y += (py - leg.position.y)*k; leg.position.z += (pz - leg.position.z)*k;
+    linkTo(TO.shins[i], tmpV2.set(i ? .32 : -.32, .62, .06), tmpV3.copy(leg.position).add(SHIN_OFF), .2);
+  });
+  const s2 = (((P.stepPh*2) % 1) + 1) % 1, bob = moving ? (1 - Math.cos(2*Math.PI*s2))/2 : .5 + Math.sin(t*2.2)*.2;
+  toInner.position.y = bob*(moving ? (P.grab ? .06 : .12) : .04);
+  toLean.rotation.z = moving ? Math.sin(2*Math.PI*P.stepPh)*.06 : 0;
+  toLean.rotation.x += ((pullX ? -.13 : moving ? .07 : 0) - toLean.rotation.x)*k10;
+  // squash and stretch: stretched leaving the ground, squashed for a moment on landing
+  const sq = !P.ground ? 1 + .16*Math.exp(-P.airT*9) - (P.vy > 0 ? 0 : .03) : P.landT > 0 ? 1 - .24*Math.sin((.2 - P.landT)/.2*Math.PI) : 1;
+  toLean.scale.set(1/Math.sqrt(sq), sq, 1/Math.sqrt(sq));
+  // the lantern: held up beside his head in the hand on the camera side (Tò's +x side turns away when he faces right)
   const denOn = held.on && held.form === 'den' && !P.grab, denSd = P.face > 0 ? -1 : 1;
   if(denOn){ HELD.den.position.set(denSd*1.55, 1.0, 0); HELD.den.scale.x = denSd; }
-  for(const [i, a] of TO.arms.entries()){
-    const sd = i ? 1 : -1, lift = denOn && sd === denSd;
-    const swing = P.ground ? (moving ? Math.sin(P.walkT + i*Math.PI)*.5 : 0) : -2.2;
-    const target = P.grab ? (P.grab.dir === 'x' ? -1.3 : -2.6) : lift ? -.15 : denOn ? swing : held.on && held.form !== 'non' ? -1.2 : swing;
-    a.rotation.x += (target - a.rotation.x)*Math.min(1, dt*12);
-    a.rotation.z += ((lift ? sd*1.0 : 0) - a.rotation.z)*Math.min(1, dt*12);
+  for(const [i, arm] of TO.arms.entries()){
+    let tx, tz = 0, reach = 0;
+    if(denOn && (i ? 1 : -1) === denSd){ tx = -.15; tz = 1.0; }
+    else if(P.grab){ tx = pullX ? -1.5 + Math.sin(t*38 + i)*.04 : -2.6; tz = pullX ? .05 : 0; reach = pullX ? .5 : 0; }
+    else if(holding){ tx = -1.3 + Math.sin(2*Math.PI*P.stepPh*2)*.05; tz = -.75; reach = .25; }
+    else if(!P.ground){ tx = P.vy > 0 ? -2.6 : -1.9; tz = P.vy > 0 ? .45 : .7; }
+    else if(P.landT > 0){ tx = -.6; tz = .5; }
+    else tx = moving ? offs[i]*.55 : Math.sin(t*1.6 + i)*.05;
+    arm.rotation.x += (tx - arm.rotation.x)*k14;
+    arm.rotation.z += (tz*(i ? 1 : -1) - arm.rotation.z)*k10;
+    arm.position.z += (.04 + reach - arm.position.z)*k10;
   }
-  TO.body.scale.y = .95*(1 + (P.ground ? 0 : .06))*(1 - rain.wet*.14);
+  if(holding) heldG.position.y = 1.25 + Math.sin(2*Math.PI*P.stepPh*2)*.05;
+  TO.body.scale.y = .95*(1 - (moving ? .05*(1 - bob) : 0))*(1 - rain.wet*.14);
 }
+const tmpV2 = new THREE.Vector3(), tmpV3 = new THREE.Vector3(), SHIN_OFF = new THREE.Vector3(0, .08, -.05);
 function place(el, obj, dy, text){
   if(!text){ el.style.opacity = 0; return; }
   obj.getWorldPosition(tmpV); tmpV.y += dy; tmpV.project(camera);

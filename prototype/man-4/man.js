@@ -324,12 +324,13 @@ function buildBay(g){
     blob(g, new THREE.Vector3(s*.3, .95, .3), [.22, .48, .2], QU);
     blob(g, new THREE.Vector3(s*.32, .45, .72), [.19, .19, .4], QU);
     blob(g, new THREE.Vector3(s*.32, .08, .82), [.2, .28, .1], '#5E4630');
+    blob(g, new THREE.Vector3(s*.31, .86, .72), .2, QU, {ow:.03});   // knee
   }
   const body = blob(g, new THREE.Vector3(0, 1.7, 0), [.68, .58, .78], AO);
   for(let i=0;i<3;i++) blob(g, new THREE.Vector3(.08, 1.95 - i*.28, .57), .05, '#F1EEE8', {small:true});
   const arms = [];
   for(const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.66, 2.15, .05); g.add(a);
-    blob(a, new THREE.Vector3(s*.1, -.32, .1), [.18, .18, .46], AO, {rot:[-.5, 0, s*.3]}); blob(a, new THREE.Vector3(s*.16, -.6, .5), .16, SK); arms.push(a); }
+    blob(a, new THREE.Vector3(s*.1, -.32, .1), [.18, .18, .46], AO, {rot:[-.5, 0, s*.3]}); blob(a, new THREE.Vector3(s*.16, -.6, .5), .16, SK); blob(a, new THREE.Vector3(-s*.02, -.06, 0), .2, AO, {ow:.03}); arms.push(a); }
   const head = new THREE.Group(); head.position.set(0, 0, 0); g.add(head);
   blob(head, new THREE.Vector3(0, 3.0, 0), [.6, .58, .64], SK);
   for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.5, 3.08, -.12), [.16, .26, .22], HAIR);
@@ -341,7 +342,7 @@ function buildBay(g){
   }
   mesh(head, new THREE.BoxGeometry(.16, .025, .025), '#2A2630', {pos:new THREE.Vector3(0, 3.12, .62), outline:false});
   blob(head, new THREE.Vector3(0, 2.86, .6), [.11, .1, .1], '#C98E68', {ow:.025});
-  return {head, body, arms};
+  return {head, body, arms, neck:2.45};
 }
 ZONE = 'bay';
 const bay = new THREE.Group(); bay.position.set(57.4, .5, .7); bay.rotation.y = -.35; bay.scale.setScalar(S*1.0); scene.add(bay); const bayR = buildBay(bay);
@@ -472,7 +473,7 @@ LV.update = (dt, t)=>{
   if(ombrOpen > 0 && ombrOpen < 1) ombrOpen = Math.min(1, ombrOpen + dt*1.2);
   const o = Math.max(.12, ombrOpen); ombr.scale.set(o, 1 + (1 - o)*2.2, o); ombr.position.y = OY - (1 - o)*.9;
   hole.visible = !patched && ombrOpen > .5; leak.material.opacity = !patched && ombrOpen > .5 ? .5*rain.k : 0;
-  bayR.head.rotation.x = bayAwake ? Math.sin(t*1.3)*.04 : .35 + Math.sin(t*1.2)*.04;
+  const ywk = wakeK(bay, bayAwake, dt); nod(bayR.head, Math.sin(t*1.3)*.04*ywk + (.35 + Math.sin(t*1.2)*.04)*(1 - ywk), bayR.neck);
   bay.position.y = .5;
   // first time the rain gets to him: say what it does
   if(!wetOnce && rain.wet > .3){ wetOnce = true; say('Mưa! Tò là bột gạo, ướt là nhũn ra…', 2.6); }
