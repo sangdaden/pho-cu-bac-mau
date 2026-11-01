@@ -1199,7 +1199,8 @@ HELD.dieu = new THREE.Group(); HELD.dieu.position.set(-.4, 5.2, -.4); HELD.dieu.
   for(let i=0;i<4;i++) blob(HELD.dieu, new THREE.Vector3(Math.sin(i*1.4)*.12, -1.05 - i*.32, 0), [.1, .04, .1], '#C23A28', {small:true});
   rod(HELD.dieu, new THREE.Vector3(0, -.85, 0), new THREE.Vector3(.5, -3.1, .9), .012, '#3B2E2A', {outline:false}); })();
 // a paper star lantern on a bamboo stick, a candle inside: it carries a flame to the lanterns hung along the street
-HELD.den = new THREE.Group(); HELD.den.position.set(.3, 0, .1); HELD.den.visible = false; heldG.add(HELD.den);
+// held up in one hand beside his head (the hand on the camera side), not in front of his face: poseTo moves it and raises that arm
+HELD.den = new THREE.Group(); HELD.den.position.set(1.55, 1.0, 0); HELD.den.visible = false; toInner.add(HELD.den);
 (function(){ rod(HELD.den, new THREE.Vector3(0, -.3, 0), new THREE.Vector3(.1, 1.9, 0), .03, '#C99A52', {outline:false});
   const st = new THREE.Shape(); for(let i=0;i<10;i++){ const a = Math.PI/2 + i*Math.PI/5, r = i%2 ? .26 : .62; if(i) st.lineTo(Math.cos(a)*r, Math.sin(a)*r); else st.moveTo(Math.cos(a)*r, Math.sin(a)*r); }
   mesh(HELD.den, new THREE.ExtrudeGeometry(st, {depth:.22, bevelEnabled:false}), '#E8442E', {pos:new THREE.Vector3(.12, 2.5, -.11), ow:.035, keep:true});
@@ -1550,6 +1551,7 @@ function poseTo(dt, t){
   if(Math.abs(fgWant - fgOp) > .001){ fgOp += (fgWant - fgOp)*Math.min(1, dt*6); for(const m of FG_MATS) m.opacity = fgOp; OUTLINE_FG.opacity = fgOp; for(const m of FG_MATS.concat(OUTLINE_FG)) m.depthWrite = fgOp > .95; }
   // a plat can stand Tò out toward the camera (an awning under a roof slab), so his head isn't drawn inside the slab
   if(P.ground) P.zWant = P.on && P.on.z != null ? P.on.z : 0;
+  else if(LV.zOut){ const z = LV.zOut(P.x, P.y); if(z != null) P.zWant = z; }   // jumping up under a low roof: step out in front of it
   P.z += ((P.zWant || 0) - P.z)*Math.min(1, dt*8);
   toG.position.set(P.x, P.y, P.z);
   const faceY = P.grab ? (P.grab.dir === 'x' ? -0.9 : 0.6) : (P.face > 0 ? 0.75 : -0.75);
@@ -1559,9 +1561,15 @@ function poseTo(dt, t){
   toInner.position.y = moving ? Math.abs(Math.sin(P.walkT))*.18 : Math.sin(t*2.2)*.03;
   toInner.rotation.z = moving ? Math.sin(P.walkT)*.08 : 0;
   TO.legs[0].position.z = .08 + (moving ? Math.sin(P.walkT)*.25 : 0); TO.legs[1].position.z = .08 - (moving ? Math.sin(P.walkT)*.25 : 0);
+  // the lantern hand: whichever side faces the camera (Tò's +x side turns away when he faces right)
+  const denOn = held.on && held.form === 'den' && !P.grab, denSd = P.face > 0 ? -1 : 1;
+  if(denOn){ HELD.den.position.set(denSd*1.55, 1.0, 0); HELD.den.scale.x = denSd; }
   for(const [i, a] of TO.arms.entries()){
-    const target = P.grab ? (P.grab.dir === 'x' ? -1.3 : -2.6) : held.on && held.form !== 'non' ? -1.2 : (P.ground ? (moving ? Math.sin(P.walkT + i*Math.PI)*.5 : 0) : -2.2);
+    const sd = i ? 1 : -1, lift = denOn && sd === denSd;
+    const swing = P.ground ? (moving ? Math.sin(P.walkT + i*Math.PI)*.5 : 0) : -2.2;
+    const target = P.grab ? (P.grab.dir === 'x' ? -1.3 : -2.6) : lift ? -.15 : denOn ? swing : held.on && held.form !== 'non' ? -1.2 : swing;
     a.rotation.x += (target - a.rotation.x)*Math.min(1, dt*12);
+    a.rotation.z += ((lift ? sd*1.0 : 0) - a.rotation.z)*Math.min(1, dt*12);
   }
   TO.body.scale.y = .95*(1 + (P.ground ? 0 : .06))*(1 - rain.wet*.14);
 }
@@ -1741,7 +1749,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // test hook: lets an automated run drive the same input the keyboard does
-const hook = window.__game = {pause:false, P, keys, sheets, buis, LV, zoneK, solids, blocks,
+const hook = window.__game = {pause:false, P, keys, sheets, buis, LV, zoneK, solids, blocks, toG,
   jump:()=>{ jumpQueued = true; }, grab:()=>{ grabQueued = true; }, back,
   skipIntro:()=>{ if(intro.on) endIntro(); }, introTick:(n)=>{ for(let i=0;i<n && intro.on;i++){ simT += 1/60; runIntro(1/60, simT); } },
   tick:(n)=>{ for(let i=0;i<n;i++){ simT += STEP; if(intro.on) runIntro(STEP, simT); else { jrStep(); step(STEP, simT); animate(STEP, simT); jrTick(); } } }, jrSave, jrLoad, get jr(){ return JR; },

@@ -57,8 +57,8 @@ const THREE = fs.readFileSync(path.join(__dirname,'../../prototype/chung/three.m
   // room 7: Cô Hai, awning, cart
   await log(()=>{ walkTo(92.9); peel(G.sheets[6]); waitFree(); return st('r7 B peeled'); });
   await snap('7a');
-  await log(()=>{ walkTo(95.5); jump(null, 40); return st('r7 on cart? y 1.15'); });
-  await log(()=>{ jump(null, 40); return st('r7 on awning? y 3.1'); });
+  await log(()=>{ walkTo(91.2); jump(null, 40); return st('r7 on cart? y 1.15'); });
+  await log(()=>{ walkTo(92.1); jump('right', 14); idle(30); return st('r7 on awning? y 3.1'); });
   await log(()=>{ jump('right', 40); walkTo(97.7); return st('r7 roof y 4'); });
   await snap('7b');
   // room 8: stack; then over-peel and restore
