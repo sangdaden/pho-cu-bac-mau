@@ -284,7 +284,15 @@ for(const dz of [-.08,.16]) mesh(cat, new THREE.ConeGeometry(.09,.18,4), '#E89A3
 for(const dz of [-.04,.2]) box(cat, .7,.73, .35,.37, .06+dz-.05, .06+dz+.03, '#141019', {outline:false});
 const catTail = rod(cat, new THREE.Vector3(-.52,.12,-.1), new THREE.Vector3(.05,.08,.42), .07, '#D9822E', {ow:.02});
 for(const dx of [-.25,-.05,.15]) box(cat, dx, dx+.07, .45, .5, -.2, .2, '#C76E22', {outline:false});
-let catGone = false, catT = -1;
+// legs stay tucked under while she sleeps; they show and move once she leaps
+const catLegs = [];
+for(const [lx, lz] of [[.34,-.14],[.34,.16],[-.34,-.14],[-.34,.16]]){
+  const l = new THREE.Group(); l.position.set(lx, .12, lz); cat.add(l); l.visible = false;
+  blob(l, new THREE.Vector3(0,-.13,0), [.08,.08,.17], '#E89A3C', {ow:.02}); blob(l, new THREE.Vector3(.03,-.28,0), [.08,.07,.05], '#F4F1EA', {ow:.015});
+  catLegs.push(l);
+}
+const CAT_LIFT = .3;
+let catGone = false, catT = -1, catWalk = 0;
 
 // ================= room 7 · Xe chè cô Hai: the chè house, awning folded behind sheet B, the cart =================
 ZONE = 'r7';
@@ -313,15 +321,20 @@ for(let i=0;i<8;i++) mesh(awning, new THREE.CylinderGeometry(.35,.35,.06,12,1,fa
 mesh(awning, new THREE.CylinderGeometry(.06,.06,5.6,8), '#8C6631', {pos:new THREE.Vector3(0,0,1.9), rot:[0,0,Math.PI/2], ow:.02});
 awning.rotation.x = Math.PI/2;
 let awningOpen = false, awningT = 0;
-plat(92.9, 98.1, 3.1, true, ()=>awningOpen && awningT > .6);
+plat(92.9, 98.1, 3.1, true, ()=>awningOpen && awningT > .6, {z:1.1});   // stand out on the awning, clear of the roof slab above
 // the chè cart: wooden body, a glass case of jars, two wheels and push handles; a one-way step once it stands under the awning
+const cartWheels = [];
 const cart = new THREE.Group(); cart.position.set(85.2, 0, .55); scene.add(cart);
 (function(g){
   box(g, -.95, .95, .45, .55, -.5, .5, '#7A4E2D', {ow:.025, uv:[.6,.6], map:TEX.wood});
   box(g, -.9, .9, .55, .95, -.45, .45, '#A27650', {ow:.025, uv:[.6,.6], map:TEX.wood});
   box(g, -.8, .8, .95, 1.12, -.4, .4, '#E9F4F2', {ow:.02});
   for(let i=0;i<4;i++) mesh(g, new THREE.CylinderGeometry(.13,.13,.26,10), ['#8CC152','#F2C230','#C0392B','#E9E2D6'][i], {pos:new THREE.Vector3(-.55+i*.37, 1.0, 0), outline:false});
-  for(const dz of [-.5, .5]){ mesh(g, new THREE.TorusGeometry(.3,.06,6,16), '#2A2630', {pos:new THREE.Vector3(.2, .3, dz), outline:false}); mesh(g, new THREE.CylinderGeometry(.08,.08,.08,8), '#B8B0A4', {pos:new THREE.Vector3(.2,.3,dz), rot:[Math.PI/2,0,0], outline:false}); }
+  for(const dz of [-.5, .5]){
+    const w = new THREE.Group(); w.position.set(.2, .3, dz); g.add(w); cartWheels.push(w);
+    mesh(w, new THREE.TorusGeometry(.3,.06,6,16), '#2A2630', {outline:false}); mesh(w, new THREE.CylinderGeometry(.08,.08,.08,8), '#B8B0A4', {rot:[Math.PI/2,0,0], outline:false});
+    for(let k=0;k<3;k++) mesh(w, new THREE.BoxGeometry(.5,.035,.03), '#B8B0A4', {rot:[0,0,k*Math.PI/3], outline:false});
+  }
   for(const dz of [-.38, .38]) rod(g, new THREE.Vector3(-.9, .8, dz), new THREE.Vector3(-1.6, 1.05, dz), .035, '#7A4E2D', {outline:false});
   rod(g, new THREE.Vector3(-.8, 1.12, 0), new THREE.Vector3(-.8, 2.3, 0), .025, '#6E655C', {outline:false});
   const um = new THREE.Group(); um.position.set(-.8, 2.3, 0); g.add(um);
@@ -331,8 +344,9 @@ const cart = new THREE.Group(); cart.position.set(85.2, 0, .55); scene.add(cart)
 const cartPlat = plat(0, 0, 1.15, true);
 let cartGo = false;
 // Cô Hai, asleep on a stool beside her cart
-const hai = new THREE.Group(); hai.position.set(86.9, 0, .2); hai.rotation.y = .25; hai.scale.setScalar(S*1.05); scene.add(hai); const haiR = buildHai(hai);
+const hai = new THREE.Group(); hai.position.set(86.9, 0, .2); hai.rotation.y = .25; hai.scale.setScalar(S*1.05); hai.rotation.order = 'YXZ'; scene.add(hai); const haiR = buildHai(hai);
 ZONE = 'r7'; stool(86.9, .2, '#2F6FB5', 0);
+let haiStep = 0, haiLean = 0;
 let haiAwake = false, haiWake = 0, haiLine = '', haiLineT = 0;
 function haiSay(t, d){ haiLine = t; haiLineT = d; }
 
@@ -392,7 +406,7 @@ ZONE = 'r7'; xeMay(98.4, 4.6, '#E9C46A', -.1);
 ZONE = 'r9'; xeMay(124.4, 4.6, '#4E9A4A', .15);
 for(const [x,k] of [[-7,'p'],[20.5,'hoa'],[46,'p'],[67,'hoa'],[90.5,'p'],[112,'hoa'],[128.5,'p']]){ ZONE = zoneFor(x); plant(W, x, -.28, 7.4, 1.2, k); }
 tree(W, -11, 3.8, 7.5, {s:1.2, zone:'r1'});
-tree(W, 52, 6.2, 8.5, {s:1.15, zone:'r5', flower:'#E8442E', c:['#4E9A4A','#5FAF55','#3F8A45']});
+tree(W, 52, -4.6, 9.5, {s:1.15, zone:'r5', flower:'#E8442E', c:['#4E9A4A','#5FAF55','#3F8A45']});
 tree(W, 88, -4.8, 9, {s:1.05, zone:'r7', flower:'#F06BAE'});
 tree(W, 93.2, -4.7, 10, {s:1.1, zone:'r7', flower:'#E8442E', c:['#4E9A4A','#5FAF55','#3F8A45']});
 tree(W, 121, -4.7, 8.2, {s:1, zone:'r9'});
@@ -457,7 +471,7 @@ talker(hai, 2.9, ()=>{
   return haiAwake ? 'Leo lên xe chè, lên mái hiên đi con!' : 'Mái hiên… dính cứng rồi…';
 });
 talker(hai, 2.8, ()=> !haiAwake && !(dist(hai) < 5 && P.y < 1) ? 'z z z' : '', 'zzz');
-talker(cat, 1.2, ()=> catT < 0 || catT > 3.2 ? 'z z z' : '', 'zzz');
+talker(cat, 1.2, ()=> catT < 0 || catGone ? 'z z z' : '', 'zzz');
 const buiTalk = new THREE.Object3D(); scene.add(buiTalk);
 talker(buiTalk, .9, ()=>{
   const b0 = buis.reduce((a,b)=>Math.abs(b.x-P.x) < Math.abs(a.x-P.x) ? b : a);
@@ -572,16 +586,34 @@ LV.update = (dt, t)=>{
   if(!metTank && P.x > 66 && P.y > 4.4){ metTank = true; say('Bồn nước bị dán xám… mèo đang ngủ trên đó.', 2.6); }
   if(catT >= 0){
     catT += dt;
-    if(catT < .7){ const k = catT/.7; cat.position.set(TANK_X + k*2.6, 7.06 + Math.sin(k*Math.PI)*1.2 - k*.9, TANK_Z + .3 + k*1.2); cat.rotation.y = -.2; ladderFall = true; }
-    else if(catT < 1.6){ cat.position.y = Math.max(4.68, cat.position.y - dt*6); }
-    else if(ladderT >= 1){ cat.position.x = Math.min(81.4, cat.position.x + dt*3.2); cat.position.y = 4.68; cat.position.z = .1; if(cat.position.x >= 81.4){ cat.rotation.y = -1.2; catGone = true; } }
+    // pose: legs stretched out front and back in the leap, reaching down as she drops, a squash on landing, a trotting gait across the roof
+    let legA = 0, legSwing = 0, stretch = 1, squash = 1;
+    if(catT < .7){ const k = catT/.7; cat.position.set(TANK_X + k*2.6, 7.06 + CAT_LIFT*k + Math.sin(k*Math.PI)*1.2 - k*.9, TANK_Z + .3 + k*.8); cat.rotation.y = -.2; ladderFall = true;
+      legA = Math.sin(Math.min(1, k*1.6)*Math.PI/2)*1.1; stretch = 1 + .18*Math.sin(k*Math.PI); }
+    else if(catT < 1.6){ const was = cat.position.y; cat.position.y = Math.max(4.68 + CAT_LIFT, cat.position.y - dt*6);
+      const land = was > cat.position.y ? 0 : Math.min(1, (catT - .7)*3); legA = was > cat.position.y ? .35 : 0; squash = 1 - .18*Math.sin(Math.min(1, land*2.5)*Math.PI); }
+    else if(ladderT >= 1 && !catGone){ cat.position.x = Math.min(81.4, cat.position.x + dt*3.2); cat.position.y = 4.68 + CAT_LIFT; cat.position.z = -.3; cat.rotation.y = 0;   // along the ladder's back rail, behind Tò rather than through him
+      catWalk += dt*11; legSwing = .55; cat.position.y += Math.abs(Math.sin(catWalk))*.05;
+      if(cat.position.x >= 81.4){ cat.rotation.y = -1.2; catGone = true; cat.position.y = 4.68; } }
+    for(const [i, l] of catLegs.entries()){
+      l.visible = !catGone;
+      const front = i < 2, odd = i === 0 || i === 3;
+      l.rotation.z = (front ? legA : -legA) + (legSwing ? Math.sin(catWalk + (odd ? 0 : Math.PI))*legSwing : 0);
+    }
+    cat.scale.set(stretch/Math.sqrt(squash), squash, 1/Math.sqrt(squash));
   }
   if(ladderFall && ladderT < 1){ ladderT = Math.min(1, ladderT + dt*1.3); }
   const le = ladderT < 1 ? ladderT*ladderT : 1; ladder.rotation.z = .14 + (-Math.PI/2 - .14)*le;
   catTail.rotation.z = Math.sin(t*2)*.1;
   // room 7: reaching the street, the cart rolls under the awning
   if(!metStreet && P.x > 83 && P.y < .5){ metStreet = true; objective('Đánh thức cô Hai'); say('Cô Hai cũng ngủ quên rồi…', 2.2); }
-  if(cartGo && cart.position.x < 95.5){ cart.position.x = Math.min(95.5, cart.position.x + dt*2.8); hai.position.x = cart.position.x - 1.9; hai.rotation.y = 1.3; }
+  // cô Hai walks behind the cart, leaning into the handles; the wheels roll with it
+  const cartMove = cartGo && cart.position.x < 95.5;
+  if(cartMove){ const dx = Math.min(95.5, cart.position.x + dt*2.8) - cart.position.x; cart.position.x += dx; hai.position.x = cart.position.x - 1.9; hai.rotation.y = 1.3;
+    haiStep += dx*3.4; for(const w of cartWheels) w.rotation.z -= dx/.36; }
+  for(const [i, l] of haiR.legs.entries()) l.rotation.x += ((cartMove ? Math.sin(haiStep + i*Math.PI)*.5 : 0) - l.rotation.x)*Math.min(1, dt*12);
+  hai.position.y = cartMove ? Math.abs(Math.sin(haiStep))*.06 : 0;
+  haiLean += ((cartMove ? .18 : 0) - haiLean)*Math.min(1, dt*6); hai.rotation.x = haiLean;
   cartPlat.x0 = cart.position.x - .95; cartPlat.x1 = cart.position.x + .95;
   if(awningOpen && awningT < 1) awningT = Math.min(1, awningT + dt*1.6);
   const ea = awningT < 1 ? 1 - Math.pow(1 - awningT, 3)*Math.cos(awningT*7) : 1;

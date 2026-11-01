@@ -32,12 +32,13 @@ let ZONE = '0';
 const mats = {}; const zoneMats = {}; const zoneK = {'0':1, keep:0};
 function toon(hex, keep, o){
   o = o||{};
-  const z = keep ? 'keep' : ZONE; const k = hex + '|' + z + '|' + (o.map ? o.map.uuid : '') + (o.flat ? 'f' : '') + (o.nofog ? 'n' : '');
+  const z = keep ? 'keep' : ZONE; const k = hex + '|' + z + '|' + (o.map ? o.map.uuid : '') + (o.flat ? 'f' : '') + (o.nofog ? 'n' : '') + (o.fg ? 'g' : '');
   if(mats[k]) return mats[k];
   const m = new THREE.MeshToonMaterial({color:new THREE.Color(hex).convertSRGBToLinear(), gradientMap:ramp});
   if(o.map){ m.map = o.map; if(o.alpha){ m.transparent = true; m.alphaTest = .35; } }
   if(o.flat) m.flatShading = true;
   if(o.nofog) m.fog = false;
+  if(o.fg){ m.transparent = true; FG_MATS.push(m); }
   m.userData.base = m.color.clone();
   const c = new THREE.Color(hex); const l = 0.299*c.r+0.587*c.g+0.114*c.b;
   m.userData.grey = new THREE.Color(l*0.78+0.17, l*0.76+0.17, l*0.74+0.17).convertSRGBToLinear();
@@ -76,9 +77,12 @@ function wipe(m, z){
   m.onBeforeCompile.isWipe = true;
 }
 const OUTLINE = new THREE.MeshBasicMaterial({color:'#141019', side:THREE.BackSide});
+// foreground trees between the camera and the street: their materials fade out while Tò walks behind them
+const FG_MATS = [], OUTLINE_FG = new THREE.MeshBasicMaterial({color:'#141019', side:THREE.BackSide, transparent:true}), fgTrees = [];
+let fgOp = 1;
 const SPH = new THREE.SphereGeometry(1, 28, 20), SPH_S = new THREE.SphereGeometry(1, 14, 10);
-function outline(mesh, w){
-  const o = new THREE.Mesh(mesh.geometry, OUTLINE); const s = mesh.scale;
+function outline(mesh, w, fg){
+  const o = new THREE.Mesh(mesh.geometry, fg ? OUTLINE_FG : OUTLINE); const s = mesh.scale;
   o.scale.set(1 + w/Math.max(s.x,.01), 1 + w/Math.max(s.y,.01), 1 + w/Math.max(s.z,.01));
   mesh.add(o); return mesh;
 }
@@ -90,7 +94,7 @@ function blob(parent, pos, scl, hex, opt){
   if(Array.isArray(scl)) m.scale.set(scl[0], scl[2], scl[1]); else m.scale.setScalar(scl);
   if(opt.rot) m.rotation.set(opt.rot[0]||0, opt.rot[1]||0, opt.rot[2]||0);
   m.castShadow = opt.shadow!==false; m.receiveShadow = true;
-  if(opt.outline!==false && !opt.small) outline(m, opt.ow||0.045);
+  if(opt.outline!==false && !opt.small) outline(m, opt.ow||0.045, opt.fg);
   parent.add(m); return m;
 }
 function mesh(parent, geo, hex, opt){
@@ -101,7 +105,7 @@ function mesh(parent, geo, hex, opt){
   if(opt.rot) m.rotation.set(opt.rot[0]||0,opt.rot[1]||0,opt.rot[2]||0);
   if(opt.scl) m.scale.set(opt.scl[0],opt.scl[1],opt.scl[2]);
   m.castShadow = opt.shadow!==false; m.receiveShadow = true;
-  if(opt.outline!==false) outline(m, opt.ow||0.04);
+  if(opt.outline!==false) outline(m, opt.ow||0.04, opt.fg);
   parent.add(m); return m;
 }
 // box UVs in world units from the box's own corner, so one tiling texture keeps the same scale on every wall
@@ -218,9 +222,13 @@ function buildBa(g){
 }
 function buildHai(g){
   const TE='#2E8C86', PA='#2A2630', SK='#EBC7A0';
+  // legs hang from hip pivots so she can walk (R.legs swing on rotation.x)
+  const legs = [];
   for(const s of [-1,1]){
-    blob(g, new THREE.Vector3(s*.28,.75,0), [.24,.24,.7], PA);
-    blob(g, new THREE.Vector3(s*.3,.1,.12), [.22,.26,.13], '#B5512F');
+    const l = new THREE.Group(); l.position.set(s*.28, 1.3, 0); g.add(l);
+    blob(l, new THREE.Vector3(0,-.55,0), [.24,.24,.7], PA);
+    blob(l, new THREE.Vector3(s*.02,-1.2,.12), [.22,.26,.13], '#B5512F');
+    legs.push(l);
   }
   blob(g, new THREE.Vector3(0,2.15,0), [.68,.55,.95], TE);
   blob(g, new THREE.Vector3(0,1.35,0), [.62,.5,.32], TE);
@@ -244,7 +252,7 @@ function buildHai(g){
   mesh(pot, new THREE.CylinderGeometry(.55,.48,.85,24), '#6B6F75', {pos:new THREE.Vector3(0,.43,0)});
   mesh(pot, new THREE.CylinderGeometry(.5,.5,.04,24), '#F1E4C3', {pos:new THREE.Vector3(0,.84,0), outline:false});
   [['#8CC152',-.18,.1],['#F2C230',.18,-.05],['#C0392B',0,.22],['#FFFFFF',.05,-.22]].forEach(([c,x,z])=>blob(pot,new THREE.Vector3(x,.88,z),[.12,.12,.05],c,{small:true}));
-  return {arm, head};
+  return {arm, head, legs};
 }
 function buildBui(g, s, seed){
   const geo = new THREE.IcosahedronGeometry(1, 1);
@@ -559,16 +567,17 @@ function hoaGiay(p, x0, x1, y, z, drop, c){
 function tree(p, x, z, h, o){
   o = o||{}; const C = o.c || ['#4E9A4A','#5FAF55','#78C25C'], s = o.s || 1;
   if(o.zone) ZONE = o.zone;
-  rod(p, new THREE.Vector3(x,-.3,z), new THREE.Vector3(x+.25*s,h*.55,z), .26*s, '#7A5638', {ow:.04});
-  rod(p, new THREE.Vector3(x+.15*s,h*.4,z), new THREE.Vector3(x-1.1*s,h*.66,z+.2), .12*s, '#7A5638', {ow:.03});
-  rod(p, new THREE.Vector3(x+.2*s,h*.45,z), new THREE.Vector3(x+1.2*s,h*.7,z-.2), .12*s, '#7A5638', {ow:.03});
+  const fg = z > 2; if(fg) fgTrees.push(x);
+  rod(p, new THREE.Vector3(x,-.3,z), new THREE.Vector3(x+.25*s,h*.55,z), .26*s, '#7A5638', {ow:.04, fg});
+  rod(p, new THREE.Vector3(x+.15*s,h*.4,z), new THREE.Vector3(x-1.1*s,h*.66,z+.2), .12*s, '#7A5638', {ow:.03, fg});
+  rod(p, new THREE.Vector3(x+.2*s,h*.45,z), new THREE.Vector3(x+1.2*s,h*.7,z-.2), .12*s, '#7A5638', {ow:.03, fg});
   const n = o.n || 7;
   for(let i=0;i<n;i++){
     const a = i/n*Math.PI*2, r = (i%2 ? 1.5 : .9)*s;
-    leaf(p, new THREE.Vector3(x + Math.cos(a)*r*1.2, h*.72 + Math.sin(a*1.7)*.9*s + (i%3)*.35*s, z + Math.sin(a)*r*.6), (1.05 + trnd()*.55)*s, C[i%C.length], {ow:.05});
+    leaf(p, new THREE.Vector3(x + Math.cos(a)*r*1.2, h*.72 + Math.sin(a*1.7)*.9*s + (i%3)*.35*s, z + Math.sin(a)*r*.6), (1.05 + trnd()*.55)*s, C[i%C.length], {ow:.05, fg});
   }
-  leaf(p, new THREE.Vector3(x+.1, h*.95, z), 1.3*s, C[0], {ow:.05});
-  if(o.flower) for(let i=0;i<12;i++) leaf(p, new THREE.Vector3(x + (trnd()-.5)*3.4*s, h*.68 + trnd()*1.9*s, z + .5 + trnd()*.8), .24*s, o.flower, {ow:.03, shadow:false});
+  leaf(p, new THREE.Vector3(x+.1, h*.95, z), 1.3*s, C[0], {ow:.05, fg});
+  if(o.flower) for(let i=0;i<12;i++) leaf(p, new THREE.Vector3(x + (trnd()-.5)*3.4*s, h*.68 + trnd()*1.9*s, z + .5 + trnd()*.8), .24*s, o.flower, {ow:.03, shadow:false, fg});
 }
 // potted plants of a few kinds
 function plant(p, x, y, z, s, kind){
@@ -894,7 +903,7 @@ function zonesTick(dt){
 const solids = [], blocks = [], hazards = [], winds = [], lifts = [];
 // one-way top: Tò lands on it from above and walks through it from below. safe: landing here moves the "về chỗ an toàn" point
 // bounce: landing on it throws Tò back up at that speed (an open umbrella)
-function plat(x0, x1, top, oneway, on, o){ const p = {x0, x1, top, on:on||(()=>true), safe:!!(o && o.safe), bounce:o && o.bounce, onBounce:o && o.onBounce}; solids.push(p); return p; }
+function plat(x0, x1, top, oneway, on, o){ const p = {x0, x1, top, on:on||(()=>true), safe:!!(o && o.safe), bounce:o && o.bounce, onBounce:o && o.onBounce, z:o && o.z}; solids.push(p); return p; }
 // a solid box: blocks walking from either side and can be stood on
 function block(x0, x1, y0, y1, on){ const b = {x0, x1, y0, y1, on:on||(()=>true)}; blocks.push(b); b.topP = plat(x0, x1, y1, false, ()=>b.on()); return b; }
 // falling below y between x0..x1 (water, a gap) puts Tò back on the last safe spot
@@ -937,13 +946,19 @@ function sheet(o){
   sheets.push(s); updSheet(s); return s;
 }
 function sheetVis(s, v){ for(const m of [s.m, s.back, s.frame, s.curl, s.glow]) m.visible = v; if(!v) s.arrow.visible = false; }
+// the rolled edge thickens as it's pulled; Tò keeps his body clear of it (half his width + a hand's reach) so he never sinks into the roll
+function curlR(p){ return .14 + .26*Math.min(1, p/2.5); }
+const GRIP = .8;
+function gripX(s){ return s.x0 + s.p + curlR(s.p) + GRIP; }
+// inverse of gripX: how far the edge has come for Tò standing at x
+function gripP(s, x){ const d = x - s.x0 - GRIP - .14; return d < 2.5*1.104 ? d/1.104 : d - .26; }
 function updSheet(s){
   const n = s.layers.length, front = s.tex[s.L], back = s.tex[s.L + 1];
   if(s.done || !front){ sheetVis(s, false); return; }
   s.m.material.map = front;
   if(back){ s.back.material.map = back; back.repeat.set(1, 1); back.offset.set(0, 0); }
   s.back.visible = !!back; s.frame.visible = true; s.m.visible = true; s.curl.visible = true; s.glow.visible = true;
-  const r = .14 + .26*Math.min(1, s.p/2.5);
+  const r = curlR(s.p);
   if(s.dir === 'x'){
     const rem = Math.max(.0001, s.w - s.p);
     s.m.scale.set(rem/s.w, 1, 1); s.m.position.set(s.x0 + s.p + rem/2, s.y0 + s.h/2, s.z);
@@ -1131,13 +1146,22 @@ const S = 0.55;  // Tò is small: the street should feel big
 ZONE = '0';
 const toG = new THREE.Group(); toG.scale.setScalar(S); scene.add(toG);
 const toInner = new THREE.Group(); toG.add(toInner); const TO = buildTo(toInner);
-const P = {x:0, y:0, vx:0, vy:0, w:.95, h:2.25, ground:true, face:1, grab:null, gx:0, gp:0, check:{x:0, y:0}, won:false, knock:0, walkT:0};
+const P = {x:0, y:0, z:0, zWant:0, vx:0, vy:0, w:.95, h:2.25, ground:true, face:1, grab:null, gx:0, gp:0, check:{x:0, y:0}, won:false, knock:0, walkT:0};
 const GRAV = 30, JUMP = 13, SPEED = 5.4, PEEL_SPEED = 2.6;
 talker(toG, 1.75, ()=> toSayT > 0 ? toSay : '');
 function grab(s){
   P.grab = s; sfx('grab'); buzz(12);
-  if(s.dir === 'x') P.x = s.x0 + s.p + .45;
+  if(s.dir === 'x') P.x = wallStop(P.x, gripX(s));
   else { P.gx = Math.min(P.x, s.x1 - .2); P.x = P.gx; P.gp = s.p; }
+}
+// while peeling Tò is moved directly, so stop him at the face of any solid block he backs into, or at the end of what he stands on
+function wallStop(x0, x){
+  if(P.on && x > P.on.x1 - .2) x = Math.max(x0, P.on.x1 - .2);
+  for(const b of blocks){
+    if(!b.on() || P.y + 1.2 <= b.y0 || P.y >= b.y1 - .02) continue;
+    if(x0 + P.w/2 <= b.x0 + .02 && x + P.w/2 > b.x0) x = b.x0 - P.w/2;
+  }
+  return x;
 }
 function release(){ const s = P.grab; P.grab = null; if(s && s.onRelease) s.onRelease(s); }
 function standingOn(x, yPrev, yNew){
@@ -1371,8 +1395,11 @@ function step(dt, t){
     if(grabQueued || !P.ground){ grabQueued = false; release(); }
     else if(s.dir === 'x'){
       P.vx = dir*PEEL_SPEED; P.face = -1;
-      P.x = Math.max(s.x0 + s.p - .2, P.x + P.vx*dt);
-      s.p = Math.min(s.w, Math.max(s.p, P.x - s.x0 - .45));
+      // backed up against a wall he keeps pulling: the edge still comes, Tò just stays put
+      const want = Math.max(gripX(s), P.x + P.vx*dt), nx = wallStop(P.x, want);
+      if(nx < want - 1e-6 && P.vx > 0) s.p = Math.min(s.w, s.p + P.vx*dt/1.104);
+      else s.p = Math.min(s.w, Math.max(s.p, gripP(s, nx)));
+      P.x = nx;
       updSheet(s);
       if(s.p >= s.w - .02){ P.grab = null; layerDone(s); } else if(dir) lastProgT = nowT;
     } else {
@@ -1519,7 +1546,12 @@ function camTo(x, y, z, dt, k){
   sun.position.set(camLook.x - 8, 18, 12); sun.target.position.set(camLook.x, 0, 0);
 }
 function poseTo(dt, t){
-  toG.position.set(P.x, P.y, 0);
+  const fgWant = fgTrees.some(x=>Math.abs(P.x - x) < 4.2) ? .22 : 1;
+  if(Math.abs(fgWant - fgOp) > .001){ fgOp += (fgWant - fgOp)*Math.min(1, dt*6); for(const m of FG_MATS) m.opacity = fgOp; OUTLINE_FG.opacity = fgOp; for(const m of FG_MATS.concat(OUTLINE_FG)) m.depthWrite = fgOp > .95; }
+  // a plat can stand Tò out toward the camera (an awning under a roof slab), so his head isn't drawn inside the slab
+  if(P.ground) P.zWant = P.on && P.on.z != null ? P.on.z : 0;
+  P.z += ((P.zWant || 0) - P.z)*Math.min(1, dt*8);
+  toG.position.set(P.x, P.y, P.z);
   const faceY = P.grab ? (P.grab.dir === 'x' ? -0.9 : 0.6) : (P.face > 0 ? 0.75 : -0.75);
   toInner.rotation.y += (faceY - toInner.rotation.y)*Math.min(1, dt*12);
   const moving = Math.abs(P.vx) > .3 && P.ground;
@@ -1709,7 +1741,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // test hook: lets an automated run drive the same input the keyboard does
-const hook = window.__game = {pause:false, P, keys, sheets, buis, LV, zoneK,
+const hook = window.__game = {pause:false, P, keys, sheets, buis, LV, zoneK, solids, blocks,
   jump:()=>{ jumpQueued = true; }, grab:()=>{ grabQueued = true; }, back,
   skipIntro:()=>{ if(intro.on) endIntro(); }, introTick:(n)=>{ for(let i=0;i<n && intro.on;i++){ simT += 1/60; runIntro(1/60, simT); } },
   tick:(n)=>{ for(let i=0;i<n;i++){ simT += STEP; if(intro.on) runIntro(STEP, simT); else { jrStep(); step(STEP, simT); animate(STEP, simT); jrTick(); } } }, jrSave, jrLoad, get jr(){ return JR; },
