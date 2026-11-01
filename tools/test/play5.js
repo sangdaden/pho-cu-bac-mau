@@ -42,14 +42,26 @@ const THREE = fs.readFileSync(path.join(__dirname,'../../prototype/chung/three.m
   await log(()=>{ walkTo(3.9); jump('right',22); walkTo(5.4); jump('right',26); walkTo(8.0); const f=G.flies; jump('right',26); walkTo(10.6); jump('right',26); walkTo(13.2); jump('right',30); walkTo(15.4); return st('r1 crossed fliesBefore='+f); });
   // room 2: peel to the high day first, then fold the boat and ride
   await log(()=>{ walkTo(18.0); peel(SH('B')); waitFree(); settle(); return st('r2 high lv='+lv()); });
-  await log(()=>{ walkTo(15.9); peel(SH('K')); fold('thuyen'); walkTo(19.6); use(); idle(30); return st('r2 boat on='+G.boat.on+' bx='+G.boat.x.toFixed(1)); });
+  // the rong blocks the river: fold a vợt, stand still at the edge till the grey cá rô comes close, scoop it; in colour it eats the rong
+  await log(()=>{ waitFree(); walkTo(15.9); peel(SH('K')); fold('vot'); walkTo(20.2); const f = G.fishes[0]; let n = 0, tries = 0;
+    while(!f.caught && !f.freed && n++ < 1500){ idle(1); if(Math.abs(f.x - (G.P.x + 1.35)) < .7 && f.flee <= 0){ use(); tries++; } }
+    waitFree(); let m = 0; while(f.goal !== undefined && m++ < 1200) idle(1); idle(30);
+    return st('r2 fish freed='+f.freed+' tries='+tries+' wait='+n+' rong cleared='+(f.goal === undefined)); });
+  await snap('2f');
+  await log(()=>{ fold('thuyen'); walkTo(19.6); use(); idle(30); return st('r2 boat on='+G.boat.on+' bx='+G.boat.x.toFixed(1)); });
   await snap('2a');
   await log(()=>{ walkTo(21.0); walkTo(36.6); return st('r2 crossed'); });
   // room 3: boat sheet, onto the quay, peel the day, launch, ride under the porch, jump up
   await log(()=>{ walkTo(36.4); peel(SH('L')); fold('thuyen'); walkTo(37.3); jump('right',20); walkTo(38.7); return st('r3 on quay held='+G.held.form); });
   await log(()=>{ peel(SH('C')); waitFree(); settle(); return st('r3 after peel held='+G.held.on+' lv='+lv()); });
+  // the lờ: high water brings the cá linh in, low water takes them back down the river and into the lờ; then haul it up by the rope
+  await log(()=>{ idle(120); const seen = G.fishes.slice(1).filter(f=>f.g.visible).length; walkTo(38.9); G.back(); idle(2); let n=0; while(G.fishes.slice(1).some(f=>f.g.visible && !f.inLo) && n++<900) idle(1); idle(30);
+    const inLo = G.fishes.filter(f=>f.inLo).length; walkTo(40.1); use(); waitFree(); const f0 = G.flies; walkTo(39.0); idle(10);
+    return st('r3 lờ seen='+seen+' inLo='+inLo+' flies '+f0+'->'+G.flies+' lv='+lv()); });
+  await snap('3l');
+  await log(()=>{ walkTo(38.7); peel(SH('C')); waitFree(); settle(); return st('r3 high again lv='+lv()); });
   await log(()=>{ if(!G.held.on){ walkTo(38.3); jump('left',20); walkTo(36.4); idle(150); peel(SH('L')); fold('thuyen'); walkTo(37.3); jump('right',20); } walkTo(39.6); use(); idle(30); return st('r3 boat='+G.boat.on+' by='+G.boat.y.toFixed(2)); });
-  await log(()=>{ jump('right',16); walkTo(48.6); const f=G.flies; idle(10); return st('r3 under porch flies '+f+'->'+G.flies); });
+  await log(()=>{ jump('right',16); walkTo(48.6); idle(10); return st('r3 under porch'); });
   await snap('3a');
   await log(()=>{ jump(null,60); idle(20); return st('r3 porch'); });
   await snap('3b');
