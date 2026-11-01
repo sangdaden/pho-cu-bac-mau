@@ -263,7 +263,7 @@ for(let i=0;i<6;i++){
 }
 for(const [a, b, top] of [[155.0, 156.6, 1.6], [156.6, 158.2, 3.2], [158.2, 160.0, 4.8]]){ box(W, a, b, top - .2, top, -.4, 2.4, '#5E6670', {ow:.03}); block(a, b, -1, top); box(W, a + .1, b - .1, -1, top - .2, -.2, 2.2, '#D9A07A', Object.assign({}, WALL, {uv:[3, 3]})); }
 win(W, 148.2, 5.4, 1.4, 1.8, -.5, '#F4F1EA', '#2E8C86'); win(W, 155.6, 5.8, 1.4, 1.8, -.5, '#F4F1EA', '#8E6CC0');
-sign(W, 147.2, 151.0, 4.2, 5.0, -.5, '#C23A28', '#F2C230', 'XÔI CHÈ', 'bà Tám');
+sign(W, 147.2, 151.0, 4.2, 5.0, -.5, '#C23A28', '#F2C230', 'XÔI CHÈ', 'bà Mười');
 for(let i=0;i<3;i++) stool(147.6 + i*1.6, 1.2, ['#C23A28','#2F6FB5','#4E9A4A'][i], 0);
 
 // room 9: a little attic with a tiled roof, then the cloud
@@ -518,7 +518,7 @@ LV.winText = ()=>({
 
 // ================= intro: rain over the market across the river =================
 LV.intro = {end:12, sheetsAt:9,
-  caps:[[0.5, 4.0, 'Rằm qua được ba hôm. Trời đổ cơn mưa đầu mùa.'],
+  caps:[[0.5, 4.0, 'Rằm qua được ba hôm. Trời đổ cơn mưa chiều.'],
         [4.3, 8.0, 'Gió đêm Rằm thổi những tờ lịch bóc rồi bay qua sông, dán kín chợ bên kia.'],
         [8.3, 11.6, 'Tò là bột gạo. Dính mưa lâu là nhũn ra, bạc cả màu.']],
   run(it, dt, t){

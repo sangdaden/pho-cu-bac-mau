@@ -254,6 +254,8 @@ for(const a of [0, Math.PI/3, Math.PI*2/3]) rod(wheel, new THREE.Vector3(Math.co
 rod(W, new THREE.Vector3(150.1, 2.0, .2), new THREE.Vector3(150.1, 3.0, .2), .06, '#5E6670', {outline:false});
 const wheelT = target({x:150.1, y:2.0, r:1.05, onHit:()=>hitWheel()});
 let gateK = 0;
+// the gate is solid until it has risen: before, a paper boat on high water floated straight through it and skipped the plane
+block(149.6, 150.6, -3, 3.0, ()=>gateK < .95);
 waterMark(140, 154, -.3, 'r7');
 // ================= room 8 · Cầu tàu: a wooden pier over the river, a shed, Lũ Bụi patrolling the planks =================
 ZONE = 'r8';

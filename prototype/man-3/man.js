@@ -598,7 +598,7 @@ function wound(){
     {dur:3.6, cam:[-1.8, 2.0, 10], start:()=>{ caption('Tò ôm lấy bà. Màu trên người Tò chảy sang bà.'); }, tick:t=>{ const k = Math.min(1, t/3.4); hug = 1; setZone('ba', k); setZone('0', 1 - k); }, end:()=>caption('')},
     {dur:2.6, cam:[-1.8, 2.0, 10], start:()=>{ hug = 0; baWake = 1; npcSay('ba', 'Ơ… con tò he của bà…', 2.6); }},
     {dur:3.0, cam:[-1.8, 2.0, 10], start:()=>npcSay('ba', 'Tò he thì nặn lại được mà.', 3)},
-    {dur:3.2, cam:[-1.8, 2.0, 10], start:()=>caption('Bà nặn lại cho Tò, ấn ngón tay lên bụng như lần đầu.'), tick:t=>{ const k = Math.min(1, t/3); setZone('0', k); }, end:()=>caption('')},
+    {dur:3.2, cam:[-1.8, 2.0, 10], start:()=>caption('Bà nặn lại cho Tò, ấn ngón tay lên bụng như ông Út năm nào.'), tick:t=>{ const k = Math.min(1, t/3); setZone('0', k); }, end:()=>caption('')},
     {dur:4.4, cam:[1.6, 2.4, 15], start:()=>{ arrive = 0; caption('Người trong phố kéo nhau tới sạp bà Năm.'); }, tick:t=>{ arrive = Math.min(1, t/4); }, end:()=>caption('')},
     {dur:3.2, cam:[1.6, 2.4, 15], start:()=>{ npcSay('hai', 'Bà ơi, con Hai nè!', 2.4); later(1.2, ()=>npcSay('bong', 'Bà Năm ơi, Rằm rồi!', 2.2)); }},
     {dur:3.8, cam:[1.0, 2.4, 14], start:()=>{ const r = relicsAll(); npcSay('ba', r === 3 ? 'Con gà trống của Hai. Con cá vàng của mẹ Bống. Con rồng của thằng Tư. Bà nhớ hết.' : 'Mấy đứa còn nhớ bà…', 3.8); }},
