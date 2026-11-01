@@ -693,7 +693,7 @@ function lantern(x, y, z, c, kind){
 }
 function lanternString(a, b, y, z, sag){
   const pts = wire(new THREE.Vector3(a, y, z), new THREE.Vector3(b, y, z), sag);
-  for(let i=2;i<pts.length-1;i+=2){ const p = pts[i]; lantern(p.x, p.y, p.z, LANT[(i/2 + Math.round(a))%LANT.length], i%4 ? 'tron' : 'sao'); }
+  for(let i=2;i<pts.length-1;i+=2){ const p = pts[i]; lantern(p.x, p.y, p.z, LANT[((i/2 + Math.round(a))%LANT.length + LANT.length)%LANT.length], i%4 ? 'tron' : 'sao'); }
 }
 
 // ================= background rows: mid row right behind the street, far row, clock tower =================
@@ -845,10 +845,11 @@ function relicLoad(){ try { return JSON.parse(localStorage.getItem('phocu.relic'
 let leaving = false;
 addEventListener('pageshow', e=>{ if(e.persisted){ leaving = false; $('fade').classList.add('out'); } });
 function goTo(url){ if(leaving) return; leaving = true; $('fade').classList.remove('out'); setTimeout(()=>{ location.href = url; }, 900); }
-function toast(t, sec){ const el = $('toast'); el.textContent = t; el.style.opacity = 1; setTimeout(()=>{ el.style.opacity = 0; }, (sec || 2.4)*1000); }
+let toastTm = 0;
+function toast(t, sec){ const el = $('toast'); el.textContent = t; el.style.opacity = 1; clearTimeout(toastTm); toastTm = setTimeout(()=>{ el.style.opacity = 0; }, (sec || 2.4)*1000); }
 // ---------- pause menu ----------
 let paused = false;
-function setPause(on){ if(P.won && on) return; paused = on; $('pause').style.display = on ? 'flex' : 'none'; if(on){ for(const k in keys) keys[k] = false; } else canvas.focus(); }
+function setPause(on){ if((P.won && on) || JR.replay) return; paused = on; if(on && window.AM && AM.tear) AM.tear(0); $('pause').style.display = on ? 'flex' : 'none'; if(on){ for(const k in keys) keys[k] = false; } else canvas.focus(); }
 $('menuB').onclick = ()=>setPause(!paused);
 $('pGo').onclick = ()=>setPause(false);
 $('pAgain').onclick = ()=>{ location.hash = 'choi'; location.reload(); };
@@ -998,7 +999,7 @@ function firefly(x, y, show){
   g.add(new THREE.Mesh(new THREE.SphereGeometry(.11, 10, 8), new THREE.MeshBasicMaterial({color:'#FFF2A0'})));
   const h = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.1), new THREE.MeshBasicMaterial({map:dotTex, color:'#FFD54A', transparent:true, depthWrite:false, blending:THREE.AdditiveBlending}));
   g.add(h);
-  const f = {g, h, x, y, show:show||(()=>true), got:false, gotT:0, ph:Math.random()*6}; flies.push(f); return f;
+  const f = {g, h, x, y, show:show||(()=>true), got:false, gotT:0, ph:(flies.length*1.7 + x*.37)%6}; flies.push(f); return f;
 }
 let relicObj = null, relicGot = false;
 function relic(g, x, y, name){ relicObj = {g, x, y, name, t:0}; relicEl.title = name; }
@@ -1019,7 +1020,7 @@ function wakeNear(x, y){
 const talkers = [];
 function talker(obj, dy, fn, cls){ const d = document.createElement('div'); d.className = cls || 'bubble'; stage.appendChild(d); const t = {obj, dy, fn, d}; talkers.push(t); return t; }
 let toSay = '', toSayT = 0, sayNext = null;
-function say(t, dur){ toSay = t; toSayT = dur || 2.2; }
+function say(t, dur){ toSay = keysTxt(t); toSayT = dur || 2.2; }
 // story beats: an objective line, and short locked camera moves that show what changed and what comes next
 let OBJ = '', nowT = 0, lastProgT = 0, hintT = 0, hintN = 0;
 // hints come in three steps: a nudge, then where to look, then the level's full hint. Each press of H (or ?) goes one step
@@ -1040,8 +1041,9 @@ function hintText(focus){
 // on a phone there is no keyboard: hints and goals name the on-screen buttons instead (E is the yellow button, whose label follows what it does)
 function grabLabel(){ return P.grab ? 'Buông' : held.on ? 'Dùng' : 'Bóc'; }
 // a key is a lone capital letter: \b would also match the R of "Rãnh", so look for letters on either side, Vietnamese ones included
-const KEY_RE = /(?<!\p{L})[EQRH](?!\p{L})/gu, KEY_BTN = {Q:'Gấp', R:'↺', H:'?'};
-function keysTxt(t){ return MOBILE && t ? t.replace(KEY_RE, k=>KEY_BTN[k] || grabLabel()) : t; }
+// (no lookbehind: Safari before 16.4 refuses it and the whole engine would fail to load on older iPhones)
+const KEY_RE = /(^|[^\p{L}])([EQRH])(?![\p{L}])/gu, KEY_BTN = {Q:'Gấp', R:'↺', H:'?'};
+function keysTxt(t){ return MOBILE && t ? t.replace(KEY_RE, (m, a, k)=>a + (KEY_BTN[k] || grabLabel())) : t; }
 function objective(t){ lastProgT = nowT; if(OBJ === t) return; hintN = 0; hintT = 0; OBJ = t; titleEl.textContent = keysTxt(t); titleEl.classList.remove('pop'); void titleEl.offsetWidth; titleEl.classList.add('pop'); }
 const seq = []; let cur = null, winReady = false;
 function play(steps){ for(const st of steps) seq.push(st); }
@@ -1079,6 +1081,8 @@ function back(){
   P.x = P.check.x; P.y = P.check.y; P.vx = P.vy = 0; release(); say('Về chỗ an toàn.', 1.2);
 }
 addEventListener('keydown', e=>{
+  if(JR.replay) return;
+  if(e.code === 'Escape' && $('sets').style.display === 'flex'){ $('sets').style.display = 'none'; return; }
   if(intro.on && (e.code === 'Space' || e.code === 'Enter' || e.code === 'Escape')){ e.preventDefault(); endIntro(); return; }
   if(e.code === 'Escape' || e.code === 'KeyP'){ setPause(!paused); return; }
   if(paused) return;
@@ -1090,33 +1094,35 @@ addEventListener('keydown', e=>{
   if(k === 'grab' && !keys.grab) grabQueued = true;
   keys[k] = true;
 });
-addEventListener('keyup', e=>{ const k = KM[e.code]; if(k) keys[k] = false; });
+addEventListener('keyup', e=>{ if(JR.replay) return; const k = KM[e.code]; if(k) keys[k] = false; });
+// a key held while the window loses focus never sends its keyup: let go of everything instead of walking on forever
+addEventListener('blur', ()=>{ if(JR.replay) return; for(const k in keys) keys[k] = false; jumpQueued = grabQueued = false; for(const b of document.querySelectorAll('.pad button.on')) b.classList.remove('on'); });
 document.querySelectorAll('.pad button').forEach(b=>{
   const k = b.dataset.k;
   if(k === 'left' || k === 'right') return;
-  const on = e=>{ e.preventDefault(); if(intro.on){ endIntro(); return; } if(k === 'hint'){ hintAsk(); return; } if(k === 'back'){ back(); return; } if(k === 'fold'){ fold(); return; }
+  const on = e=>{ e.preventDefault(); if(JR.replay) return; if(intro.on){ endIntro(); return; } if(k === 'hint'){ hintAsk(); return; } if(k === 'back'){ back(); return; } if(k === 'fold'){ fold(); return; }
     if(k === 'jump' && !keys.jump) jumpQueued = true; if(k === 'grab' && !keys.grab) grabQueued = true; keys[k] = true; b.classList.add('on'); };
-  const off = e=>{ e.preventDefault(); if(k in keys) keys[k] = false; b.classList.remove('on'); };
+  const off = e=>{ e.preventDefault(); if(JR.replay) return; if(k in keys) keys[k] = false; b.classList.remove('on'); };
   b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
 });
 // ◀ ▶ share one finger: sliding across switches direction without lifting it, like a real d-pad
 const padL = document.querySelector('.pad.l'), dirB = [...padL.querySelectorAll('[data-k=left],[data-k=right]')];
 let dirId = null;
-function dirSet(k){ keys.left = k === 'left'; keys.right = k === 'right'; for(const b of dirB) b.classList.toggle('on', b.dataset.k === k); }
+function dirSet(k){ if(JR.replay) return; keys.left = k === 'left'; keys.right = k === 'right'; for(const b of dirB) b.classList.toggle('on', b.dataset.k === k); }
 function dirAt(x){ return x < (dirB[0].getBoundingClientRect().right + dirB[1].getBoundingClientRect().left)/2 ? 'left' : 'right'; }
-for(const b of dirB) b.addEventListener('pointerdown', e=>{ e.preventDefault(); if(intro.on){ endIntro(); return; } dirId = e.pointerId; try { padL.setPointerCapture(e.pointerId); } catch(_){} dirSet(b.dataset.k); });
+for(const b of dirB) b.addEventListener('pointerdown', e=>{ e.preventDefault(); if(JR.replay) return; if(intro.on){ endIntro(); return; } dirId = e.pointerId; try { padL.setPointerCapture(e.pointerId); } catch(_){} dirSet(b.dataset.k); });
 padL.addEventListener('pointermove', e=>{ if(e.pointerId === dirId) dirSet(dirAt(e.clientX)); });
 for(const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) padL.addEventListener(ev, e=>{ if(e.pointerId === dirId){ dirId = null; dirSet(null); } });
 canvas.addEventListener('pointerdown', ()=>{ canvas.focus(); if(intro.on) endIntro(); });
 stage.addEventListener('contextmenu', e=>e.preventDefault());
 // in a phone browser the address bar eats a big slice of a landscape screen: the first touch asks for full screen and holds it landscape
 // (an installed app already opens full screen; iPhone Safari has no full screen for pages, so there it is a no-op)
-const STANDALONE = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+const STANDALONE = !!window.PHOCU_APP || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
 function fullLandscape(){
   const d = document.documentElement;
   if(d.requestFullscreen && !document.fullscreenElement) d.requestFullscreen({navigationUI:'hide'}).then(()=>{ if(screen.orientation && screen.orientation.lock) return screen.orientation.lock('landscape'); }).catch(()=>{});
 }
-if(MOBILE && !STANDALONE) addEventListener('pointerdown', fullLandscape, {once:true, capture:true});
+if(MOBILE && !STANDALONE){ const fl = ()=>{ if(document.fullscreenElement) removeEventListener('pointerup', fl, true); else fullLandscape(); }; addEventListener('pointerup', fl, true); }
 
 // ---------- Tò ----------
 const S = 0.55;  // Tò is small: the street should feel big
@@ -1419,6 +1425,8 @@ function step(dt, t){
   if(P.ground && !P.grab && Math.abs(P.vx) > 1.5){ stepD += Math.abs(P.vx)*dt; if(stepD > .95){ stepD = 0; sfx('step'); } }
   wetTick(dt);
   for(const h of hazards) if(P.y < h.y && P.x > h.x0 && P.x < h.x1){ respawn(h.msg); break; }
+  // a safety net under every street: a hole a level forgot to cover sends Tò back instead of letting him fall for ever
+  if(P.y < -14) respawn('Tò rơi mất rồi! Về chỗ an toàn.');
   for(const c of channels) if(P.x > c.x0 && P.x < c.x1 && P.y < Math.max(c.floor + .5, c.level - .25) && P.on !== boat.plat){ respawn(c.level > c.floor + .45 ? 'Á! Nước! Tò sợ nước lắm!' : 'Rãnh sâu quá!'); break; }
   // Lũ Bụi bump Tò back
   for(const b of buis){
@@ -1557,7 +1565,7 @@ function animate(dt, t){
   if(P.won || busy()) h = '';
   else if(P.grab) h = P.grab.dir === 'x' ? 'Đi lùi để kéo · E để buông' : 'Đi lùi để kéo mép lên · E để buông, mép giấy thành gờ';
   else if(held.on) h = held.form ? (held.form === 'thuyen' ? 'E để thả thuyền xuống nước · Q đổi kiểu gấp' : held.form === 'maybay' ? 'E để phóng máy bay · Q đổi kiểu gấp' : held.form === 'non' ? 'Đang đội nón giấy, đi mưa được một lúc · Q đổi kiểu gấp' : held.form === 'den' ? 'Cầm đèn: E để thắp đèn treo, soi chỗ tối · Q đổi kiểu gấp' : held.form === 'dieu' ? 'Cầm diều: nhảy là lượn, vào luồng gió nóng là bay lên · Q đổi kiểu gấp' : 'E để phẩy quạt · Q đổi kiểu gấp') : (nearSlot() ? 'E để dán vào ô viền chấm' : learned.length ? 'Q để gấp tờ lịch' : 'Tìm ô viền chấm để dán');
-  else if(near) h = near.locked ? 'E để thử bóc' : 'E để nắm mép';
+  else if(near) h = near.locked ? 'Tờ này dính chặt, bấm E thử xem' : 'E để nắm mép';
   else if(stackNear() && !stackNear().solved) h = 'R để dán lại tờ vừa bóc';
   else if(hintT > 0) h = hintText(sheets.find(q=>!q.done && !q.solved));
   h = keysTxt(h); if(hintEl.textContent !== h) hintEl.textContent = h; hintEl.style.opacity = h ? 1 : 0;
@@ -1600,7 +1608,7 @@ function showWin(){
   $('win').style.display = 'flex'; traySet(LV.level);
   kyucSave(LV.level, w);
 }
-addEventListener('keydown', e=>{ if($('win').style.display === 'flex' && e.code === 'Enter'){ const b = $('winB').firstChild; if(b) b.click(); } });
+addEventListener('keydown', e=>{ if($('win').style.display === 'flex' && e.code === 'Enter'){ e.preventDefault(); const a = document.activeElement, b = a && a.parentNode === $('winB') ? a : $('winB').firstChild; if(b) b.click(); } });
 
 // the title screen's "Cuốn lịch ký ức" keeps one page per level: its win text, the memory, and the old tò he found there
 function kyucSave(n, w){
@@ -1652,7 +1660,7 @@ function jrStep(){
 function jrTick(){ if(!JR.replay && JR.n % 300 === 0) jrSave(); }
 function jrSave(){
   if(JR.replay || !JR.dirty || P.won || intro.on || !LV.level) return; JR.dirty = false;
-  try { localStorage.setItem(JR_KEY, JSON.stringify({man:LV.level, n:JR.n, t0:+JR.t0.toFixed(4), x:+P.x.toFixed(3), y:+P.y.toFixed(3), ev:JR.ev})); } catch(e){}
+  try { localStorage.setItem(JR_KEY, JSON.stringify({man:LV.level, n:JR.n, t0:JR.t0, x:+P.x.toFixed(3), y:+P.y.toFixed(3), ev:JR.ev})); } catch(e){}
 }
 function jrLoad(){ try { const j = JSON.parse(localStorage.getItem(JR_KEY) || 'null'); return j && j.man === LV.level && Array.isArray(j.ev) ? j : null; } catch(e){ return null; } }
 function jrClear(){ try { localStorage.removeItem(JR_KEY); } catch(e){} }

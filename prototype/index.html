@@ -132,7 +132,7 @@ function go(n, hash){ if(leaving) return; leaving = true; $('fade').classList.re
 function wipe(){ for(const k of ['phocu.save', 'phocu.tray', 'phocu.relic', 'phocu.jr', 'phocu.kyuc']) try { localStorage.removeItem(k); } catch(e){} }
 // a save that finished chương 1 before Màn 4 existed carries on into it; one that finished the last level before the next one existed can open the next one
 const LAST = LV.length - 1;
-const cur = Math.min(LAST, Math.max(1, save.done && save.man === 3 ? 4 : save.man || 1)), started = !!save.man, maxOpen = Math.min(LAST, Math.max(save.max || 1, cur, save.done && save.man >= 4 ? save.man + 1 : 1));
+const cur = Math.min(LAST, Math.max(1, save.done && save.man === 3 && (save.max || 1) <= 3 ? 4 : save.man || 1)), started = !!save.man, maxOpen = Math.min(LAST, Math.max(save.max || 1, cur, save.done && save.man >= 4 ? save.man + 1 : 1));
 // a level left halfway keeps a journal of the run, so "Chơi tiếp" puts Tò back where he was
 const midway = !!(jr && jr.man === cur && jr.n > 0);
 if(started){
@@ -169,10 +169,11 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick = ()=>{ b.closest
 addEventListener('keydown', e=>{
   const open = [...document.querySelectorAll('.over')].find(o=>o.style.display === 'flex');
   if(e.code === 'Escape' && open){ open.style.display = 'none'; return; }
-  if(!open && (e.code === 'Enter' || e.code === 'Space')){ e.preventDefault(); $('play').click(); }
+  const a = document.activeElement;
+  if(!open && (e.code === 'Enter' || e.code === 'Space') && !(a && a.tagName === 'BUTTON' && a.id !== 'play')){ e.preventDefault(); $('play').click(); }
 });
 requestAnimationFrame(()=>requestAnimationFrame(()=>$('fade').classList.add('out')));
-addEventListener('pageshow', e=>{ if(e.persisted){ leaving = false; $('fade').classList.add('out'); } });
+addEventListener('pageshow', e=>{ if(e.persisted) location.reload(); });
 $('play').focus();
 // on a phone the help names the on-screen buttons, not keys
 if(matchMedia('(pointer:coarse)').matches) $('keysHelp').innerHTML = '<li><b>◀</b> <b>▶</b> đi, trượt ngón để đổi hướng · <b>⤒</b> nhảy</li><li><b>Bóc</b> nắm mép sáng, rồi đi lùi để bóc · bấm lần nữa để buông</li><li>Đang cầm tờ lịch: <b>Dùng</b> để dán, thả thuyền, phóng máy bay, phẩy quạt · <b>Gấp</b> đổi kiểu gấp</li><li><b>↺</b> dán lại tờ vừa bóc, hoặc về chỗ an toàn · <b>?</b> gợi ý · <b>❚❚</b> tạm dừng</li><li>Chơi ngang màn hình. '+(window.PHOCU_APP ? '' : 'Cài lên điện thoại để chơi toàn màn hình.')+'</li>';

@@ -528,7 +528,7 @@ LV.update = (dt, t)=>{
   // the golden fish rides on its sill; nothing to animate but the bob
   fish.rotation.y = relicGot ? fish.rotation.y : Math.sin(t*1.3)*.3;
   // room 4: through the lock to the quay
-  if(!metLock && P.x > 58.2 && P.y > 2.1){ metLock = true; colour('r4'); sheetG.solved = true; objective('Lên mái nhà, bóc tờ giờ Ngọ'); say('Lên bến rồi!', 1.6); }
+  if(!metLock && P.x > 58.2 && P.y > 2.1){ metLock = true; colour('r4'); sheetG.solved = true; sheetH.solved = true; objective('Lên mái nhà, bóc tờ giờ Ngọ'); say('Lên bến rồi!', 1.6); }
     // room 5: the lanterns drop at midnight
   for(const L of lantSteps){ const gy = L.y + .9 + Math.sin(t*1.6 + L.x)*.05; const k = Math.min(1, nightK/.9); L.g.position.y = 9 + (gy - 9)*(k*k*(3 - 2*k)); L.glow.material.opacity = nightK*(.7 + Math.sin(t*3 + L.x)*.15); L.p.top = L.g.position.y - .9; }
   if(!metRoof && P.x > 62.2 && P.y > 3.5){ metRoof = true; say('Tờ lịch giờ trên tấm bảng… giờ Ngọ là giữa trưa.', 2.6); objective('Bóc tờ giờ Ngọ'); }

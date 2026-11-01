@@ -13,9 +13,11 @@ const AM = (()=>{
   function save(){ try { localStorage.setItem(SET_KEY, JSON.stringify(set)); } catch(e){} }
   // browsers only let sound start from a tap or a key press
   function start(){
-    if(ctx){ if(ctx.state === 'suspended') ctx.resume().catch(()=>{}); return; }
+    if(ctx){ if(ctx.state !== 'running' && !document.hidden) ctx.resume().catch(()=>{}); return; }  // iOS also leaves it 'interrupted' after a call
     const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
     try { ctx = new AC(); } catch(e){ ctx = null; return; }
+    // iPhone: play through the silent switch like a game, not like a web page
+    try { if(navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e){}
     master = ctx.createGain(); master.gain.value = 1; master.connect(ctx.destination);
     sfxG = ctx.createGain(); sfxG.gain.value = set.tieng; sfxG.connect(master);
     musG = ctx.createGain(); musG.gain.value = set.nhac*.55; musG.connect(master);
@@ -23,7 +25,7 @@ const AM = (()=>{
     const d = noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i] = Math.random()*2 - 1;
     musicStart();
   }
-  for(const ev of ['pointerdown', 'keydown', 'touchend']) addEventListener(ev, start, {passive:true});
+  for(const ev of ['pointerdown', 'pointerup', 'keydown', 'touchend']) addEventListener(ev, start, {passive:true});
   document.addEventListener('visibilitychange', ()=>{ if(!ctx) return; if(document.hidden) ctx.suspend().catch(()=>{}); else ctx.resume().catch(()=>{}); });
 
   const now = ()=>ctx.currentTime;
