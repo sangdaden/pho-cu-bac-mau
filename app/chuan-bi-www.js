@@ -19,4 +19,13 @@ for(const d of fs.readdirSync(OUT)){
   const f = path.join(OUT, d, 'index.html');
   if(/^man-\d+$/.test(d) && fs.existsSync(f)) fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<script>window.PHOCU_APP = true;</script>'));
 }
+// fonts ship inside the app (chung/phong.css + chung/phong/*.woff2): no Google Fonts call, and the text keeps its fonts offline
+function localFonts(f, css){
+  if(!fs.existsSync(f)) return;
+  const s = fs.readFileSync(f, 'utf8').replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\n?/g, '')
+    .replace(/<link href="https:\/\/fonts\.googleapis\.com\/css2[^"]*" rel="stylesheet">/g, '<link rel="stylesheet" href="' + css + '">');
+  fs.writeFileSync(f, s);
+}
+localFonts(idx, 'chung/phong.css'); localFonts(path.join(OUT, 'rieng-tu.html'), 'chung/phong.css');
+for(const d of fs.readdirSync(OUT)) if(/^man-\d+$/.test(d)) localFonts(path.join(OUT, d, 'index.html'), '../chung/phong.css');
 console.log('www/ sẵn sàng:', fs.readdirSync(OUT).join(' '));

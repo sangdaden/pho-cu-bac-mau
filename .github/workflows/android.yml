@@ -28,12 +28,33 @@ jobs:
         run: |
           sed -i -E 's/<activity( |$)/<activity android:screenOrientation="sensorLandscape"\1/' android/app/src/main/AndroidManifest.xml
           grep -n screenOrientation android/app/src/main/AndroidManifest.xml
+          # giữ màn hình sáng suốt lúc app mở (người chơi đứng nghĩ câu đố lâu thì máy không tự tắt)
+          f=$(find android/app/src/main/java -name MainActivity.java)
+          cat > "$f" <<JAVA
+          package com.markhocai.phocu;
+
+          import android.os.Bundle;
+          import android.view.WindowManager;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+              }
+          }
+          JAVA
+          cat "$f"
       - name: Icon từ prototype/icon
         run: |
           for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-            for f in android/app/src/main/res/mipmap-$d/ic_launcher.png android/app/src/main/res/mipmap-$d/ic_launcher_round.png android/app/src/main/res/mipmap-$d/ic_launcher_foreground.png; do
+            for f in android/app/src/main/res/mipmap-$d/ic_launcher.png android/app/src/main/res/mipmap-$d/ic_launcher_round.png; do
               if [ -f "$f" ]; then cp ../prototype/icon/icon-512.png "$f"; fi
             done
+            # icon thích ứng (Android 8+) cắt hình theo khuôn của máy: lớp trước dùng bản maskable có lề an toàn
+            f=android/app/src/main/res/mipmap-$d/ic_launcher_foreground.png
+            if [ -f "$f" ]; then cp ../prototype/icon/icon-maskable-512.png "$f"; fi
           done
       - run: npx cap sync android
       - run: cd android && ./gradlew assembleDebug --no-daemon

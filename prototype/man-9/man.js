@@ -65,7 +65,7 @@ function tower(x0, x1, top, c, zone){
 }
 
 // ================= everything Tò has learned: calls that hang in the air, warm air, gusts, lanterns and the steps they light =================
-const raos = [];
+const raos = [], RAO_MAT = {};
 function rao(o){
   const r = Object.assign({on:false, t:0, gap:.5, life:3, rest:1.4}, o);
   r.ws = r.words.map(([w, x, y, wd])=>{
@@ -73,7 +73,7 @@ function rao(o){
     const g = new THREE.Group(); g.position.set(x, y, .9); g.visible = false; scene.add(g); ZONE = 'keep';
     box(g, -wd/2, wd/2, -.5, 0, -.25, .25, '#F6E7C8', {ow:.04, keep:true});
     const tw = Math.min(2.4, Math.max(2.0, wd*.92));
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(tw, tw/4), toon('#C23A28', false, {map:textTex(w), alpha:true}));
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(tw, tw/4), RAO_MAT[w] || (RAO_MAT[w] = toon('#C23A28', false, {map:textTex(w), alpha:true})));  // repeated words share one texture
     m.position.set(0, -.25, .26); g.add(m);
     const q = {g, x, y, k:0, on:false};
     q.p = plat(x - wd/2, x + wd/2, y, true, ()=>q.on);
