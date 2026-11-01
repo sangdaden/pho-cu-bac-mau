@@ -155,7 +155,7 @@ let ombrOpen = 0, patched = false;
 const bounceOn = ()=> patched;
 const canopy = [[52.6, 54.8], [56.2, 58.4]].map(([a, b])=>plat(a, b, 3.6, true, ()=>ombrOpen > .7, {bounce:17}));
 for(const c of canopy) c.bounce = 0;
-const holePlat = plat(54.8, 56.2, 3.6, true, ()=>patched, {bounce:17});
+const holePlat = plat(54.8, 56.2, 3.6, true, ()=>patched && ombrOpen > .7, {bounce:17});
 
 // ================= rooms 4 and 5 · the rooftops: buildings to bounce up onto, high walls with long pages, a gap, a low grey cloud =================
 const TOPS = [[59, 70, '#E9C46A'], [70, 80, '#9FCBC1'], [82.5, 92, '#E8A598'], [92, 101, '#F1DDB0'], [101, 110, '#C7B8E0'], [160, 169, '#E8A598'], [169, 178, '#E9C46A']];

@@ -227,11 +227,11 @@ wall(120, 128, 7.6, '#E8A598', 'r5');
 house(128, 140, 7.4, '#F1DDB0', {roof:'#B5513A'}); house(140, 152, 8.0, '#9FCBC1');
 ZONE = 'r6';
 box(W, 128.8, 132.4, 0, 2.6, -1.4, -.46, '#C7B8E0', Object.assign({}, WALL, {uv:[2, 2.6]}));
-for(const [a, b] of [[136, 138.4], [143.6, 146]]){ ZONE = 'r6'; box(W, a, b, -.3, 0, -.4, 2.2, '#A27650', {ow:.03, uv:[.8,.8], map:TEX.wood}); plat(a, b, 0, true); }
+for(const [a, b] of [[136, 137.8], [144.2, 146]]){ ZONE = 'r6'; box(W, a, b, -.3, 0, -.4, 2.2, '#A27650', {ow:.03, uv:[.8,.8], map:TEX.wood}); plat(a, b, 0, true); }
 for(const x of [136.2, 145.8]) rod(W, new THREE.Vector3(x, -1.4, -.3), new THREE.Vector3(x, 1.4, -.3), .07, '#7A4E2D', {outline:false});
 let plankOn = false;
-plat(138.4, 143.6, 0, true, ()=>plankOn);
-const gapSlot = slot({x0:138.4, x1:143.6, y0:-.3, y1:.05, z:.9, onPaste:()=>{ plankOn = true; colour('r6'); say('Dán tờ lịch làm ván cầu!', 2); objective('Qua cầu'); }});
+plat(137.8, 144.2, 0, true, ()=>plankOn);
+const gapSlot = slot({x0:137.8, x1:144.2, y0:-.3, y1:.05, z:.9, onPaste:()=>{ plankOn = true; colour('r6'); say('Dán tờ lịch làm ván cầu!', 2); objective('Qua cầu'); }});
 // ================= room 7 · Cổng Lũ Bụi: the dust gang guards a locked gate; knock its latch with a plane =================
 house(152, 164, 7.8, '#E8A598', {roof:'#B5513A'}); house(164, 176, 8.2, '#E9C46A');
 ZONE = 'r7';

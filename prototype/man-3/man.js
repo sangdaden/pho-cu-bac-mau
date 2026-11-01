@@ -664,6 +664,8 @@ LV.update = (dt, t)=>{
     s.m.position.y = s.y - .9; s.m.material.opacity = kqOn ? (kqSpin ? .32 : .55) : 0;
     s.slab.position.y = s.y - .11; s.slab.material.opacity = kqOn && !kqSpin ? .92 : 0; s.slab.visible = kqOn && !kqSpin;
   }
+  // any phase that still gets Tò over the wall counts, so the hint and halo move on with him
+  if(!kqSolved && kqOn && P.x > 26.4 && P.ground && P.y > 3){ kqSolved = true; sheetK.solved = true; colour('r2', .6); }
   if(kqOn && !kqSpin && kqPhase === 0 && !kqSolved){ kqSolved = true; sheetK.solved = true; colour('r2', .6); say('Bóng thành bậc rồi!', 1.8); objective('Leo lên bóng ngựa, qua tường'); }
   if(!metBui && P.x > 30.2 && P.y < .5){ metBui = true; colour('r2'); say('Lũ Bụi chắn đường tới tiệm chú Tư…', 2.4); objective('Bóc tờ lịch trên tường'); }
   // room 4: the ceiling fan, chú Tư
@@ -754,7 +756,7 @@ LV.winText = ()=>{
       ? '<b>Ký ức mở khoá.</b> Năm 1985, thằng Tư mười tuổi ăn chè không tiền ở quán cô Hai, rồi chạy ra sạp bà Năm xin nặn con rồng. Bà nặn cho, dặn: “Giữ giờ cho cả phố nghe con.” Từ đó Tư lên dây cót tháp đồng hồ mỗi tuần.'
       : 'Còn ' + (5 - fliesGot) + ' con đom đóm ở Màn 3 chưa tìm thấy.')
       + '<br><b>Tò he cũ tìm được:</b> ' + r + '/3. ' + (r === 3 ? 'Bà Năm gọi được tên cả ba người.' : 'Tìm đủ cả ba con thì bà Năm gọi được tên cả ba người.'),
-    next:'Chương 2 · Mưa phố (bản thử) đang chờ bên kia sông'
+    next:'Chương 2 · Mưa phố đang chờ bên kia sông'
   };
 };
 

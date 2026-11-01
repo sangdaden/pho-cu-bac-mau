@@ -89,7 +89,7 @@ const THREE = fs.readFileSync(path.join(__dirname,'../../prototype/chung/three.m
   for(const [n, k] of shots){ await p.evaluate(k=>{ G.tick(k); }, k); await snap(n); }
   await log(()=>{ waitFree(); idle(60); return st('end won='+G.won+' ready='+G.winReady); });
   await p.evaluate(()=>{ __game.pause=false; }); await p.waitForTimeout(1500);
-  await stage.screenshot({path:`${out}-win.png`});
+  if(!process.env.NOSHOT) await stage.screenshot({path:`${out}-win.png`});
   if(errs.length) console.log('ERRORS\n'+errs.join('\n'));
   console.log('info', JSON.stringify(await p.evaluate(()=>G.info)));
   await b.close();
