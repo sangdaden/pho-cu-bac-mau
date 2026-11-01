@@ -1545,7 +1545,8 @@ function unstack(){
   const done = [];
   for(const b of on){
     let r = b.d.getBoundingClientRect();
-    for(const o of done) if(r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top){ b.d.style.top = (parseFloat(b.d.style.top) - (r.bottom - o.top) - 4) + 'px'; r = b.d.getBoundingClientRect(); }
+    // the tail under each bubble (12px) is not part of its box: count it, or the upper bubble's tail lands on the lower one
+    for(const o of done) if(r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom + 12 > o.top){ b.d.style.top = (parseFloat(b.d.style.top) - (r.bottom + 12 - o.top) - 4) + 'px'; r = b.d.getBoundingClientRect(); }
     done.push(r);
   }
 }
@@ -1742,5 +1743,10 @@ function startGame(){
   requestAnimationFrame(loop);
 }
 
+// keep the screen awake while a level is open (a player stops to think; the phone should not go dark). The app does this natively.
+let wakeL = null;
+function wakeOn(){ if(window.PHOCU_APP || wakeL || document.hidden || !navigator.wakeLock) return; navigator.wakeLock.request('screen').then(l=>{ wakeL = l; l.addEventListener('release', ()=>{ wakeL = null; }); }).catch(()=>{}); }
+addEventListener('pointerup', wakeOn, true); addEventListener('keydown', wakeOn, true);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) wakeOn(); });
 // works offline and installs like an app (Thêm vào màn hình chính): see /sw.js
 if(!window.PHOCU_APP && 'serviceWorker' in navigator && location.protocol.startsWith('http')) addEventListener('load', ()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));

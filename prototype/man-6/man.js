@@ -49,6 +49,7 @@ function wall(x0, x1, top, c, zone){
 
 // ================= the calls: each word of a rao pops out as a sign Tò can stand on, then fades =================
 const raos = [];
+const RAO_MAT = {};
 function rao(o){
   const r = Object.assign({on:false, t:0, gap:.5, life:3, rest:1.4, bounce:0}, o);
   r.ws = r.words.map(([w, x, y, wd])=>{
@@ -56,7 +57,9 @@ function rao(o){
     const g = new THREE.Group(); g.position.set(x, y, .9); g.visible = false; scene.add(g); ZONE = 'keep';
     box(g, -wd/2, wd/2, -.5, 0, -.25, .25, r.board || '#F6E7C8', {ow:.04, keep:true});
     const tw = Math.min(2.4, Math.max(2.0, wd*.92));
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(tw, tw/4), toon(r.ink || '#C23A28', false, {map:textTex(w), alpha:true}));
+    // a word called more than once (đây!, Bánh, Chè…) shares one texture and material instead of a 512×128 canvas each
+    const mk = (r.ink || '#C23A28') + '|' + w, mat = RAO_MAT[mk] || (RAO_MAT[mk] = toon(r.ink || '#C23A28', false, {map:textTex(w), alpha:true}));
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(tw, tw/4), mat);
     m.position.set(0, -.25, .26); g.add(m);
     const q = {g, x, y, k:0, on:false};
     q.p = plat(x - wd/2, x + wd/2, y, true, ()=>q.on, r.bounce ? {bounce:r.bounce} : null);
