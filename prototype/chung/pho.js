@@ -1223,7 +1223,7 @@ function standingOn(x, yPrev, yNew){
 function respawn(msg){ if(/Nước|nước|Rãnh/.test(msg)) sfx('splash'); say(msg, 2.4); P.x = P.check.x; P.y = P.check.y; P.vx = P.vy = 0; release(); }
 
 // ---------- hands: carry a peeled page, paste it over a dotted slot, or fold it into a boat, a plane or a fan ----------
-const FORMS = {thuyen:'thuyền', maybay:'máy bay', quat:'quạt', non:'nón', dieu:'diều', den:'đèn'};
+const FORMS = {thuyen:'thuyền', maybay:'máy bay', quat:'quạt', non:'nón', dieu:'diều', den:'đèn', vot:'vợt'};
 const learned = [];
 const held = {on:false, form:null, src:null, wear:1};
 const handEl = $('hand');
@@ -1246,13 +1246,20 @@ HELD.dieu = new THREE.Group(); HELD.dieu.position.set(-.4, 5.2, -.4); HELD.dieu.
   for(let i=0;i<4;i++) blob(HELD.dieu, new THREE.Vector3(Math.sin(i*1.4)*.12, -1.05 - i*.32, 0), [.1, .04, .1], '#C23A28', {small:true});
   rod(HELD.dieu, new THREE.Vector3(0, -.85, 0), new THREE.Vector3(.5, -3.1, .9), .012, '#3B2E2A', {outline:false}); })();
 // a paper star lantern on a bamboo stick, a candle inside: it carries a flame to the lanterns hung along the street
-HELD.den = new THREE.Group(); HELD.den.position.set(.3, 0, .1); HELD.den.visible = false; heldG.add(HELD.den);
+// held up in one hand beside his head (the hand on the camera side), not in front of his face: poseTo moves it and raises that arm
+HELD.den = new THREE.Group(); HELD.den.position.set(1.55, 1.0, 0); HELD.den.visible = false; toInner.add(HELD.den);
 (function(){ rod(HELD.den, new THREE.Vector3(0, -.3, 0), new THREE.Vector3(.1, 1.9, 0), .03, '#C99A52', {outline:false});
   const st = new THREE.Shape(); for(let i=0;i<10;i++){ const a = Math.PI/2 + i*Math.PI/5, r = i%2 ? .26 : .62; if(i) st.lineTo(Math.cos(a)*r, Math.sin(a)*r); else st.moveTo(Math.cos(a)*r, Math.sin(a)*r); }
   mesh(HELD.den, new THREE.ExtrudeGeometry(st, {depth:.22, bevelEnabled:false}), '#E8442E', {pos:new THREE.Vector3(.12, 2.5, -.11), ow:.035, keep:true});
   for(let i=0;i<3;i++) blob(HELD.den, new THREE.Vector3(.12 + (i - 1)*.12, 1.75 - i*.18, .05), [.05, .12, .03], '#F2C230', {small:true, keep:true});
   const g = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), new THREE.MeshBasicMaterial({map:dotTex, color:'#FFC94A', transparent:true, opacity:.55, depthWrite:false, blending:THREE.AdditiveBlending}));
   g.position.set(.12, 2.5, .2); HELD.den.add(g); })();
+// a paper vợt: a bamboo handle, a ring of folded page and a shallow paper net, for scooping a grey fish out of the river (Màn 5)
+HELD.vot = new THREE.Group(); HELD.vot.position.set(.25, -.1, .1); HELD.vot.scale.setScalar(1.35); HELD.vot.visible = false; heldG.add(HELD.vot);
+(function(){ rod(HELD.vot, new THREE.Vector3(0, 0, 0), new THREE.Vector3(.9, 1.5, 0), .035, '#C99A52', {outline:false});
+  mesh(HELD.vot, new THREE.TorusGeometry(.42, .045, 6, 22), '#F4EFE4', {pos:new THREE.Vector3(1.22, 1.98, 0), rot:[0, 0, -.55], ow:.02});
+  const net = mesh(HELD.vot, new THREE.ConeGeometry(.4, .55, 14, 1, true), '#E9E4DA', {pos:new THREE.Vector3(1.34, 1.78, 0), rot:[0, 0, Math.PI - .55], outline:false});
+  net.material.side = THREE.DoubleSide; })();
 (function(){
   const pm = toon('#E9E4DA'); const pg = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.2), pm); pm.side = THREE.DoubleSide; HELD.paper.add(pg); HELD.paper.rotation.x = -.3;
   const ol = new THREE.Mesh(new THREE.PlaneGeometry(1.08, 1.28), new THREE.MeshBasicMaterial({color:'#141019', side:THREE.DoubleSide})); ol.position.z = -.01; HELD.paper.add(ol);
@@ -1295,6 +1302,7 @@ function useHeld(){
     launchBoat(c, P.x); sfx('use'); dropHeld(); say('Thả thuyền!', 1.2); return;
   }
   if(f === 'maybay'){ throwPlane(); sfx('use'); dropHeld(); return; }
+  if(f === 'vot'){ swingVot(); return; }
   if(f === 'quat'){ waveFan(); sfx('use'); }
   if(f === 'den'){ if(!(LV.onDen && LV.onDen())) say('Chẳng có đèn treo nào gần để thắp.', 1.6); return; }
   if(f === 'dieu') say(P.ground ? 'Nhảy lên là lượn. Gặp luồng gió nóng thì bay lên!' : 'Lượn…', 1.8);
@@ -1366,6 +1374,83 @@ function waveFan(){
   fanT = .45; let n = 0;
   for(const b of buis) if(b.fan && !b.gone && Math.sign(b.x - P.x) === P.face && Math.abs(b.x - P.x) < 5 && Math.abs(b.top - P.y) < 1.6){ b.gone = true; b.goneT = 0; n++; }
   say(n ? 'Phù! Bay hết!' : 'Phẩy phẩy…', 1); if(LV.onFan) LV.onFan(n);
+}
+
+// ---------- fish (Màn 5): grey fish drift in a river. Footsteps on the bank scare them off; a Tò standing still smells of
+// rice flour and they come to look. A paper vợt scoops one up, its grey peels off and it goes back to the water in colour.
+// Everything here runs in the fixed step with a seeded random, so Chơi tiếp replays it the same way.
+const fishes = []; let votT = 0;
+const FISH_C = {ro:{body:'#C99A3A', back:'#5E7A3A', belly:'#F2D98A', fin:'#C23A28'}, linh:{body:'#DCE3E8', back:'#6F9FB8', belly:'#F6F2E6', fin:'#F2C230'}};
+function buildFish(g, kind, keep){
+  const c = FISH_C[kind] || FISH_C.ro, o = keep ? {keep:true} : {};
+  blob(g, new THREE.Vector3(0, 0, 0), [.56, .22, .3], c.body, Object.assign({ow:.035}, o));
+  blob(g, new THREE.Vector3(-.02, .1, 0), [.46, .18, .2], c.back, Object.assign({outline:false}, o));
+  blob(g, new THREE.Vector3(.04, -.12, 0), [.4, .17, .14], c.belly, Object.assign({outline:false}, o));
+  mesh(g, new THREE.ConeGeometry(.26, .4, 4), c.fin, Object.assign({pos:new THREE.Vector3(-.72, 0, 0), rot:[0, 0, -Math.PI/2], scl:[1, 1, .25], ow:.025}, o));
+  mesh(g, new THREE.ConeGeometry(.16, .3, 4), c.fin, Object.assign({pos:new THREE.Vector3(-.05, .32, 0), rot:[0, 0, .5], scl:[1, 1, .2], ow:.02}, o));
+  for(const z of [-.2, .2]){ blob(g, new THREE.Vector3(.34, .06, z), .1, '#FFFFFF', Object.assign({ow:.02}, o)); blob(g, new THREE.Vector3(.39, .07, z*1.18), .05, '#141019', Object.assign({small:true}, o)); }
+}
+function riverFish(o){
+  const f = Object.assign({kind:'ro', s:1, z:1.5, a:o.c.x0 + .6, b:o.c.x1 - .6, caught:false, freed:false, seed:7, dir:1, wait:0, flee:0, still:0, sp:0}, o);
+  if(f.x === undefined) f.x = (f.a + f.b)/2;
+  f.tx = f.x; f.y = f.c.level - .4; f.ph = fishes.length*1.7;
+  f.zone = f.zone || 'ca' + fishes.length;
+  const z0 = ZONE; ZONE = f.zone;
+  f.g = new THREE.Group(); f.g.scale.setScalar(f.s); scene.add(f.g); f.body = new THREE.Group(); f.g.add(f.body); buildFish(f.body, f.kind);
+  ZONE = z0; setZone(f.zone, 0);
+  fishes.push(f); return f;
+}
+function fishRnd(f){ f.seed = (f.seed*16807) % 2147483647; return f.seed/2147483647; }
+const fishDeep = f => f.c.level - f.c.floor > .7;
+function fishTick(dt, t){
+  if(votT > 0){ votT = Math.max(0, votT - dt); HELD.vot.rotation.z = -Math.sin((1 - votT/.45)*Math.PI)*1.2; }
+  for(const f of fishes){
+    const deep = fishDeep(f);
+    // seen from the street only the top of the water shows: a fish swims with its back and fin just breaking the surface
+    let wantY = deep ? f.c.level - .1 + Math.sin(t*1.3 + f.ph)*.04 : f.c.floor + .22;
+    if(f.drive) wantY = f.drive(f, dt, t, wantY);
+    else if(!f.caught){
+      const by = P.y > f.c.level - .8 && P.y < f.c.level + 3.4, near = by && Math.abs(P.x - f.x) < 4.5;
+      f.still = by && Math.abs(P.x - f.x) < 7.5 && P.ground && Math.abs(P.vx) < .3 && !P.grab ? f.still + dt : 0;
+      if(!f.freed && deep && near && Math.abs(P.vx) > 1.4 && f.flee <= 0){ f.flee = 1.6; f.tx = P.x < f.x ? f.b : f.a; }
+      if(f.flee > 0){ f.flee -= dt; f.sp = 3.2; }
+      else if(f.goal !== undefined && !f.atGoal){ f.tx = f.goal; f.sp = 1.8; if(Math.abs(f.x - f.goal) < .08){ f.atGoal = true; if(f.onGoal) f.onGoal(f); } }
+      else if(!f.freed && deep && f.still > 1.0){ f.tx = Math.max(f.a, Math.min(f.b, P.x + P.face*1.3)); f.sp = 1.2; }
+      else { f.wait -= dt; if(f.wait <= 0){ f.tx = f.a + fishRnd(f)*(f.b - f.a); f.wait = 1.8 + fishRnd(f)*2.4; } f.sp = !deep ? .2 : f.freed ? 1.5 : .7; }
+      if(f.atGoal && f.nibble) f.tx = f.goal + Math.sin(t*2.2)*.25;
+    }
+    if(!f.caught){
+      const d = f.tx - f.x; f.x += Math.max(-f.sp*dt, Math.min(f.sp*dt, d)); if(Math.abs(d) > .03) f.dir = d > 0 ? 1 : -1;
+      f.y += (wantY - f.y)*Math.min(1, dt*3);
+    }
+    // now and then a fish flips up out of the water after a bubble: that is how you spot it from the street
+    const hp = (t*.3 + f.ph*.37) % 1, hop = !f.caught && !f.inLo && deep && f.flee <= 0 && hp < .1 ? Math.sin(hp/.1*Math.PI)*.5 : 0;
+    f.g.position.set(f.x, f.y + hop, f.z);
+    f.g.rotation.y += ((f.dir > 0 ? 0 : Math.PI) - f.g.rotation.y)*Math.min(1, dt*6);
+    f.body.rotation.y = Math.sin(t*(f.caught ? 22 : f.flee > 0 ? 16 : 6) + f.ph)*(f.caught ? .3 : .14);
+    f.body.rotation.z = !deep && !f.caught ? .5 + Math.sin(t*9 + f.ph)*.15 : 0;
+  }
+}
+function swingVot(){
+  votT = .45; sfx('use');
+  const hx = P.x + P.face*1.35;
+  const f = fishes.find(f=>!f.freed && !f.caught && !f.noVot && fishDeep(f) && f.flee <= 0 && Math.abs(f.x - hx) < 1.0 && f.y < P.y + .5 && P.y - f.y < 2.6);
+  if(f){ catchFish(f); return; }
+  const near = fishes.find(q=>!q.freed && !q.caught && !q.noVot && Math.abs(q.x - P.x) < 7);
+  if(!near){ say('Chẳng có con cá nào ở đây.', 1.6); return; }
+  if(!fishDeep(near)){ say('Nước cạn, cá nằm sát bùn. Vợt không tới.', 2); return; }
+  sfx('splash');
+  for(const q of fishes) if(!q.freed && !q.caught && Math.abs(q.x - P.x) < 4.5){ q.flee = 1.4; q.tx = q.x < P.x ? q.a : q.b; }
+  say(Math.abs(near.x - P.x) > 3 ? 'Xa quá! Đứng yên chờ cá bơi lại gần.' : 'Hụt rồi! Cá giật mình. Đứng yên chờ nó quay lại.', 2.2);
+}
+function catchFish(f){
+  f.caught = true; sfx('splash'); buzz(30); lastProgT = nowT;
+  const sx = f.x, sy = f.y, face = P.face;
+  play([{dur:.7, tick:(t)=>{ const k = Math.min(1, t/.7); f.x = sx + (P.x + face*.7 - sx)*k; f.y = sy + (P.y + 2.9 - sy)*k + Math.sin(k*Math.PI)*.8; }},
+    {dur:1.8, start:()=>{ say('Vớt được rồi! Bóc lớp xám ra nào…', 1.8); colour(f.zone); }},
+    {dur:.9, start:()=>{ sfx('fly'); say(f.name ? f.name + ' có màu lại rồi!' : 'Cá có màu lại rồi!', 1.8); },
+      tick:(t)=>{ const k = Math.min(1, t/.9), tx = Math.max(f.a, Math.min(f.b, P.x + face*2.4)), ty = f.c.level - .1; f.x = P.x + face*.7 + (tx - P.x - face*.7)*k; f.y = P.y + 2.9 + (ty - P.y - 2.9)*k + Math.sin(k*Math.PI)*1.0; },
+      end:()=>{ f.caught = false; f.freed = true; f.flee = 0; f.wait = 0; sfx('splash'); if(f.onFree) f.onFree(f); }}]);
 }
 // timers
 const timers = [];
@@ -1458,7 +1543,8 @@ function step(dt, t){
     }
   }
   if(!P.grab){
-    if(grabQueued && P.ground){
+    if(grabQueued && P.ground && LV.act && !nearSheet() && LV.act()){}
+    else if(grabQueued && P.ground){
       // holding a page but standing at another edge with no slot to paste into: put the page down and take hold of the edge
       // a nón stays on his head, so his hands are free to peel
       const hands = held.on && held.form !== 'non', ns = hands && !nearSlot() && nearSheet();
@@ -1540,7 +1626,7 @@ function buiPuffs(b, dt){
 
 // ---------- Bụi, fireflies, sheets: per-frame motion ----------
 function actors(dt, t){
-  timersTick(dt); boatTick(dt, t); planeTick(dt);
+  timersTick(dt); boatTick(dt, t); planeTick(dt); fishTick(dt, t);
   if(fanT > 0){ fanT -= dt; HELD.quat.rotation.z = Math.sin(fanT*30)*.5; }
   toLight.position.set(P.x + .3, P.y + 2.2, 1.6); toLight.intensity = LV.lantern || 0;
   for(const b of buis){
@@ -1614,10 +1700,11 @@ function poseTo(dt, t){
   if(Math.abs(fgWant - fgOp) > .001){ fgOp += (fgWant - fgOp)*Math.min(1, dt*6); for(const m of FG_MATS) m.opacity = fgOp; OUTLINE_FG.opacity = fgOp; for(const m of FG_MATS.concat(OUTLINE_FG)) m.depthWrite = fgOp > .95; }
   // a plat can stand Tò out toward the camera (an awning under a roof slab), so his head isn't drawn inside the slab
   if(P.ground) P.zWant = P.on && P.on.z != null ? P.on.z : 0;
+  else if(LV.zOut){ const z = LV.zOut(P.x, P.y); if(z != null) P.zWant = z; }   // jumping up under a low roof: step out in front of it
   P.z += ((P.zWant || 0) - P.z)*Math.min(1, dt*8);
   toG.position.set(P.x, P.y, P.z);
   // walking he turns nearly side-on so his feet travel along the street, and looks back over his shoulder at the camera
-  const pullX = P.grab && P.grab.dir === 'x', holding = held.on && held.form !== 'non';
+  const pullX = P.grab && P.grab.dir === 'x', holding = held.on && held.form !== 'non' && held.form !== 'den';
   const faceY = P.grab ? (pullX ? -1.25 : 0.6) : (P.face > 0 ? 1.1 : -1.1);
   toInner.rotation.y += (faceY - toInner.rotation.y)*Math.min(1, dt*10);
   const k10 = Math.min(1, dt*10), k14 = Math.min(1, dt*14);
@@ -1650,9 +1737,13 @@ function poseTo(dt, t){
   // squash and stretch: stretched leaving the ground, squashed for a moment on landing
   const sq = !P.ground ? 1 + .16*Math.exp(-P.airT*9) - (P.vy > 0 ? 0 : .03) : P.landT > 0 ? 1 - .24*Math.sin((.2 - P.landT)/.2*Math.PI) : 1;
   toLean.scale.set(1/Math.sqrt(sq), sq, 1/Math.sqrt(sq));
+  // the lantern: held up beside his head in the hand on the camera side (Tò's +x side turns away when he faces right)
+  const denOn = held.on && held.form === 'den' && !P.grab, denSd = P.face > 0 ? -1 : 1;
+  if(denOn){ HELD.den.position.set(denSd*1.55, 1.0, 0); HELD.den.scale.x = denSd; }
   for(const [i, arm] of TO.arms.entries()){
     let tx, tz = 0, reach = 0;
-    if(P.grab){ tx = pullX ? -1.5 + Math.sin(t*38 + i)*.04 : -2.6; tz = pullX ? .05 : 0; reach = pullX ? .5 : 0; }
+    if(denOn && (i ? 1 : -1) === denSd){ tx = -.15; tz = 1.0; }
+    else if(P.grab){ tx = pullX ? -1.5 + Math.sin(t*38 + i)*.04 : -2.6; tz = pullX ? .05 : 0; reach = pullX ? .5 : 0; }
     else if(holding){ tx = -1.3 + Math.sin(2*Math.PI*P.stepPh*2)*.05; tz = -.75; reach = .25; }
     else if(!P.ground){ tx = P.vy > 0 ? -2.6 : -1.9; tz = P.vy > 0 ? .45 : .7; }
     else if(P.landT > 0){ tx = -.6; tz = .5; }
@@ -1704,7 +1795,8 @@ function animate(dt, t){
   let h = '';
   if(P.won || busy()) h = '';
   else if(P.grab) h = P.grab.dir === 'x' ? 'Đi lùi để kéo · E để buông' : 'Đi lùi để kéo mép lên · E để buông, mép giấy thành gờ';
-  else if(held.on) h = held.form ? (held.form === 'thuyen' ? 'E để thả thuyền xuống nước · Q đổi kiểu gấp' : held.form === 'maybay' ? 'E để phóng máy bay · Q đổi kiểu gấp' : held.form === 'non' ? 'Đang đội nón giấy, đi mưa được một lúc · Q đổi kiểu gấp' : held.form === 'den' ? 'Cầm đèn: E để thắp đèn treo, soi chỗ tối · Q đổi kiểu gấp' : held.form === 'dieu' ? 'Cầm diều: nhảy là lượn, vào luồng gió nóng là bay lên · Q đổi kiểu gấp' : 'E để phẩy quạt · Q đổi kiểu gấp') : (nearSlot() ? 'E để dán vào ô viền chấm' : learned.length ? 'Q để gấp tờ lịch' : 'Tìm ô viền chấm để dán');
+  else if(held.on) h = held.form ? (held.form === 'thuyen' ? 'E để thả thuyền xuống nước · Q đổi kiểu gấp' : held.form === 'maybay' ? 'E để phóng máy bay · Q đổi kiểu gấp' : held.form === 'non' ? 'Đang đội nón giấy, đi mưa được một lúc · Q đổi kiểu gấp' : held.form === 'den' ? 'Cầm đèn: E để thắp đèn treo, soi chỗ tối · Q đổi kiểu gấp' : held.form === 'dieu' ? 'Cầm diều: nhảy là lượn, vào luồng gió nóng là bay lên · Q đổi kiểu gấp' : held.form === 'vot' ? 'Cầm vợt: đứng yên sát mép nước chờ cá lại gần, E để vớt · Q đổi kiểu gấp' : 'E để phẩy quạt · Q đổi kiểu gấp') : (nearSlot() ? 'E để dán vào ô viền chấm' : learned.length ? 'Q để gấp tờ lịch' : 'Tìm ô viền chấm để dán');
+  else if(LV.prompt && LV.prompt()) h = LV.prompt();
   else if(near) h = near.locked ? 'Tờ này dính chặt, bấm E thử xem' : 'E để nắm mép';
   else if(stackNear() && !stackNear().solved) h = 'R để dán lại tờ vừa bóc';
   else if(hintT > 0) h = hintText(sheets.find(q=>!q.done && !q.solved));
@@ -1841,12 +1933,12 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 // test hook: lets an automated run drive the same input the keyboard does
-const hook = window.__game = {pause:false, P, keys, sheets, buis, LV, zoneK, solids, blocks,
+const hook = window.__game = {pause:false, P, keys, sheets, buis, LV, zoneK, solids, blocks, toG,
   jump:()=>{ jumpQueued = true; }, grab:()=>{ grabQueued = true; }, back,
   skipIntro:()=>{ if(intro.on) endIntro(); }, introTick:(n)=>{ for(let i=0;i<n && intro.on;i++){ simT += 1/60; runIntro(1/60, simT); } },
   tick:(n)=>{ for(let i=0;i<n;i++){ simT += STEP; if(intro.on) runIntro(STEP, simT); else { jrStep(); step(STEP, simT); animate(STEP, simT); jrTick(); } } }, jrSave, jrLoad, get jr(){ return JR; },
   tp:(x, y)=>{ P.x = x; P.y = y; P.vx = P.vy = 0; },
-  get flies(){ return fliesGot; }, held, learned, boat, channels, lifts, winds, fold, slots, targets, rain, get relic(){ return relicGot; }, get info(){ return renderer.info.render; }, get busy(){ return busy(); }, get objective(){ return OBJ; }, get won(){ return P.won; }, get winReady(){ return winReady; }};
+  get flies(){ return fliesGot; }, fishes, held, learned, boat, channels, lifts, winds, fold, slots, targets, rain, get relic(){ return relicGot; }, get info(){ return renderer.info.render; }, get busy(){ return busy(); }, get objective(){ return OBJ; }, get won(){ return P.won; }, get winReady(){ return winReady; }};
 function startGame(){
   const s0 = saveGet(); savePut({man: Math.max(s0.man || 1, LV.level), max: Math.max(s0.max || 1, LV.level)});
   const fadeIn = ()=>requestAnimationFrame(()=>requestAnimationFrame(()=>$('fade').classList.add('out')));

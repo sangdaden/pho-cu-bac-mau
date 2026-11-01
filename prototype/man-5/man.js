@@ -38,7 +38,10 @@ function river(x0, x1, floor, lo, o){
   o = o || {}; ZONE = zoneFor(x0 + .1);
   const kerb = o.kerb === undefined ? .08 : o.kerb;
   box(W, x0, x1, floor - .6, floor, -6, 3, '#8A7B68', {outline:false, uv:[2,1], map:TEX.stone});
-  box(W, x0, x1, floor, kerb, 2.55, 3.0, '#9C8F80', {ow:.04, uv:[2,1], map:TEX.stone});
+  // o.gap: a stretch at the left end where the kerb stays low, so the water by a landing shows from the street
+  const kx = o.gap ? o.gap[0] : x0;
+  if(o.gap) box(W, x0, kx, floor, o.gap[1], 2.55, 3.0, '#9C8F80', {ow:.04, uv:[2,1], map:TEX.stone});
+  box(W, kx, x1, floor, kerb, 2.55, 3.0, '#9C8F80', {ow:.04, uv:[2,1], map:TEX.stone});
   box(W, x0, x1, floor, .02, -.62, -.5, '#7E756B', {outline:false, uv:[2,1], map:TEX.stone});
   for(let x = x0 + .8; x < x1 - .5; x += 1.5 + trnd()) mesh(W, new THREE.CylinderGeometry(.04, .04, .5 + trnd()*.4, 4), '#6FAE4E', {pos:new THREE.Vector3(x, floor + .3, 2.3), outline:false, shadow:false});
   const c = channel({x0, x1, floor, level:o.level === undefined ? lo : o.level, z0:-.5, z1:2.55, speed:o.speed || 1.25});
@@ -46,7 +49,7 @@ function river(x0, x1, floor, lo, o){
 }
 const chA = river(4, 15, -3, -2.8, {hi:-.3, level:-.3});
 const chB = river(20, 36, -3, -2.8, {hi:-.3});
-const chC = river(40, 54, -3, -2.8, {hi:1.4, kerb:1.6});
+const chC = river(40, 54, -3, -2.8, {hi:1.4, kerb:1.6, gap:[44, .7]});
 const chD = river(66, 82, -3, -2.6, {hi:-.3});
 const chE = river(86, 108, -3, -2.8, {hi:-.3});
 const chF = river(115, 131, -3.2, -3.0, {hi:-.3, level:-.3});
@@ -138,6 +141,13 @@ balcony(W, 29.0, 36.4, 3.8, -.5, .9, '#E9DCC8', '#2A2630');
 hoaGiay(W, 26.0, 27.4, 8.2, -.2, 2.8);
 for(let i=0;i<3;i++) mesh(W, new THREE.CylinderGeometry(.18, .18, 3.4, 8), '#7A4E2D', {pos:new THREE.Vector3(24 + i*4.5, -1.6, 2.2)});
 waterMark(20, 36, -.3, 'r2');
+// a mat of grey rong tangled across the middle of the river: no boat gets through it. Strands run down to the mud, the mat rides the water
+ZONE = 'r2';
+for(let i=0;i<7;i++) rod(W, new THREE.Vector3(27.5 + i*.26, -3, .5 + (i%3)*.6), new THREE.Vector3(27.6 + i*.26 + Math.sin(i*2.1)*.25, -.5, .4 + (i%2)*.8), .05, '#5E8A3E', {outline:false});
+const rongG = new THREE.Group(); rongG.position.set(28.2, 0, 0); scene.add(rongG);
+for(let i=0;i<11;i++) leaf(rongG, new THREE.Vector3(-.95 + i*.19, .04 + (i%2)*.05, .3 + (i%4)*.5), [.34, .18, .3], i%2 ? '#4E7A3A' : '#6A8F45', {ow:.02});
+let rongK = 1, rongGone = false, rongSaid = false;
+block(27.3, 29.1, -3.2, 1.0, ()=>!rongGone);
 // ================= room 3 · Nhà sàn: a stilt house over the river, its porch high above a stone quay =================
 house(38, 44, 8.6, '#E9C46A', {roof:'#B5513A'});
 ZONE = 'r3';
@@ -159,6 +169,22 @@ for(let i=0;i<3;i++) mesh(W, new THREE.CylinderGeometry(.26, .2, .34, 10), '#B55
 box(W, 54, 58, 3.6, 3.8, -.5, 2.6, '#B8A58E', {ow:.03, uv:[2,1], map:TEX.stone});
 for(const [a, b, top] of [[58, 59.3, 2.85], [59.3, 60.6, 1.9], [60.6, 62, .95]]){ box(W, a, b, -5, top, -.5, 2.6, '#A39788', {ow:.03, uv:[2,1], map:TEX.stone}); block(a, b, -5, top); plat(a, b, top); }
 waterMark(40, 54, 1.4, 'r3');
+// the lờ: a bamboo fish trap lying in the river off the quay, its mouth to the right, tied by a rope to a stake on the quay.
+// Cá linh come up the river with nước rong and go back down with nước ròng: that is when they swim into a lờ
+// it sits on a bamboo trestle with its mouth at the high-water line: nước ròng leaves it standing out of the water
+const LO = {x:41.7, y:1.05, up:0, busy:false, done:false};
+const loG = new THREE.Group(); loG.position.set(LO.x, LO.y, 1.6); scene.add(loG); ZONE = 'r3';
+for(const x of [40.9, 42.5]) for(const z of [1.15, 2.05]) rod(W, new THREE.Vector3(x, -3, z), new THREE.Vector3(x + (z > 1.5 ? .15 : -.15), .62, z), .05, '#A27650', {outline:false});
+box(W, 40.7, 42.7, .55, .62, 1.1, 2.1, '#A27650', {outline:false});
+(function(g){
+  const body = mesh(g, new THREE.CylinderGeometry(.4, .52, 1.9, 12, 1, true), '#C99A52', {rot:[0, 0, Math.PI/2], ow:.03}); body.material.side = THREE.DoubleSide;
+  mesh(g, new THREE.ConeGeometry(.4, .6, 12), '#B88A4A', {pos:new THREE.Vector3(-1.25, 0, 0), rot:[0, 0, Math.PI/2], ow:.03});
+  for(const x of [-.6, 0, .6]) mesh(g, new THREE.TorusGeometry(.46 + x*.06, .035, 5, 18), '#7A5638', {pos:new THREE.Vector3(x, 0, 0), rot:[0, Math.PI/2, 0], outline:false});
+  const hom = mesh(g, new THREE.ConeGeometry(.5, .7, 12, 1, true), '#E0B878', {pos:new THREE.Vector3(.62, 0, 0), rot:[0, 0, Math.PI/2], outline:false}); hom.material.side = THREE.DoubleSide;
+})(loG);
+rod(W, new THREE.Vector3(39.75, 1.6, 1.9), new THREE.Vector3(39.75, 2.5, 1.9), .07, '#7A5638', {ow:.02});
+const loRope = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), new THREE.LineBasicMaterial({color:'#3B2E2A'}));
+scene.add(loRope);
 // ================= room 4 · Đò chú Chín: a ferry landing; the đò sits on the mud at low water, its boatman asleep =================
 house(58, 66, 9.6, '#9FCBC1', {roof:'#B5513A'});
 house(66, 75, 8.2, '#F1DDB0'); house(75, 86, 8.8, '#E8A598', {roof:'#B5513A'});
@@ -393,13 +419,65 @@ const toad = new THREE.Group(); scene.add(toad); toad.scale.setScalar(.42);
 toad.position.set(82.9, 3.6, 1.4);
 relic(toad, 82.9, 3.6, 'Con cóc nhỏ của chú Chín');
 firefly(8.0, -1.0, ()=>chA.level < -1.8);
-firefly(48.6, 2.8, ()=>chC.level > .8);
+firefly(39.0, 2.7, ()=>LO.done);
 firefly(68.2, -1.2, ()=>!doFloat);
 firefly(120.4, 4.5);
 firefly(166.0, 3.2);
 for(const z of ROOMS.concat(['chin','sky'])) setZone(z, 0);
 bui({x:162.4, top:0, s:.55, a:161.4, b:164.0, fan:true}); bui({x:164.6, top:0, s:.48, a:163.4, b:166.0, fan:true});
 bui({x:166.8, top:0, s:.6, a:165.6, b:168.2, fan:true}); bui({x:163.6, top:0, s:.4, a:162.2, b:165.2, fan:true});
+
+// ================= fish =================
+// room 2: a grey cá rô, the one fish that can eat through the rong once it is in colour again
+const caRo = riverFish({c:chB, kind:'ro', s:1.3, a:20.8, b:26.4, x:24.6, z:1.4, seed:11, name:'Cá rô', onFree:()=>{
+  caRo.goal = 26.95; caRo.nibble = true; colour('r2', .4); objective('Cá rô đang rỉa đám rong…'); }});
+// room 3: a school of cá linh that only comes with the high water
+const linh = [];
+for(let i=0;i<5;i++) linh.push(riverFish({c:chC, kind:'linh', s:.78, z:1.0 + (i%3)*.45, x:55, seed:31 + i*7, noVot:true, zone:'calinh', drive:linhDrive}));
+let school = 'away', schoolSeen = false;
+function linhDrive(f, dt, t, wantY){
+  const i = linh.indexOf(f), high = chC.level > .4;
+  if(school === 'away' && high){ school = 'in'; for(const q of linh){ q.x = 54.5 + linh.indexOf(q)*.5; q.y = chC.level - .1; } }
+  if(school === 'in' && chC.want === chC.lo){ school = 'out'; for(const q of linh) q.inLo = false; }
+  f.g.visible = school !== 'away';
+  if(f.inLo){ f.tx = loG.position.x - .1 + ((i*.37 + t*.4)%1)*1.15; f.sp = 2; f.z = 1.6; return loG.position.y - .08 + (i%2)*.12; }
+  if(school === 'in'){ f.tx = 47.5 + Math.sin(t*.22 + i*1.1)*5.2; f.sp = 1.6; }
+  else if(school === 'out'){
+    // the water drains away down the river and the school goes with it: through the lờ's mouth if it is lying in the water
+    f.tx = 39.6; f.sp = 3.2;
+    if(LO.up < .1 && f.x < LO.x + .8){ f.inLo = true; }
+    else if(f.x < 40.4){ f.g.visible = false; f.out = true; if(linh.every(q=>q.out || q.inLo)){ school = linh.some(q=>q.inLo) ? 'trap' : 'away'; if(school === 'trap' && P.x > 34 && P.x < 58) say('Nước ròng… cá linh lọt vào lờ rồi!', 2.4); for(const q of linh) q.out = false; } }
+  }
+  else if(school === 'free'){ f.tx = 46.5 + Math.sin(t*.3 + i*1.3)*5.5; f.sp = 1.8; }
+  else if(school === 'trap' && !f.inLo) f.g.visible = false;
+  return wantY;
+}
+function pullLo(){
+  LO.busy = true; sfx('use');
+  const n = linh.filter(f=>f.inLo).length;
+  const steps = [{dur:1.1, cam:[40.6, 2.2], tick:(t)=>{ LO.up = Math.min(1, t/1.1); }}];
+  if(n){
+    steps.push({dur:2.0, cam:[40.6, 2.2], start:()=>{ say('Lờ đầy cá linh! Bóc lớp xám ra nào…', 2); colour('calinh'); buzz(30); }});
+    // Tò tips the lờ: the cá linh, in colour now, leap one after another back to the river
+    steps.push({dur:2.4, cam:[43, 2.0], start:()=>{ say('Cá linh mùa nước về rồi!', 2); school = 'free'; LO.done = true; colour('r3', .6);
+        for(const f of linh){ f.inLo = false; f.caught = true; f.g.visible = true; } },
+      tick:(t)=>{ for(const f of linh){ const i = linh.indexOf(f), k = Math.max(0, Math.min(1, (t - i*.3)/.9));
+          const x0 = loG.position.x + .9, y0 = loG.position.y, x1 = 43.2 + i*1.7, y1 = chC.level - .1;
+          f.x = x0 + (x1 - x0)*k; f.y = y0 + (y1 - y0)*k + Math.sin(k*Math.PI)*1.6; f.dir = 1;
+          if(k >= 1 && f.caught){ f.caught = false; f.tx = f.x; sfx('splash'); } } },
+      end:()=>{ for(const f of linh) f.caught = false; }});
+  } else {
+    steps.push({dur:2.6, start:()=>say(school === 'in' ? 'Lờ trống. Nước rong cá còn bơi lên. Nước ròng cá mới theo nước về sông.'
+      : schoolSeen ? 'Lờ trống. Cá theo nước ròng đi mất rồi. Thả lờ nằm dưới nước mà chờ.' : 'Lờ trống trơn. Sông cạn, chưa có con cá nào.', 2.6)});
+  }
+  steps.push({dur:1.0, tick:(t)=>{ LO.up = 1 - Math.min(1, t/1.0); }, end:()=>{ LO.up = 0; LO.busy = false; }});
+  play(steps);
+}
+LV.act = ()=>{
+  if(P.x > 39.5 && P.x < 40.7 && Math.abs(P.y - 1.6) < .2 && !LO.busy && !LO.done){ pullLo(); return true; }
+  return false;
+};
+LV.prompt = ()=> P.x > 39.5 && P.x < 40.7 && Math.abs(P.y - 1.6) < .2 && !LO.done && !held.on ? 'E để kéo dây lờ lên' : '';
 
 // ================= bubbles =================
 const dist = o => Math.abs(P.x - o.position.x) + Math.abs(P.y - o.position.y)*.5;
@@ -416,7 +494,7 @@ npcTalk(chin, 'chin', 2.4, ()=>{
 talker(chin, 2.3, ()=> !chinAwake && dist(chin) > 6 ? 'z z z' : '', 'zzz');
 
 // ================= story beats =================
-let lowA = false, metB = false, metC = false, metPorch = false, metDo = false, metE = false, metRain = false, lowF = false, metG = false, metPier = false, metGauge = false, pierClear = false, gateOpen = false;
+let metFish = false, lowA = false, metB = false, metC = false, metPorch = false, metDo = false, metE = false, metRain = false, lowF = false, metG = false, metPier = false, metGauge = false, pierClear = false, gateOpen = false;
 function peeledDo(){
   sheetDo.solved = true; chinAwake = true; colour('chin');
   play([{dur:2.4, cam:[DO.x + 1, DO.y + 1.8], start:()=>npcSay('chin', 'Hử? Ai bóc tờ lịch trên mui vậy?', 2.4)},
@@ -476,6 +554,20 @@ LV.update = (dt, t)=>{
   if(!sheetDo.done) placeDoSheet();
   if(chinAwake && doFloat && !ferried && !ferrying && (P.on === doDeck || P.on === doMui) && !busy()) ferry();
   if(chinAwake && doFloat && !ferried && !ferrying && OBJ === 'Đổi ngày ở bến cho nước lớn'){ npcSay('chin', 'Nước lớn rồi! Lên đò đi con.', 2.4); objective('Lên đò chú Chín'); }
+  // the rong rides the water; the cá rô in colour eats it away
+  rongG.position.y = chB.level; rongG.scale.set(1, Math.max(.05, rongK), Math.max(.05, rongK)); rongG.visible = rongK > .02;
+  if(caRo.atGoal && caRo.nibble && rongK > 0){ rongK = Math.max(0, rongK - dt/3.2);
+    if(rongK === 0){ rongGone = true; caRo.nibble = false; caRo.goal = undefined; caRo.b = 34.8; colour('r2', .6); say('Cá rô rỉa sạch đám rong rồi! Thuyền qua được.', 2.6); objective('Gấp thuyền, đi thuyền qua sông'); } }
+  if(!rongGone && boat.on && boat.c === chB && P.on === boat.plat && P.x > 26.2){ if(!rongSaid){ rongSaid = true; say('Rong quấn kín, thuyền không qua được!', 2.2); } } else if(P.x < 25) rongSaid = false;
+  if(!metFish && chB.level > -1.2 && P.x > 15 && P.x < 36 && !busy()){ metFish = true;
+    play([{dur:2.6, cam:[27, .8], start:()=>say('Giữa sông có đám rong xám quấn kín…', 2.4)},
+      {dur:2.8, cam:[24, .6], start:()=>say('Có con cá rô xám lờ đờ… Gấp cái vợt vớt nó lên thử!', 2.8)},
+      {dur:0, start:()=>{ if(!learned.includes('vot')) learned.unshift('vot'); say('Tò biết gấp vợt rồi! Bấm Q.', 2.4); objective('Gấp vợt, đứng yên sát mép nước chờ cá lại gần'); }}]); }
+  // the lờ: lying on the riverbed, or hauled up by its rope to hang beside the quay
+  const ue = LO.up*LO.up*(3 - 2*LO.up);
+  loG.position.set(LO.x + (40.9 - LO.x)*ue, LO.y + (2.6 - LO.y)*ue, 1.6); loG.rotation.z = ue*.35;
+  { const a = loRope.geometry.attributes.position; a.setXYZ(0, 39.75, 2.45, 1.9); a.setXYZ(1, loG.position.x - .95, loG.position.y + .1, 1.6); a.needsUpdate = true; }
+  if(school !== 'away' && !schoolSeen && P.x > 34 && P.x < 58){ schoolSeen = true; if(!busy()) say('Cá linh theo nước rong về! Dưới bến có cái lờ…', 2.6); }
   // the sluice gate lifts once the wheel is hit
   if(gateOpen && gateK < 1) gateK = Math.min(1, gateK + dt*.6);
   gate.position.y = gateK*2.4; wheel.rotation.z = -gateK*6;
@@ -500,7 +592,20 @@ const boatHint = (c, need)=> boat.on && boat.c === c ? (c.level > c.floor + .45 
   : held.on ? (held.form === 'thuyen' ? 'Đứng sát mép nước, bấm E để thả thuyền.' : 'Bấm Q cho tới khi gấp thành thuyền.') : 'Lấy tờ lịch trên tường để gấp thuyền.';
 LV.hint = ()=>{
   if(P.x < 15) return sheetT1.L === 0 ? 'Ngày 18 nước rong, đá chìm hết. Bóc tờ lịch ở bến xem ngày khác.' : 'Nước ròng rồi. Nhảy từ hòn đá này sang hòn đá kia.';
-  if(P.x < 36) return sheetT2.L === 0 ? 'Hăm Ba nước kém, sông cạn trơ bùn. Bóc lịch cho tới ngày nước rong.' : boatHint(chB, 'Bước lên thuyền, đi sang phải là thuyền trôi theo.');
+  if(P.x < 36){
+    if(sheetT2.L === 0) return 'Hăm Ba nước kém, sông cạn trơ bùn. Bóc lịch cho tới ngày nước rong.';
+    if(!rongGone){
+      if(caRo.freed) return 'Cá rô đang rỉa rong. Chờ một chút.';
+      if(boat.on && P.on === boat.plat) return 'Rong quấn kín giữa sông. Quay lại bờ, vớt con cá rô xám trước.';
+      if(heldIs('vot')) return 'Đứng sát mép nước rồi đứng yên. Cá sợ tiếng chân, đứng yên thì nó tò mò bơi lại. Tới gần thì bấm E.';
+      return held.on ? 'Bấm Q cho tới khi gấp thành vợt.' : 'Lấy tờ lịch trên tường, gấp cái vợt.';
+    }
+    return boatHint(chB, 'Bước lên thuyền, đi sang phải là thuyền trôi theo.');
+  }
+  if(P.x < 41 && P.y > 1.4 && P.y < 2 && school !== 'away' && !LO.done){
+    if(school === 'in') return 'Cá linh theo nước rong vào, theo nước ròng ra. Muốn cá lọt lờ thì cho nước ròng: bấm R dán lại ngày cũ.';
+    if(school === 'trap') return 'Cá lọt lờ rồi! Đứng sát mép bến, bấm E kéo dây lờ lên.';
+  }
   if(P.x < 54 && P.y < 3.5) return sheetT3.L === 0 ? 'Đứng trên bậc đá, bóc tờ lịch cho nước lên.' : boatHint(chC, 'Nước lớn nâng thuyền lên cao. Đi thuyền tới dưới hiên rồi nhảy lên.');
   if(P.x < 82){
     if(!chinAwake) return 'Nhảy xuống đò, bóc tờ lịch trên mui.';
@@ -527,6 +632,7 @@ LV.winText = ()=>({
   memory:(fliesGot === 5
     ? '<b>Ký ức mở khoá.</b> Mùa lụt năm 1992, chú Chín chèo đò chở cả xóm qua sông, mấy chục chuyến một đêm. Bà Năm nặn tặng chú con cóc nhỏ: “Cóc kêu thì trời mưa, chú chở thì xóm yên.”'
     : 'Còn ' + (5 - fliesGot) + ' con đom đóm ở Màn 5 chưa tìm thấy.')
+    + (LO.done ? '<br><b>Cá linh mùa nước đã về sông.</b>' : '<br>Dưới bến nhà sàn có cái lờ tre, cá linh về theo con nước.')
     + (relicGot ? '<br><b>Tìm được con cóc nhỏ của chú Chín.</b>' : '<br>Có một con tò he cũ giấu trên cột buộc đò.'),
   next:'Màn 6 · Gánh hàng rong: sáng mai, hẻm sau chợ'
 });
