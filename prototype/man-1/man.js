@@ -321,9 +321,14 @@ for(let i=0;i<8;i++) mesh(awning, new THREE.CylinderGeometry(.35,.35,.06,12,1,fa
 mesh(awning, new THREE.CylinderGeometry(.06,.06,5.6,8), '#8C6631', {pos:new THREE.Vector3(0,0,1.9), rot:[0,0,Math.PI/2], ow:.02});
 awning.rotation.x = Math.PI/2;
 let awningOpen = false, awningT = 0;
-plat(92.9, 98.1, 3.1, true, ()=>awningOpen && awningT > .6, {z:1.1});   // stand out on the awning, clear of the roof slab above
+// jumping from the cart up to the awning (and from the awning to the roof) Tò comes out in front of the roof slab, as he stands on the awning
+LV.zOut = (x, y)=>awningOpen && x > 91.6 && x < 98.6 && y > 1.5 && y < 4.0 ? 1.3 : null;
+plat(92.9, 98.1, 3.1, true, ()=>awningOpen && awningT > .6, {z:1.3});   // stand out on the awning, clear of the roof slab above
 // the chè cart: wooden body, a glass case of jars, two wheels and push handles; a one-way step once it stands under the awning
-const cartWheels = [];
+// the cart parks just left of the awning, not under it: Tò on the cart (top 1.15, Tò is 2.4 tall) would poke through the awning at 3.1
+const CART_PARK = 91.4, cartWheels = [], cartDu = new THREE.Group(), cartUm = new THREE.Group();
+let duT = 0, duFrom = null;
+const DU_HAND = new THREE.Vector3(-1.0, .55, .3);   // in cô Hai's own (scaled) frame: her free hand grips the folded parasol
 const cart = new THREE.Group(); cart.position.set(85.2, 0, .55); scene.add(cart);
 (function(g){
   box(g, -.95, .95, .45, .55, -.5, .5, '#7A4E2D', {ow:.025, uv:[.6,.6], map:TEX.wood});
@@ -336,8 +341,10 @@ const cart = new THREE.Group(); cart.position.set(85.2, 0, .55); scene.add(cart)
     for(let k=0;k<3;k++) mesh(w, new THREE.BoxGeometry(.5,.035,.03), '#B8B0A4', {rot:[0,0,k*Math.PI/3], outline:false});
   }
   for(const dz of [-.38, .38]) rod(g, new THREE.Vector3(-.9, .8, dz), new THREE.Vector3(-1.6, 1.05, dz), .035, '#7A4E2D', {outline:false});
-  rod(g, new THREE.Vector3(-.8, 1.12, 0), new THREE.Vector3(-.8, 2.3, 0), .025, '#6E655C', {outline:false});
-  const um = new THREE.Group(); um.position.set(-.8, 2.3, 0); g.add(um);
+  // the parasol on its own group so cô Hai can fold it and lean it on the wall before Tò climbs up
+  cartDu.position.set(-.8, 1.12, 0); g.add(cartDu);
+  rod(cartDu, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1.18, 0), .025, '#6E655C', {outline:false});
+  const um = cartUm; um.position.set(0, 1.18, 0); cartDu.add(um);
   for(let i=0;i<8;i++) mesh(um, new THREE.ConeGeometry(.9, .4, 3, 1, true, i*Math.PI/4, Math.PI/4), i%2 ? '#F4F1EA' : '#2E9C93', {pos:new THREE.Vector3(0,0,0), outline:false});
   box(g, -.6, .6, .56, .86, .46, .47, '#C23A28', {outline:false});
 })(cart);
@@ -608,13 +615,21 @@ LV.update = (dt, t)=>{
   // room 7: reaching the street, the cart rolls under the awning
   if(!metStreet && P.x > 83 && P.y < .5){ metStreet = true; objective('Đánh thức cô Hai'); say('Cô Hai cũng ngủ quên rồi…', 2.2); }
   // cô Hai walks behind the cart, leaning into the handles; the wheels roll with it
-  const cartMove = cartGo && cart.position.x < 95.5;
-  if(cartMove){ const dx = Math.min(95.5, cart.position.x + dt*2.8) - cart.position.x; cart.position.x += dx; hai.position.x = cart.position.x - 1.9; hai.rotation.y = 1.3;
+  const cartMove = cartGo && cart.position.x < CART_PARK;
+  if(cartMove){ const dx = Math.min(CART_PARK, cart.position.x + dt*2.8) - cart.position.x; cart.position.x += dx; hai.position.x = cart.position.x - 1.9; hai.rotation.y = 1.3;
     haiStep += dx*3.4; for(const w of cartWheels) w.rotation.z -= dx/.36; }
   for(const [i, l] of haiR.legs.entries()) l.rotation.x += ((cartMove ? Math.sin(haiStep + i*Math.PI)*.5 : 0) - l.rotation.x)*Math.min(1, dt*12);
   hai.position.y = cartMove ? Math.abs(Math.sin(haiStep))*.06 : 0;
   haiLean += ((cartMove ? .18 : 0) - haiLean)*Math.min(1, dt*6); hai.rotation.x = haiLean;
   cartPlat.x0 = cart.position.x - .95; cartPlat.x1 = cart.position.x + .95;
+  // parked: cô Hai folds the parasol shut and takes it in her free hand, out of Tò's way
+  if(cartGo && !cartMove && duT < 1){
+    duT = Math.min(1, duT + dt*1.4);
+    const f = Math.min(1, duT*2.5); cartUm.scale.set(1 - .85*f, 1 + .6*f, 1 - .85*f);
+    if(duT > .4 && cartDu.parent === cart){ hai.attach(cartDu); duFrom = cartDu.position.clone(); }
+    if(cartDu.parent === hai){ const k = (duT - .4)/.6, e = k*k*(3 - 2*k);
+      cartDu.position.lerpVectors(duFrom, DU_HAND, e); cartDu.rotation.set(0, 0, .12*e); }
+  }
   if(awningOpen && awningT < 1) awningT = Math.min(1, awningT + dt*1.6);
   const ea = awningT < 1 ? 1 - Math.pow(1 - awningT, 3)*Math.cos(awningT*7) : 1;
   awning.rotation.x = Math.PI/2*(1 - ea) + .06*ea;

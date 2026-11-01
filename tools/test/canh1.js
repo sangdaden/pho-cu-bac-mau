@@ -23,7 +23,13 @@ const THREE = fs.readFileSync(path.join(__dirname,'../../prototype/chung/three.m
   console.log('dbg', await ev(()=>window.dbg));
   await ev(()=>{ let n = 0; while(n++ < 60*8.4) G.tick(1); });
   await snap('hai-1'); await ev(()=>G.tick(9)); await snap('hai-2');
-  await ev(()=>{ let n = 0; while(G.busy && n++ < 3000) G.tick(1); G.tick(30); G.tp(95.2, 3.4); G.P.ground = false; G.tick(60); });
+  await ev(()=>{ let n = 0; while(G.busy && n++ < 3000) G.tick(1); G.tick(60); G.tp(91.6, 1.5); G.P.ground = false; G.tick(60); });
+  console.log('on cart', await ev(()=>[G.P.y, G.P.z]));
+  await snap('tren-xe');
+  await ev(()=>{ G.tp(92.1, 1.15); G.jump(); G.keys.right = true; G.tick(14); G.keys.right = false; G.tick(8); });
+  console.log('jumping', await ev(()=>[G.P.y, G.P.z]));
+  await snap('dang-nhay');
+  await ev(()=>{ G.tick(60); });
   console.log('on awning', await ev(()=>[G.P.y, G.P.z]));
   await snap('maihien');
   console.log(errs.join('\n') || 'no errors');
