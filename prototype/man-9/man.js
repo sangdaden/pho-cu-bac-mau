@@ -158,19 +158,21 @@ LV.onDen = ()=>{
 // ================= people =================
 function buildPerson(g, o){
   const SK = o.sk || '#D9A57C', AO = o.ao, QU = o.quan || '#2A2630';
-  for(const s of [-1,1]){ blob(g, new THREE.Vector3(s*.3, .75, 0), [.24, .24, .7], QU); blob(g, new THREE.Vector3(s*.3, .1, .12), [.2, .24, .1], '#5E4630'); }
+  const legs = [];
+  for(const s of [-1,1]){ const l = new THREE.Group(); l.position.set(s*.3, 1.35, 0); g.add(l);
+    blob(l, new THREE.Vector3(0, -.6, 0), [.24, .24, .7], QU); blob(l, new THREE.Vector3(0, -1.25, .12), [.2, .24, .1], '#5E4630'); legs.push(l); }
   blob(g, new THREE.Vector3(0, 2.0, 0), [.66, .55, .88], AO);
   blob(g, new THREE.Vector3(0, 1.3, 0), [.58, .48, .34], AO);
   const arms = [];
   for(const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.62, 2.5, 0); g.add(a);
-    blob(a, new THREE.Vector3(s*.1, -.4, .05), [.17, .17, .5], AO, {rot:[0, 0, s*.3]}); blob(a, new THREE.Vector3(s*.2, -.85, .12), .15, SK); arms.push(a); }
+    blob(a, new THREE.Vector3(s*.1, -.4, .05), [.17, .17, .5], AO, {rot:[0, 0, s*.3]}); blob(a, new THREE.Vector3(s*.2, -.85, .12), .15, SK); blob(a, new THREE.Vector3(-s*.02, -.08, 0), .19, AO, {ow:.03}); arms.push(a); }
   const head = new THREE.Group(); g.add(head);
   blob(head, new THREE.Vector3(0, 3.35, 0), [.6, .58, .6], SK);
   if(o.hair) blob(head, new THREE.Vector3(0, 3.6, -.2), [.62, .5, .45], o.hair);
   eyes(head, 0, 3.42, .52, .18, .21, .2, .23);
   for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.4, 3.2, .44), [.1, .04, .06], '#E79B85', {small:true});
   if(o.hat === 'non') mesh(head, new THREE.ConeGeometry(1.0, .62, 20), '#E9D9B0', {pos:new THREE.Vector3(0, 4.05, -.05), rot:[-.15, 0, 0], ow:.035});
-  return {head, arms};
+  return {head, arms, legs, neck:2.85};
 }
 const people = [];
 function person(o){
@@ -387,7 +389,7 @@ LV.update = (dt, t)=>{
   for(const h of hangs){ h.k = (h.k || 0) + ((h.lit ? 1 : 0) - (h.k || 0))*Math.min(1, dt*4); h.glow.material.opacity = h.k*(.75 + Math.sin(t*5 + h.x)*.1); h.g.rotation.z = Math.sin(t*1.4 + h.x)*.05; }
   for(const v of people){
     if(v.lineT > 0) v.lineT -= dt;
-    v.R.head.rotation.x = v.awake ? Math.sin(t*1.3 + v.x)*.05 : .35 + Math.sin(t*1.2 + v.x)*.04;
+    const wk = wakeK(v, v.awake, dt); nod(v.R.head, Math.sin(t*1.3 + v.x)*.05*wk + (.35 + Math.sin(t*1.2 + v.x)*.04)*(1 - wk), v.R.neck || 0);
     if(v.R.arms && v.R.arms[1]) v.R.arms[1].rotation.z = v.awake ? -1.0 + Math.sin(t*2 + v.x)*.2 : 0;
   }
   const g8 = gustOn();

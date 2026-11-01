@@ -89,13 +89,16 @@ function raoLine(r){ if(!r.on) return ''; const n = r.ws.filter((q, i)=>r.t >= i
 // a street vendor: a round body in an áo bà ba, a nón lá or a cap, sitting or standing beside their load
 function buildVendor(g, o){
   const SK = o.sk || '#D9A57C', AO = o.ao, QU = o.quan || '#2A2630';
-  for(const s of [-1,1]){ blob(g, new THREE.Vector3(s*.3, .75, 0), [.24, .24, .7], QU); blob(g, new THREE.Vector3(s*.3, .1, .12), [.2, .24, .1], '#5E4630'); }
+  // legs hang from hip hinges so the people who walk (bà Tám, the lantern children) can step instead of sliding
+  const legs = [];
+  for(const s of [-1,1]){ const l = new THREE.Group(); l.position.set(s*.3, 1.35, 0); g.add(l);
+    blob(l, new THREE.Vector3(0, -.6, 0), [.24, .24, .7], QU); blob(l, new THREE.Vector3(0, -1.25, .12), [.2, .24, .1], '#5E4630'); legs.push(l); }
   const body = blob(g, new THREE.Vector3(0, 2.0, 0), [.66, .55, .88], AO);
   blob(g, new THREE.Vector3(0, 1.3, 0), [.58, .48, .34], AO);
   for(let i=0;i<3;i++) blob(g, new THREE.Vector3(.12, 2.35 - i*.3, .52), .045, '#F4F1EA', {small:true});
   const arms = [];
   for(const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.62, 2.5, 0); g.add(a);
-    blob(a, new THREE.Vector3(s*.1, -.4, .05), [.17, .17, .5], AO, {rot:[0, 0, s*.3]}); blob(a, new THREE.Vector3(s*.2, -.85, .12), .15, SK); arms.push(a); }
+    blob(a, new THREE.Vector3(s*.1, -.4, .05), [.17, .17, .5], AO, {rot:[0, 0, s*.3]}); blob(a, new THREE.Vector3(s*.2, -.85, .12), .15, SK); blob(a, new THREE.Vector3(-s*.02, -.08, 0), .19, AO, {ow:.03}); arms.push(a); }
   const head = new THREE.Group(); g.add(head);
   blob(head, new THREE.Vector3(0, 3.35, 0), [.6, .58, .6], SK);
   if(o.hair) blob(head, new THREE.Vector3(0, 3.6, -.2), [.62, .5, .45], o.hair);
@@ -104,7 +107,7 @@ function buildVendor(g, o){
   const mouth = blob(head, new THREE.Vector3(0, 3.12, .55), [.1, .05, .04], '#7A2E2E', {small:true});
   if(o.hat === 'non'){ mesh(head, new THREE.ConeGeometry(1.0, .62, 20), '#E9D9B0', {pos:new THREE.Vector3(0, 4.05, -.05), rot:[-.15, 0, 0], ow:.035}); }
   else if(o.hat === 'mu'){ blob(head, new THREE.Vector3(0, 3.82, -.04), [.64, .6, .3], o.hatC || '#2F6FB5'); blob(head, new THREE.Vector3(0, 3.72, .5), [.42, .3, .06], o.hatC || '#2F6FB5'); }
-  return {head, body, arms, mouth};
+  return {head, body, arms, mouth, legs, neck:2.85};
 }
 // a gánh: a bamboo pole and two baskets, set down on the ground
 function ganh(x, z, c, zone){
@@ -182,13 +185,19 @@ wall(102, 107, 6.8, '#D9A07A', 'r5');
 sign(W, 102.4, 106.6, 3.6, 4.6, 2.62, '#5E6670', '#F4F1EA', 'VE CHAI', 'mua bán');
 for(let i=0;i<4;i++) crate(102.6 + i*1.2, 3.0, .7, ['#9FCBC1','#E9C46A','#E8A598'][i%3], 0);
 const tamG = new THREE.Group(); scene.add(tamG); ZONE = 'r5';
-(function(){ for(const dx of [-.7, .7]) mesh(tamG, new THREE.TorusGeometry(.38, .07, 8, 18), '#2A2630', {pos:new THREE.Vector3(dx, .4, 0), outline:false});
+const tamWheels = [];
+(function(){ for(const dx of [-.7, .7]){ const w = new THREE.Group(); w.position.set(dx, .4, 0); tamG.add(w); tamWheels.push(w);
+    mesh(w, new THREE.TorusGeometry(.38, .07, 8, 18), '#2A2630', {outline:false});
+    for(let k=0;k<3;k++) mesh(w, new THREE.BoxGeometry(.66, .03, .03), '#B8B0A4', {rot:[0, 0, k*Math.PI/3], outline:false}); }
   box(tamG, -1.0, 1.0, .8, 1.5, -.5, .5, '#A27650', {ow:.03, uv:[.8,.8], map:TEX.wood});
   for(let i=0;i<4;i++) mesh(tamG, new THREE.CylinderGeometry(.12, .12, .5, 8), ['#7DBB4B','#B8C4C8','#C23A28','#E9C46A'][i], {pos:new THREE.Vector3(-.6 + i*.4, 1.75, 0), ow:.015}); })();
 const vNat = vendor({x:88, z:.5, ao:'#8E6CC0', hat:'non', hair:'#7A7480', zone:'batam', ry:.1});
 const NAT = [['Ai', 1.6, 1.4], ['đồng', 3.8, 2.8], ['nát', 6.0, 4.2], ['bán', 8.2, 5.6], ['không?', 10.2, 6.0, 1.6]];
 vNat.rao = rao({words:NAT.map(w=>[w[0], 88 + w[1], w[2], w[3]]), gap:.55, life:3.2, rest:2.2});
-let natX = 88, natDir = 1;
+let natX = 88, natDir = 1, natD = 0;
+// the handlebar runs from the back of her cart to her near hand, re-aimed every frame
+const tamBar = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 2, 8), toon('#2A2630')); tamBar.castShadow = true; scene.add(tamBar);
+const tamA = new THREE.Vector3(), tamB = new THREE.Vector3();
 // ================= room 6 · Hôm nay ai qua: a stack of days; each day a different vendor comes down the lane =================
 house(107, 118, 8.2, '#F1DDB0', {roof:'#B5513A'}); house(118, 128, 7.4, '#9FCBC1');
 ZONE = 'r6';
@@ -356,17 +365,27 @@ LV.update = (dt, t)=>{
   raoTick(dt);
   for(const v of vendors){
     if(v.lineT > 0) v.lineT -= dt;
-    v.R.head.rotation.x = v.awake ? Math.sin(t*1.3 + v.x)*.05 : .35 + Math.sin(t*1.2 + v.x)*.04;
+    const wk = wakeK(v, v.awake, dt); nod(v.R.head, Math.sin(t*1.3 + v.x)*.05*wk + (.35 + Math.sin(t*1.2 + v.x)*.04)*(1 - wk), v.R.neck || 0);
     const talking = v.awake && v.rao && raoLine(v.rao);
-    v.R.mouth.scale.y = talking ? .6 + Math.abs(Math.sin(t*14))*1.6 : 1;
+    v.R.mouth.scale.y = .04*(talking ? .6 + Math.abs(Math.sin(t*14))*1.6 : 1);   // .04 is the mouth's own height (1 drew a tall stripe down the face)
     v.R.arms[1].rotation.z = talking ? -.6 - Math.sin(t*6)*.2 : 0;
   }
   // bà Tám walks her bicycle up and down; her call starts wherever she is
   if(vNat.awake){
-    if(vNat.rao.t > vNat.rao.gap*NAT.length + vNat.rao.life){ natX += natDir*dt*1.1; if(natX > 94){ natX = 94; natDir = -1; } if(natX < 86.4){ natX = 86.4; natDir = 1; } }
+    if(vNat.rao.t > vNat.rao.gap*NAT.length + vNat.rao.life){ natX += natDir*dt*1.1; natD += dt*1.1; for(const w of tamWheels) w.rotation.z -= natDir*dt*1.1/.45; if(natX > 94){ natX = 94; natDir = -1; } if(natX < 86.4){ natX = 86.4; natDir = 1; } }
     if(vNat.rao.t < .05) vNat.rao.ws.forEach((q, i)=>{ q.x = natX + NAT[i][1]; const w = (q.p.x1 - q.p.x0)/2; q.p.x0 = q.x - w; q.p.x1 = q.x + w; q.g.position.x = q.x; });
   }
-  vNat.g.position.x = natX; vNat.g.rotation.y = natDir > 0 ? .5 : -.5; tamG.position.set(natX + natDir*1.6, 0, 1.2);
+  // walking she turns side-on and steps (feet planted), looking back at the camera; stopped to call she turns to face the street
+  const natWalk = vNat.awake && vNat.rao.t > vNat.rao.gap*NAT.length + vNat.rao.life && natX > 86.4 && natX < 94;
+  const nk = wakeK(vNat.R.legs, natWalk, dt*1.5);
+  vNat.g.rotation.y += ((natDir > 0 ? 1 : -1)*(.5 + 1.02*nk) - vNat.g.rotation.y)*Math.min(1, dt*6);
+  vNat.R.head.rotation.y = -(natDir > 0 ? 1 : -1)*.7*nk;
+  const nw = walkLegs(vNat.R.legs, natD/S, 1.35, .3*nk);
+  vNat.g.position.set(natX, nw.drop*S, .5);
+  vNat.R.arms[0].rotation.x = -.95*nk;
+  tamG.position.set(natX + natDir*1.25, 0, 1.2);
+  vNat.R.arms[0].children[1].getWorldPosition(tamB); tamA.set(tamG.position.x - natDir*1.0, 1.25, 1.0);
+  linkTo(tamBar, tamA, tamB, .04);
   bell.rotation.z = vKem.awake ? Math.sin(t*12)*.4 : 0;
   if(loaK > 0 && loaK < 1) loaK = Math.min(1, loaK + dt);
   loaSwitch.rotation.z = -.6 + loaK*1.2; loa.rotation.z = loaRao.on ? Math.sin(t*20)*.02 : 0;

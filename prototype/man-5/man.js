@@ -356,6 +356,7 @@ function buildChin(g){
     blob(g, new THREE.Vector3(s*.3, .95, .3), [.22, .48, .2], QU);
     blob(g, new THREE.Vector3(s*.32, .45, .72), [.19, .19, .4], QU);
     blob(g, new THREE.Vector3(s*.32, .08, .82), [.18, .26, .08], SK);
+    blob(g, new THREE.Vector3(s*.31, .86, .72), .19, QU, {ow:.03});   // knee
   }
   const body = blob(g, new THREE.Vector3(0, 1.7, 0), [.62, .54, .76], AO);
   for(let i=0;i<3;i++) blob(g, new THREE.Vector3(.08, 1.9 - i*.26, .53), .045, '#F1EEE8', {small:true});
@@ -364,7 +365,7 @@ function buildChin(g){
   for(let i=0;i<5;i++) blob(g, new THREE.Vector3(-.32 + i*.16, 2.33, .44), .04, '#F1EEE8', {small:true});
   const arms = [];
   for(const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.6, 2.12, .05); g.add(a);
-    blob(a, new THREE.Vector3(s*.1, -.32, .1), [.17, .17, .46], AO, {rot:[-.5, 0, s*.3]}); blob(a, new THREE.Vector3(s*.16, -.6, .5), .15, SK); arms.push(a); }
+    blob(a, new THREE.Vector3(s*.1, -.32, .1), [.17, .17, .46], AO, {rot:[-.5, 0, s*.3]}); blob(a, new THREE.Vector3(s*.16, -.6, .5), .15, SK); blob(a, new THREE.Vector3(-s*.02, -.06, 0), .19, AO, {ow:.03}); arms.push(a); }
   const head = new THREE.Group(); g.add(head);
   blob(head, new THREE.Vector3(0, 3.0, 0), [.58, .56, .6], SK);
   eyes(head, 0, 3.08, .5, .17, .2, .3, .22);
@@ -373,7 +374,7 @@ function buildChin(g){
   // the nón lá, tipped back a little
   const non = mesh(head, new THREE.ConeGeometry(1.0, .62, 20), '#E9D9B0', {pos:new THREE.Vector3(0, 3.75, -.05), rot:[-.18, 0, 0], ow:.035});
   for(let i=0;i<2;i++) mesh(head, new THREE.TorusGeometry(.35 + i*.32, .02, 4, 24), '#C9B994', {pos:new THREE.Vector3(0, 3.82 - i*.2, -.06 + i*.03), rot:[Math.PI/2 - .18, 0, 0], outline:false});
-  return {head, body, arms, non};
+  return {head, body, arms, non, neck:2.45};
 }
 ZONE = 'chin';
 const chin = new THREE.Group(); chin.rotation.y = -.5; chin.scale.setScalar(S*1.0); scene.add(chin); const chinR = buildChin(chin);
@@ -471,7 +472,7 @@ LV.update = (dt, t)=>{
   doDeck.x0 = DO.x - 2.6; doDeck.x1 = DO.x + 2.6; doDeck.top = DO.y + .5;
   doMui.x0 = DO.x - 1.5; doMui.x1 = DO.x + .9; doMui.top = DO.y + 1.4;
   chin.position.set(DO.x + 1.9, DO.y + .5, .3);
-  chinR.head.rotation.x = chinAwake ? Math.sin(t*1.3)*.04 : .35 + Math.sin(t*1.2)*.04;
+  const cwk = wakeK(chin, chinAwake, dt); nod(chinR.head, Math.sin(t*1.3)*.04*cwk + (.35 + Math.sin(t*1.2)*.04)*(1 - cwk), chinR.neck);
   if(!sheetDo.done) placeDoSheet();
   if(chinAwake && doFloat && !ferried && !ferrying && (P.on === doDeck || P.on === doMui) && !busy()) ferry();
   if(chinAwake && doFloat && !ferried && !ferrying && OBJ === 'Đổi ngày ở bến cho nước lớn'){ npcSay('chin', 'Nước lớn rồi! Lên đò đi con.', 2.4); objective('Lên đò chú Chín'); }

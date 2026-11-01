@@ -672,7 +672,7 @@ LV.update = (dt, t)=>{
   if(!metShop && P.x > 46.4){ metShop = true; say('Chú Tư ngủ gục rồi. Ba cầu dao bị dán xám.', 2.6); objective('Đọc lịch bloc trên tường'); }
   if(cfanK > 0) cfanK = Math.min(1, cfanK + dt*.5);
   cblades.rotation.y += dt*cfanK*14;
-  tuR.head.rotation.x = tuAwake ? Math.sin(t*2)*.04 : .4 + Math.sin(t*1.3)*.04;
+  const twk = wakeK(tu, tuAwake, dt); nod(tuR.head, Math.sin(t*2)*.04*twk + (.4 + Math.sin(t*1.3)*.04)*(1 - twk), tuR.neck);
   tuR.belly.scale.y = 1 + Math.sin(t*1.6)*.02;
   if(tdoorUp > 0 && tdoorUp < 1) tdoorUp = Math.min(1, tdoorUp + dt*.7);
   tdoor.position.y = 4.4*tdoorUp*tdoorUp;
@@ -720,7 +720,7 @@ LV.update = (dt, t)=>{
   else crank.rotation.z = -sheetCr.p*.9;
   if(flipK >= 0 && flipK < 1){ flipK = Math.min(1, flipK + dt*.7); calFlip.visible = true; calFlip.material.map = calTex[0]; calFlip.rotation.x = -flipK*Math.PI*.95; cal.material.map = calTex[1]; if(flipK >= 1) calFlip.visible = false; }
   // the ending: bà wakes, people arrive
-  baR.head.rotation.x = ending ? .35*(1 - baWake) : .35 + Math.sin(t*1.1)*.03;
+  nod(baR.head, ending ? .35*(1 - baWake) : .35 + Math.sin(t*1.1)*.03, baR.neck);
   if(ending){
     if(baWake > 0 && baWake < 1) baWake = Math.min(1, baWake + dt);
     if(arrive >= 0) for(const [i, q] of ARRIVE.entries()){

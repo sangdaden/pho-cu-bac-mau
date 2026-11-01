@@ -90,13 +90,16 @@ function airTick(dt){
 // ================= people =================
 function buildPerson(g, o){
   const SK = o.sk || '#D9A57C', AO = o.ao, QU = o.quan || '#2A2630';
-  for(const s of [-1,1]){ blob(g, new THREE.Vector3(s*.3, .75, 0), [.24, .24, .7], QU); blob(g, new THREE.Vector3(s*.3, .1, .12), [.2, .24, .1], '#5E4630'); }
+  // legs hang from hip hinges so the people who walk (bà Tám, the lantern children) can step instead of sliding
+  const legs = [];
+  for(const s of [-1,1]){ const l = new THREE.Group(); l.position.set(s*.3, 1.35, 0); g.add(l);
+    blob(l, new THREE.Vector3(0, -.6, 0), [.24, .24, .7], QU); blob(l, new THREE.Vector3(0, -1.25, .12), [.2, .24, .1], '#5E4630'); legs.push(l); }
   blob(g, new THREE.Vector3(0, 2.0, 0), [.66, .55, .88], AO);
   blob(g, new THREE.Vector3(0, 1.3, 0), [.58, .48, .34], AO);
   for(let i=0;i<3;i++) blob(g, new THREE.Vector3(.12, 2.35 - i*.3, .52), .045, '#F4F1EA', {small:true});
   const arms = [];
   for(const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.62, 2.5, 0); g.add(a);
-    blob(a, new THREE.Vector3(s*.1, -.4, .05), [.17, .17, .5], AO, {rot:[0, 0, s*.3]}); blob(a, new THREE.Vector3(s*.2, -.85, .12), .15, SK); arms.push(a); }
+    blob(a, new THREE.Vector3(s*.1, -.4, .05), [.17, .17, .5], AO, {rot:[0, 0, s*.3]}); blob(a, new THREE.Vector3(s*.2, -.85, .12), .15, SK); blob(a, new THREE.Vector3(-s*.02, -.08, 0), .19, AO, {ow:.03}); arms.push(a); }
   const head = new THREE.Group(); g.add(head);
   blob(head, new THREE.Vector3(0, 3.35, 0), [.6, .58, .6], SK);
   if(o.hair) blob(head, new THREE.Vector3(0, 3.6, -.2), [.62, .5, .45], o.hair);
@@ -105,7 +108,7 @@ function buildPerson(g, o){
   const mouth = blob(head, new THREE.Vector3(0, 3.12, .55), [.1, .05, .04], '#7A2E2E', {small:true});
   if(o.hat === 'mu'){ blob(head, new THREE.Vector3(0, 3.82, -.04), [.64, .6, .3], o.hatC || '#2F6FB5'); blob(head, new THREE.Vector3(0, 3.72, .5), [.42, .3, .06], o.hatC || '#2F6FB5'); }
   if(o.beard) blob(head, new THREE.Vector3(0, 2.95, .42), [.28, .2, .14], o.hair || '#E8E4DC');
-  return {head, arms, mouth};
+  return {head, arms, mouth, legs, neck:2.85};
 }
 const people = [];
 function person(o){
@@ -377,8 +380,8 @@ LV.update = (dt, t)=>{
   airTick(dt);
   for(const v of people){
     if(v.lineT > 0) v.lineT -= dt;
-    v.R.head.rotation.x = v.awake ? Math.sin(t*1.3 + v.x)*.05 : .35 + Math.sin(t*1.2 + v.x)*.04;
-    v.R.mouth.scale.y = v.lineT > 0 ? .6 + Math.abs(Math.sin(t*14))*1.6 : 1;
+    const wk = wakeK(v, v.awake, dt); nod(v.R.head, Math.sin(t*1.3 + v.x)*.05*wk + (.35 + Math.sin(t*1.2 + v.x)*.04)*(1 - wk), v.R.neck || 0);
+    v.R.mouth.scale.y = .04*(v.lineT > 0 ? .6 + Math.abs(Math.sin(t*14))*1.6 : 1);   // .04 is the mouth's own height
     v.R.arms[1].rotation.z = v.awake ? -1.6 + Math.sin(t*2 + v.x)*.25 : 0;
   }
   const g3 = gustOn();

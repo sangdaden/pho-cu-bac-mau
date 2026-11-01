@@ -116,19 +116,22 @@ function hide(s){ s.hid = true; sheetVis(s, false); hidden.push(s); return s; }
 // ================= people =================
 function buildPerson(g, o){
   const SK = o.sk || '#D9A57C', AO = o.ao, QU = o.quan || '#2A2630';
-  for(const s of [-1,1]){ blob(g, new THREE.Vector3(s*.3, .75, 0), [.24, .24, .7], QU); blob(g, new THREE.Vector3(s*.3, .1, .12), [.2, .24, .1], '#5E4630'); }
+  // legs hang from hip hinges so the people who walk (bà Tám, the lantern children) can step instead of sliding
+  const legs = [];
+  for(const s of [-1,1]){ const l = new THREE.Group(); l.position.set(s*.3, 1.35, 0); g.add(l);
+    blob(l, new THREE.Vector3(0, -.6, 0), [.24, .24, .7], QU); blob(l, new THREE.Vector3(0, -1.25, .12), [.2, .24, .1], '#5E4630'); legs.push(l); }
   blob(g, new THREE.Vector3(0, 2.0, 0), [.66, .55, .88], AO);
   blob(g, new THREE.Vector3(0, 1.3, 0), [.58, .48, .34], AO);
   const arms = [];
   for(const s of [-1,1]){ const a = new THREE.Group(); a.position.set(s*.62, 2.5, 0); g.add(a);
-    blob(a, new THREE.Vector3(s*.1, -.4, .05), [.17, .17, .5], AO, {rot:[0, 0, s*.3]}); blob(a, new THREE.Vector3(s*.2, -.85, .12), .15, SK); arms.push(a); }
+    blob(a, new THREE.Vector3(s*.1, -.4, .05), [.17, .17, .5], AO, {rot:[0, 0, s*.3]}); blob(a, new THREE.Vector3(s*.2, -.85, .12), .15, SK); blob(a, new THREE.Vector3(-s*.02, -.08, 0), .19, AO, {ow:.03}); arms.push(a); }
   const head = new THREE.Group(); g.add(head);
   blob(head, new THREE.Vector3(0, 3.35, 0), [.6, .58, .6], SK);
   if(o.hair) blob(head, new THREE.Vector3(0, 3.6, -.2), [.62, .5, .45], o.hair);
   eyes(head, 0, 3.42, .52, .18, .21, .2, .23);
   for(const s of [-1,1]) blob(head, new THREE.Vector3(s*.4, 3.2, .44), [.1, .04, .06], '#E79B85', {small:true});
   const mouth = blob(head, new THREE.Vector3(0, 3.12, .55), [.1, .05, .04], '#7A2E2E', {small:true});
-  return {head, arms, mouth};
+  return {head, arms, mouth, legs, neck:2.85};
 }
 const people = [];
 function person(o){
@@ -142,6 +145,12 @@ function wakeUp(v, line, obj, camY){
   play([{dur:.4, start:()=>{ v.awake = true; colour(v.zone); vSay(v, line, 2.8); }}, {dur:2.2, cam:[v.g.position.x + 4, camY || 3.4]}, {dur:0, start:()=>objective(obj)}]);
 }
 // a star lantern on a long pole, for the children of the procession
+// a star lantern on a pole held in the fist: the pole runs through the hand, the star on top
+function handStar(parent, c){
+  rod(parent, new THREE.Vector3(0, -.7, 0), new THREE.Vector3(0, 3.7, 0), .05, '#C99A52', {outline:false});
+  const st = new THREE.Shape(); for(let i=0;i<10;i++){ const a = Math.PI/2 + i*Math.PI/5, r = i%2 ? .3 : .72; if(i) st.lineTo(Math.cos(a)*r, Math.sin(a)*r); else st.moveTo(Math.cos(a)*r, Math.sin(a)*r); }
+  return mesh(parent, new THREE.ExtrudeGeometry(st, {depth:.24, bevelEnabled:false}), c, {pos:new THREE.Vector3(0, 4.25, -.12), ow:.035});
+}
 function poleStar(parent, c, h){
   rod(parent, new THREE.Vector3(.5, 1.4, .3), new THREE.Vector3(.7, h, .3), .05, '#C99A52', {outline:false});
   const st = new THREE.Shape(); for(let i=0;i<10;i++){ const a = Math.PI/2 + i*Math.PI/5, r = i%2 ? .3 : .72; if(i) st.lineTo(Math.cos(a)*r, Math.sin(a)*r); else st.moveTo(Math.cos(a)*r, Math.sin(a)*r); }
@@ -229,7 +238,10 @@ box(W, 162.6, 166.4, 0, 2.6, -1.4, -.46, '#3B4152', Object.assign({}, WALL, {uv:
 const drum = mesh(W, new THREE.CylinderGeometry(.6, .6, .7, 16), '#C23A28', {pos:new THREE.Vector3(166.0, .35, 1.6), ow:.03});
 for(let i=0;i<4;i++){
   const k = person({x:168 + i*2, z:1.1, ao:['#F2C230','#2E9C93','#F06BAE','#2F6FB5'][i], quan:'#3B4152', hair:'#2A2630', zone:'kids', s:.6, ry:.4});
-  ZONE = 'kids'; k.star = poleStar(k.g, ['#E8442E','#F2C230','#E8442E','#F06BAE'][i], 6.2); k.g.visible = false; parade.kids.push(k);
+  // the lantern pole sits in the near hand (arms[0]) and is kept upright while the arm swings
+  ZONE = 'kids'; const hp = new THREE.Group(); hp.position.set(-.2, -.85, .18); k.R.arms[0].add(hp); k.hp = hp; k.d = 0;
+  k.star = handStar(hp, ['#E8442E','#F2C230','#E8442E','#F06BAE'][i]);
+  k.g.visible = false; parade.kids.push(k);
 }
 for(const [x, y] of [[168.4, 1.8], [171.0, 3.4], [173.6, 5.0], [176.2, 6.6], [178.8, 8.0]]) mstep(x, y, 2.0);
 wall(181, 190, 9.6, '#E8A598', 'r8');
@@ -391,7 +403,16 @@ LV.update = (dt, t)=>{
   // the procession walks to and fro
   if(parade.on){
     parade.c += parade.dir*dt*1.3; if(parade.c > 176){ parade.c = 176; parade.dir = -1; } if(parade.c < 168){ parade.c = 168; parade.dir = 1; }
-    parade.kids.forEach((k, i)=>{ k.g.position.x = parade.c + (i - 1.5)*2.0; k.g.position.y = Math.abs(Math.sin(t*6 + i))*.08; k.g.rotation.y = parade.dir > 0 ? .5 : -.5; });
+    // side-on, stepping with planted feet (each child a little out of step), looking back at the camera; the star swings behind the step
+    parade.kids.forEach((k, i)=>{ k.d += dt*1.3; const sd = parade.dir > 0 ? 1 : -1;
+      k.g.rotation.y += (sd*1.52 - k.g.rotation.y)*Math.min(1, dt*8); k.R.head.rotation.y = -sd*.75;
+      const w = walkLegs(k.R.legs, k.d/(S*.6), 1.35, .36, i*.13);
+      k.g.position.x = parade.c + (i - 1.5)*2.0; k.g.position.y = w.drop*S*.6;
+      // the pole lives in whichever hand is nearer the camera
+      const near = k.R.arms[sd > 0 ? 0 : 1], far = k.R.arms[sd > 0 ? 1 : 0];
+      if(k.hp.parent !== near){ near.add(k.hp); k.hp.position.x = sd > 0 ? -.2 : .2; far.rotation.z = 0; }
+      near.rotation.x = -.75 + Math.sin(w.ph*Math.PI*4)*.04; near.rotation.z = -.15*sd; far.rotation.x = -Math.sin(w.ph*Math.PI*2)*.4;
+      k.hp.rotation.x = -near.rotation.x - .08; k.hp.rotation.z = .15*sd; k.star.rotation.y = -sd*1.2; k.star.rotation.z = Math.sin(w.ph*Math.PI*4 - 1.2)*.18; });
   }
   drum.rotation.y = parade.on ? Math.sin(t*10)*.1 : 0;
   // the moon: behind a cloud on the 14th, full on the Rằm, gone on the 1st
@@ -401,8 +422,8 @@ LV.update = (dt, t)=>{
   bigGlow.material.opacity = sheetF.done ? .7 : 0;
   for(const v of people){
     if(v.lineT > 0) v.lineT -= dt;
-    v.R.head.rotation.x = v.awake ? Math.sin(t*1.3 + v.x)*.05 : .35 + Math.sin(t*1.2 + v.x)*.04;
-    if(v.R.arms && v.R.arms[1]) v.R.arms[1].rotation.z = v.awake ? -1.0 + Math.sin(t*2 + v.x)*.2 : 0;
+    const wk = wakeK(v, v.awake, dt); nod(v.R.head, Math.sin(t*1.3 + v.x)*.05*wk + (.35 + Math.sin(t*1.2 + v.x)*.04)*(1 - wk), v.R.neck || 0);
+    if(v.R.arms && v.R.arms[1] && v.zone !== 'kids') v.R.arms[1].rotation.z = v.awake ? -1.0 + Math.sin(t*2 + v.x)*.2 : 0;
   }
   // room beats, in the order Tò meets them
   if(!met2 && P.x > 18.4 && P.y < 1){ met2 = true; colour('r1'); say('Dây đèn qua kênh chưa ai thắp…', 2.4); objective('Thắp từng đèn treo, đi trên bậc trăng qua kênh'); }
