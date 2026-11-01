@@ -132,7 +132,7 @@ body.game .pad.r{right:max(12px,env(safe-area-inset-right))}
 .setsN{font-size:13px;color:var(--muted);min-height:1em;margin:4px 0}
 #sets{z-index:7}
 /* Chữ to: bubbles, hints, goal and captions grow */
-.chu-to .hint,.chu-to .cap,.chu-to .toast{font-size:125%}.chu-to #title{font-size:112%}
+.chu-to .hint,.chu-to .cap,.chu-to .toast,.chu-to .bubble{font-size:125%}.chu-to #title{font-size:112%}
 /* Nút cho tay trái: action buttons on the left, the d-pad on the right */
 .tay-trai body.game .pad.l{left:auto;right:max(12px,env(safe-area-inset-right))}
 .tay-trai body.game .pad.r{right:auto;left:max(12px,env(safe-area-inset-left))}

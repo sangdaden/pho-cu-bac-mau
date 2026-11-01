@@ -59,11 +59,13 @@ function clothes(x0, x1, y, z, zone){ ZONE = zone;
 
 // ================= moving air: rising streaks for an updraft, sideways streaks for wind =================
 const drafts = [];
+// every air streak shares one shape: a few hundred of them each with its own geometry weighed on phones
+const STREAK_G = new THREE.PlaneGeometry(.07, .8), GUST_G = new THREE.PlaneGeometry(1.1, .06);
 function draft(x0, x1, y0, y1, on, c){
   const d = {x0, x1, y0, y1, on, k:0, l:lift(x0, x1, y0, y1, on), s:[]};
   d.mat = new THREE.MeshBasicMaterial({color:c || '#FFFFFF', transparent:true, opacity:0, depthWrite:false});
   const n = Math.round((x1 - x0)*(y1 - y0)/3.2);
-  for(let i=0;i<n;i++){ const m = new THREE.Mesh(new THREE.PlaneGeometry(.07, .8), d.mat); m.position.set(x0 + .2 + Math.random()*(x1 - x0 - .4), y0 + Math.random()*(y1 - y0), .8 + Math.random()*.6); scene.add(m); d.s.push({m, v:4 + Math.random()*3}); }
+  for(let i=0;i<n;i++){ const m = new THREE.Mesh(STREAK_G, d.mat); m.position.set(x0 + .2 + Math.random()*(x1 - x0 - .4), y0 + Math.random()*(y1 - y0), .8 + Math.random()*.6); scene.add(m); d.s.push({m, v:4 + Math.random()*3}); }
   drafts.push(d); return d;
 }
 const gusts = [];
@@ -71,7 +73,7 @@ function gust(x0, x1, y0, y1, force, on){
   const g = {x0, x1, y0, y1, force, on, k:0, w:wind(x0, x1, y0, y1, force, ()=>on() && kiteOn() && !P.ground), s:[]};
   g.mat = new THREE.MeshBasicMaterial({color:'#FFFFFF', transparent:true, opacity:0, depthWrite:false});
   const n = Math.round((x1 - x0)*Math.min(12, y1 - y0)/4);
-  for(let i=0;i<n;i++){ const m = new THREE.Mesh(new THREE.PlaneGeometry(1.1, .06), g.mat); m.position.set(x0 + Math.random()*(x1 - x0), Math.max(y0, -.5) + .4 + Math.random()*Math.min(12, y1 - Math.max(y0, -.5)), .6 + Math.random()*1.2); scene.add(m); g.s.push({m, v:.8 + Math.random()*.5}); }
+  for(let i=0;i<n;i++){ const m = new THREE.Mesh(GUST_G, g.mat); m.position.set(x0 + Math.random()*(x1 - x0), Math.max(y0, -.5) + .4 + Math.random()*Math.min(12, y1 - Math.max(y0, -.5)), .6 + Math.random()*1.2); scene.add(m); g.s.push({m, v:.8 + Math.random()*.5}); }
   gusts.push(g); return g;
 }
 function airTick(dt){
@@ -318,7 +320,7 @@ bui({x:86.0, top:0, s:.5, a:85.0, b:87.2, fan:true}); bui({x:87.2, top:0, s:.44,
 vTi.mo = ["…diều sáo… bay cao…", "…mẹ ơi… cho con ra đê…", "…dây diều… đứt mất rồi…"];
 vMai.mo = ["…bánh trôi… còn nóng…", "…gió bấc… lạnh tay quá…", "…phơi miến… sợ mưa…"];
 vNa.mo = ["…chong chóng… quay đi…", "…gió ơi… thổi mạnh lên…"];
-vSau.mo = ["…lò bánh… đỏ lửa…", "…hơi nóng… bốc lên mái…", "…ai thả diều… trên mái nhà tôi…"];
+vSau.mo = ["…bếp phở… đỏ lửa…", "…hơi nóng… bốc lên mái…", "…ai thả diều… trên mái nhà tôi…"];
 vDuc.mo = ["…khung tre… phải vót mỏng…", "…dán diều… bằng hồ nếp…", "…Năm ơi… gió lên rồi…"];
 for(const v of people) talker(v.g, 2.6*(v.s || 1), ()=>{
   if(P.won && !v.line) return '';

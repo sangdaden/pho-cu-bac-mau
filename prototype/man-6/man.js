@@ -120,7 +120,7 @@ function vendor(o){
 function wake(v){ v.awake = true; colour(v.zone); if(v.rao) v.rao.on = true; }
 function vSay(v, t, d){ v.line = t; v.lineT = d; }
 
-// ================= room 1 · Đầu hẻm: bà Hai bán xôi asleep by the gate; the gate is a tall wall =================
+// ================= room 1 · Đầu hẻm: bà Mười bán xôi asleep by the gate; the gate is a tall wall =================
 house(-8, 2, 8.0, '#E8A598', {roof:'#B5513A'}); house(2, 10, 7.2, '#F1DDB0'); house(10, 19, 8.4, '#9FCBC1', {roof:'#B5513A'});
 ZONE = 'r1';
 box(W, -7.0, -1.6, 0, 3.0, -.5, -.47, '#3B4152', {outline:false});
@@ -290,7 +290,8 @@ firefly(69.4, 7.6);
 firefly(104.0, 8.4);
 firefly(143.4, 7.4);
 for(const z of ROOMS.concat(['sky'])) setZone(z, 0);
-bui({x:155.0, top:0, s:.5, a:154.6, b:157.2, fan:true}); bui({x:156.4, top:0, s:.42, a:155.4, b:158.0, fan:true}); bui({x:157.6, top:0, s:.55, a:156.4, b:159.2, fan:true});
+// the first one used to patrol right where Tò backs up to peel tờ Q and knocked the page out of his hands
+bui({x:156.0, top:0, s:.5, a:155.9, b:157.6, fan:true}); bui({x:156.6, top:0, s:.42, a:156.2, b:158.0, fan:true}); bui({x:157.6, top:0, s:.55, a:156.4, b:159.2, fan:true});
 
 // sleep-talk: each grey sleeper mutters a line about the day they forgot (Đợt 3)
 vXoi.mo = ["…xôi nếp… gói lá chuối…", "…sáng nay… ai ăn xôi gấc…", "…con bé nhà ai… quên lấy tiền thối…"];
@@ -340,11 +341,11 @@ function peeledSign(){
 function drawUtMemory(x, W, H){
   x.fillStyle = '#F6EBD9'; x.fillRect(20, 20, W-40, H-40); x.strokeStyle = '#141019'; x.lineWidth = 3; x.strokeRect(20, 20, W-40, H-40);
   x.fillStyle = '#3B2E2A'; x.font = '28px "Patrick Hand", cursive'; x.textAlign = 'center';
-  x.fillText('Sáng mồng Một Tết năm 1979, chợ bên sông', W/2, 62);
+  x.fillText('Sáng mồng Một Tết năm 1962, chợ bên sông', W/2, 62);
   x.strokeStyle = '#7A4E2D'; x.lineWidth = 4; x.strokeRect(110, 200, 260, 40);
   for(let i=0;i<6;i++){ const cx = 140 + i*40; x.beginPath(); x.moveTo(cx, 200); x.lineTo(cx, 140); x.stroke(); x.beginPath(); x.arc(cx, 128, 12, 0, Math.PI*2); x.stroke(); }
   x.beginPath(); x.arc(400, 150, 26, 0, Math.PI*2); x.stroke(); x.beginPath(); x.moveTo(400, 176); x.lineTo(400, 250); x.stroke();
-  x.fillStyle = '#3B2E2A'; x.font = '24px "Patrick Hand", cursive'; x.fillText('“Bà Năm học nặn tò he ở sạp ông Út, con đầu tiên là Tò.”', W/2, 306);
+  x.fillStyle = '#3B2E2A'; x.font = '24px "Patrick Hand", cursive'; x.fillText('“Ông Út nặn con tò he đầu tiên tặng bà Năm. Đó là Tò.”', W/2, 306);
 }
 
 // ================= per-frame level logic =================
@@ -379,7 +380,7 @@ LV.update = (dt, t)=>{
 };
 const heldIs = f => held.on && held.form === f;
 LV.hint = ()=>{
-  if(P.x < 19.4) return !vXoi.awake ? 'Bóc tờ lịch trên thúng xôi của bà Hai.' : 'Mỗi chữ của câu rao thành một bậc. Bà rao thì nhảy lên chữ đầu tiên.';
+  if(P.x < 19.4) return !vXoi.awake ? 'Bóc tờ lịch trên thúng xôi của bà Mười.' : 'Mỗi chữ của câu rao thành một bậc. Bà rao thì nhảy lên chữ đầu tiên.';
   if(P.x < 36) return !vMi.awake ? 'Bóc tờ lịch trên tủ bánh mì.' : 'Chờ chú rao, chạy theo chữ qua kênh. Chữ tắt nhanh lắm.';
   if(P.x < 52) return !vChe.awake ? 'Bóc tờ lịch trên cột sau gánh chè.' : 'Chè, đậu, đỏ, chè, bưởi: nhảy qua lại leo lên tường.';
   if(P.x < 84 && P.y < 8) return !vKem.awake ? 'Bóc tờ lịch ở góc tường bên xe kem.' : 'Nhảy lên tiếng Leng là nhún lên cao, rồi tiếng keng, lên mái.';
@@ -397,7 +398,7 @@ LV.winText = ()=>({
   h:'Hết chương 2!',
   p:'Tiếng rao về đủ chữ. Chợ bên sông lại có màu, có tiếng.',
   memory:(fliesGot === 5
-    ? '<b>Ký ức mở khoá.</b> Mồng Một Tết năm 1979, bà Năm học nặn tò he ở sạp ông Út. Con đầu tiên bà nặn là một chú gà trống đỏ, bà đặt tên là Tò.'
+    ? '<b>Ký ức mở khoá.</b> Mồng Một Tết năm 1962, ông Út nặn một con tò he tặng bà Năm ở sạp bên sông. Bà đặt tên nó là Tò, rồi theo ông học nặn từ đó.'
     : 'Còn ' + (5 - fliesGot) + ' con đom đóm ở Màn 6 chưa tìm thấy.')
     + (relicGot ? '<br><b>Tìm được con chim sẻ của bà Tám.</b>' : '<br>Có một con tò he cũ giấu trên bồn nước trên mái.'),
   next:'Chương 3 · Màn 7 Gió mùa: chiều lộng gió trên mái phố'
@@ -421,6 +422,6 @@ LV.intro = {end:12, sheetsAt:9,
   done(){
     learned.push('thuyen', 'maybay', 'quat', 'non');
     say('Hẻm chợ im phăng phắc…', 2.2);
-    objective('Bóc tờ lịch trên thúng xôi của bà Hai');
+    objective('Bóc tờ lịch trên thúng xôi của bà Mười');
   }};
 startGame();

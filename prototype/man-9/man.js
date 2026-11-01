@@ -1,5 +1,5 @@
 // ================= Màn 9 · Về nhà (hết game): an early spring morning, Tò walks home to bà Năm's street using everything he has learned =================
-// rooms (x): 1 mưa bóng mây -8..32 · 2 xôi bà Hai 32..56 · 3 kênh 56..80 · 4 lò bánh 80..104 · 5 ngõ đèn lồng 104..128
+// rooms (x): 1 mưa bóng mây -8..32 · 2 xôi bà Mười 32..56 · 3 kênh 56..80 · 4 lò bánh 80..104 · 5 ngõ đèn lồng 104..128
 //            6 cầu thiếu ván 128..152 · 7 cổng Lũ Bụi 152..176 · 8 chong chóng 176..200 · 9 sạp tò he bà Năm 200..226
 LV.level = 9;
 LV.start = {x:-3.5, y:0};
@@ -96,18 +96,20 @@ function raoTick(dt){
 }
 function raoLine(r){ if(!r.on) return ''; const n = r.ws.filter((q, i)=>r.t >= i*r.gap).length; return r.t < r.gap*r.ws.length + r.life ? r.words.slice(0, n).map(w=>w[0]).join(' ') : ''; }
 const drafts = [];
+// every air streak shares one shape: a few hundred of them each with its own geometry weighed on phones
+const STREAK_G = new THREE.PlaneGeometry(.07, .8), GUST_G = new THREE.PlaneGeometry(1.1, .06);
 function draft(x0, x1, y0, y1, on, c){
   const d = {x0, x1, y0, y1, on, k:0, l:lift(x0, x1, y0, y1, on), s:[]};
   d.mat = new THREE.MeshBasicMaterial({color:c || '#FFFFFF', transparent:true, opacity:0, depthWrite:false});
   const n = Math.round((x1 - x0)*(y1 - y0)/3.2);
-  for(let i=0;i<n;i++){ const m = new THREE.Mesh(new THREE.PlaneGeometry(.07, .8), d.mat); m.position.set(x0 + .2 + Math.random()*(x1 - x0 - .4), y0 + Math.random()*(y1 - y0), .8 + Math.random()*.6); scene.add(m); d.s.push({m, v:4 + Math.random()*3}); }
+  for(let i=0;i<n;i++){ const m = new THREE.Mesh(STREAK_G, d.mat); m.position.set(x0 + .2 + Math.random()*(x1 - x0 - .4), y0 + Math.random()*(y1 - y0), .8 + Math.random()*.6); scene.add(m); d.s.push({m, v:4 + Math.random()*3}); }
   drafts.push(d); return d;
 }
 const gusts = [];
 function gust(x0, x1, y0, y1, force, on){
   const g = {x0, x1, y0, y1, force, on, k:0, w:wind(x0, x1, y0, y1, force, ()=>on() && kiteOn() && !P.ground), s:[]};
   g.mat = new THREE.MeshBasicMaterial({color:'#FFFFFF', transparent:true, opacity:0, depthWrite:false});
-  for(let i=0;i<40;i++){ const m = new THREE.Mesh(new THREE.PlaneGeometry(1.1, .06), g.mat); m.position.set(x0 + Math.random()*(x1 - x0), .4 + Math.random()*7, .6 + Math.random()*1.2); scene.add(m); g.s.push({m, v:.8 + Math.random()*.5}); }
+  for(let i=0;i<40;i++){ const m = new THREE.Mesh(GUST_G, g.mat); m.position.set(x0 + Math.random()*(x1 - x0), .4 + Math.random()*7, .6 + Math.random()*1.2); scene.add(m); g.s.push({m, v:.8 + Math.random()*.5}); }
   gusts.push(g); return g;
 }
 function airTick(dt){
@@ -191,13 +193,15 @@ for(const x of [6, 14, 22]) plant(W, x, -.28, 3.6, 1.1, ['hoa', 'chuoi', 'p'][x%
 const cloudG = new THREE.Group(); scene.add(cloudG); cloudG.position.set(17, 11, -1); ZONE = 'keep';
 for(let k=0;k<6;k++) blob(cloudG, new THREE.Vector3((k - 2.5)*2.6, Math.sin(k*1.3)*.5, 0), [2.2, 1.3, 1.4], '#9AA0AA', {outline:false, shadow:false, keep:true});
 const vHai = person({x:-4.2, z:.7, ao:'#2E8C86', hair:'#2A2630', zone:'cohai', build:g=>{ const R = buildHai(g); return R; }, s:1.0, ry:.35});
-// ================= room 2 · Xôi bà Hai: her call is the stair over the gate =================
+// ================= room 2 · Xôi bà Mười: her call is the stair over the gate =================
 house(32, 44, 7.8, '#C7B8E0'); house(44, 56, 8.2, '#E9C46A', {roof:'#B5513A'});
 ZONE = 'r2';
 box(W, 36.6, 41.0, 0, 2.6, -1.4, -.46, '#F1DDB0', Object.assign({}, WALL, {uv:[2, 2.6]}));
 const vXoi = person({x:42.2, z:.9, ao:'#C23A28', hat:'non', hair:'#2A2630', zone:'baxoi', ry:-.2});
 vXoi.rao = rao({words:[['Xôi', 44.6, 1.4], ['nếp', 46.8, 2.8], ['nóng', 49.0, 4.2], ['đây!', 50.4, 5.4, 1.4]], gap:.5, life:3.2});
 wall(51, 53.4, 5.4, '#D9A07A', 'r2');
+// from the tops of this wall and the room-5 wall a kite glided over the canal (room 3) and the whole bridge (room 6)
+LV.noGlide = x=>(x > 53.4 && x < 76) || (x > 128 && x < 150);
 // ================= room 3 · Kênh: a paper boat over the canal =================
 house(56, 68, 7.4, '#9FCBC1', {roof:'#B5513A'}); house(68, 80, 8.0, '#E8A598');
 ZONE = 'r3';
@@ -392,7 +396,7 @@ LV.update = (dt, t)=>{
   gate.position.y = gateK*6.6; latch.visible = !gateOpen;
   steamer.rotation.y = vSang.awake ? Math.sin(t*8)*.03 : 0;
   // room beats, in the order Tò meets them
-  const beats = [[32.4, 'r1', 'Bà Hai bán xôi ngủ gật trước cổng.', 'Bóc tờ lịch trên vách sau gánh xôi'],
+  const beats = [[32.4, 'r1', 'Bà Mười bán xôi ngủ gật trước cổng.', 'Bóc tờ lịch trên vách sau gánh xôi'],
     [56.4, 'r2', 'Con kênh nhỏ chắn ngang phố.', 'Bóc tờ lịch, gấp thuyền'],
     [80.4, 'r3', 'Lò bánh mì nguội, nhà bên cao quá.', 'Bóc tờ lịch trên cửa lò'],
     [104.4, 'r4', 'Ngõ đèn lồng chưa ai thắp đèn.', 'Bóc tờ lịch ở sạp đèn'],
@@ -408,7 +412,7 @@ LV.hint = ()=>{
   if(P.x < 56) return !vXoi.awake ? 'Bóc tờ lịch trên vách sau gánh xôi.' : 'Bà rao thì nhảy lên chữ đầu tiên, leo qua cổng.';
   if(P.x < 80) return boat.on ? 'Đi trên thuyền sang bờ bên kia.' : heldIs('thuyen') ? 'Đứng sát mép nước, bấm E thả thuyền rồi nhảy lên.' : f('thuyền');
   if(P.x < 104) return !vMai.awake ? 'Bóc tờ lịch trên cửa lò.' : kiteOn() ? 'Đứng trên miệng lò, bay lên rồi sang phải lên mái.' : f('diều');
-  if(P.x < 128) return !vDen.awake ? 'Bóc tờ lịch ở sạp đèn.' : heldIs('den') ? 'Thắp đèn dưới thấp, leo lên rồi thắp đèn trên cao.' : f('đèn');
+  if(P.x < 128) return !vDen.awake ? 'Bóc tờ lịch ở sạp đèn.' : heldIs('den') ? 'Thắp đèn dưới thấp, leo lên bậc thứ hai, đứng sát mép phải rồi bấm E thắp đèn trên cao.' : f('đèn');
   if(P.x < 146) return plankOn ? 'Qua cầu.' : held.on && !held.form ? 'Đứng ở đầu cầu, bấm E dán tờ lịch vào chỗ thiếu ván.' : held.on ? 'Bấm Q cho tới khi mở ra thành tờ lịch.' : 'Lấy tờ lịch trên tường.';
   if(P.x < 176) return !dustGone ? (heldIs('quat') ? 'Quay mặt về phía Lũ Bụi, bấm E để quạt.' : f('quạt')) : gateOpen ? 'Qua cổng.' : heldIs('maybay') ? 'Đứng cách cổng vài bước, bấm E phóng vào then đỏ.' : f('máy bay');
   if(P.x < 200) return !windOn ? 'Bóc tờ lịch ở sạp chong chóng.' : kiteOn() ? 'Chờ chong chóng quay tít, chạy nhảy qua kênh.' : f('diều');
@@ -419,7 +423,7 @@ LV.winText = ()=>({
   h:'Hết game! Tò về nhà rồi.',
   p:'Cả phố cũ có màu. Bà Năm lại ngồi nặn tò he ở đầu phố.',
   memory:(fliesGot === 5
-    ? '<b>Ký ức mở khoá.</b> Bốn mươi năm ở đầu phố, mỗi con tò he bà Năm nặn là một ngày bà nhớ. Tò là ngày bà nhớ nhất.'
+    ? '<b>Ký ức mở khoá.</b> Mấy chục năm ở đầu phố, mỗi con tò he bà Năm nặn là một ngày bà nhớ. Tò là ngày bà nhớ nhất.'
     : 'Còn ' + (5 - fliesGot) + ' con đom đóm ở Màn 9 chưa tìm thấy.')
     + (relicGot ? '<br><b>Tìm được con mèo mướp của bà Năm.</b>' : '<br>Có một con tò he cũ trên nắp ống khói nhà cao.'),
   next:'Cảm ơn bạn đã chơi Phố Cũ Bạc Màu.'

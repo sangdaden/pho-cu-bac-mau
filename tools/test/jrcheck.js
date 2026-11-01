@@ -9,7 +9,7 @@ async function verify(){
   const ctx = await page.context().browser().newContext({viewport:{width:1280, height:720}}); const p2 = await ctx.newPage();
   const errs = []; p2.on('pageerror', e=>errs.push(e.message));
   await p2.route('https://fonts.googleapis.com/**', r=>r.abort());
-  await p2.addInitScript(s=>{ try { localStorage.setItem('phocu.jr', s); } catch(e){} }, last);
+  await p2.addInitScript(s=>{ try { localStorage.setItem('phocu.jr.' + JSON.parse(s).man, s); } catch(e){} }, last);
   const t0 = Date.now(); await p2.goto(url.split('#')[0] + '#tiep', {waitUntil:'commit'});
   await p2.waitForFunction(()=>window.__game && window.__game.jrResult, null, {timeout:180000}).catch(()=>{});
   const r = await p2.evaluate(()=>window.__game && window.__game.jrResult); const secs = ((Date.now() - t0)/1000).toFixed(1);
@@ -22,7 +22,7 @@ async function verify(){
 exports.attach = async (p)=>{
   page = p;
   await p.exposeFunction('__jrSnap', s=>{ last = s; });
-  await p.addInitScript(()=>{ const set = Storage.prototype.setItem; Storage.prototype.setItem = function(k, v){ if(k === 'phocu.jr') window.__jrSnap(v); return set.call(this, k, v); }; });
+  await p.addInitScript(()=>{ const set = Storage.prototype.setItem; Storage.prototype.setItem = function(k, v){ if(/^phocu\.jr/.test(k)) window.__jrSnap(v); return set.call(this, k, v); }; });
   p.on('framenavigated', f=>{ if(f === p.mainFrame()) url = f.url(); });
   const b = p.context().browser(), close = b.close.bind(b);
   b.close = async ()=>{ await verify(); return close(); };

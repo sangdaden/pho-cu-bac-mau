@@ -1,5 +1,5 @@
 // ================= Màn 8 · Rước đèn: the full moon of the first lunar month (Tết Nguyên Tiêu), the lantern procession through the old streets =================
-// rooms (x): 1 đầu phố, Bống -8..18 · 2 dây đèn qua kênh 18..42 · 3 lò bánh nướng 42..66 · 4 Lũ Bụi 66..90 · 5 đèn hoa đăng 90..114
+// rooms (x): 1 đầu phố, Bống -8..18 · 2 dây đèn qua kênh 18..42 · 3 bếp bánh trôi 42..66 · 4 Lũ Bụi 66..90 · 5 đèn hoa đăng 90..114
 //            6 lịch trăng 114..138 · 7 đèn trên dây 138..162 · 8 đoàn rước đèn 162..190 · 9 sân đình 190..216
 // new here: fold the page into a star lantern; carry its flame to the lanterns hung along the street; moon steps only hold where a hung lantern shines
 LV.level = 8;
@@ -158,17 +158,19 @@ const bongStar = new THREE.Group(); bongStar.position.set(1.7, 0, .9); scene.add
 const H1 = hang(10.0, 3.4, {cord:4.4});
 mstep(8.6, 1.5); mstep(11.0, 2.9); mstep(13.2, 4.3);
 wall(14.6, 18, 5.6, '#D9A07A', 'r1');
+// the kite must not glide from this wall over the whole canal and skip the three lanterns on the wire
+LV.noGlide = x=>x > 18 && x < 37;
 // ================= room 2 · Dây đèn qua kênh: three lanterns on a wire over the canal; light them one by one =================
 house(18, 30, 7.8, '#C7B8E0'); house(30, 42, 8.2, '#E9C46A', {roof:'#B5513A'});
 ZONE = 'r2'; wire(new THREE.Vector3(20, 4.9, .2), new THREE.Vector3(38, 4.9, .2), .5);
 const H2 = [hang(23.0, 3.4, {c:'#F2C230', cord:1.4}), hang(27.4, 3.4, {c:'#E8442E', cord:1.4}), hang(31.8, 3.4, {c:'#F06BAE', cord:1.4})];
 mstep(26.0, 1.0); mstep(29.6, 1.0); mstep(33.2, 1.0);
-// ================= room 3 · Lò bánh nướng: the mooncake oven; its heat carries a kite up to a moon step =================
+// ================= room 3 · Bếp bánh trôi: the mooncake oven; its heat carries a kite up to a moon step =================
 house(42, 52, 7.6, '#F1DDB0', {roof:'#B5513A'});
 ZONE = 'r3';
 box(W, 43.2, 49.0, 0, 3.0, -2.6, -.46, '#E9A23B', Object.assign({}, WALL, {uv:[3, 3]}));
 roof(W, 42.8, 49.4, 3.0, -.3, 2.6, 1.0, '#B5513A');
-sign(W, 45.6, 48.8, 1.9, 2.7, -.44, '#C23A28', '#F4F1EA', 'BÁNH NƯỚNG', 'bánh dẻo');
+sign(W, 45.6, 48.8, 1.9, 2.7, -.44, '#C23A28', '#F4F1EA', 'BÁNH TRÔI', 'bánh chay');
 box(W, 50, 53, 0, .5, -1.2, .4, '#8A8178', {ow:.03, uv:[1,1], map:TEX.stone});
 for(let i=0;i<5;i++) box(W, 50.2 + i*.55, 50.5 + i*.55, .5, .56, -1.1, .3, '#3B3540', {outline:false});
 const vBanh = person({x:47.6, z:.7, ao:'#F4F1EA', hair:'#2A2630', zone:'cohoa', ry:.15});
@@ -288,7 +290,7 @@ const sheetT1 = page('T', 3.6, .4, starPic, ()=>{
   play([{dur:.4, start:()=>{ bong.awake = true; colour('bong'); vSay(bong, 'Gấp đèn ông sao như hồi Trung thu đó! Thắp cái đèn treo kia kìa!', 3.2); }}, {dur:2.4, cam:[7, 3.4]},
         {dur:0, start:()=>objective('Gấp đèn, thắp đèn treo, leo bậc trăng')}]);
 });
-const sheetO3 = page('O', 44.2, .4, cakePic, ()=>wakeUp(vBanh, 'Lò bánh nướng đỏ lửa rồi! Hơi nóng bốc lên đó con.', 'Thắp đèn treo, rồi gấp diều bay theo hơi lò'));
+const sheetO3 = page('O', 44.2, .4, cakePic, ()=>wakeUp(vBanh, 'Bếp bánh trôi đỏ lửa rồi! Hơi nóng bốc lên đó con.', 'Thắp đèn treo, rồi gấp diều bay theo hơi lò'));
 const sheetQ4 = page('Q', 67.4, .4, fanPic, ()=>{ colour('r3'); objective('Gấp quạt, đuổi Lũ Bụi khỏi cột đèn'); });
 const sheetP5 = page('P', 91.4, .4, lotusPic, ()=>wakeUp(vSen, 'Thả đèn hoa đăng đi con. Đèn trôi tới đâu sáng tới đó.', 'Thắp đèn hoa đăng, rồi gấp thuyền qua sông'));
 const sheetM6 = sheet({id:'L', x0:115.4, x1:116.6, y0:.4, y1:2.4, z:-.44,
@@ -326,7 +328,7 @@ bui({x:75.0, top:0, s:.5, a:74.0, b:78.4, fan:true}); bui({x:76.6, top:0, s:.44,
 bong.mo = ["…đèn ông sao… năm cánh…", "…Tò ơi… rước đèn đi…", "…tùng dinh dinh… cắc tùng…"];
 vBanh.mo = ["…bánh trôi… bánh chay…", "…Rằm tháng Giêng… lên chùa…", "…nặn viên tròn… cho đều tay…"];
 vSen.mo = ["…hoa sen… cắm lên ban thờ…", "…năm nay… sen nở muộn…"];
-vTu.mo = ["…cầu dao… hai, ba, một…", "…đình làng… mất điện rồi…", "…ông sao… ai dán vậy…"];
+vTu.mo = ["…cầu dao… một, ba, hai…", "…đình làng… mất điện rồi…", "…ông sao… ai dán vậy…"];
 for(const v of people) talker(v.g, 2.6*(v.s || 1)*.9, ()=>{
   if(!v.g.visible || P.won && !v.line) return '';
   if(v.lineT > 0) return v.line;
@@ -404,7 +406,7 @@ LV.update = (dt, t)=>{
   }
   // room beats, in the order Tò meets them
   if(!met2 && P.x > 18.4 && P.y < 1){ met2 = true; colour('r1'); say('Dây đèn qua kênh chưa ai thắp…', 2.4); objective('Thắp từng đèn treo, đi trên bậc trăng qua kênh'); }
-  if(!met3 && P.x > 42.4 && P.y < 1){ met3 = true; colour('r2'); say('Lò bánh nướng nguội ngắt.', 2.4); objective('Bóc tờ lịch trên lò bánh nướng'); }
+  if(!met3 && P.x > 42.4 && P.y < 1){ met3 = true; colour('r2'); say('Bếp bánh trôi nguội ngắt.', 2.4); objective('Bóc tờ lịch trên bếp bánh trôi'); }
   if(!met4 && P.x > 66.4 && P.y < 1){ met4 = true; colour('r3'); say('Lũ Bụi bu quanh cột đèn!', 2.4); objective('Gấp quạt, đuổi Lũ Bụi khỏi cột đèn'); }
   if(!met5 && P.x > 90.4 && P.y < 1){ met5 = true; colour('r4'); say('Bờ sông tối om. Bà Sen ngồi bên rổ đèn hoa đăng.', 2.6); objective('Bóc tờ lịch trên vách nhà bà Sen'); }
   if(!met6 && P.x > 114.4 && P.y < 1){ met6 = true; colour('r5'); moonDay(); }
@@ -416,7 +418,7 @@ LV.hint = ()=>{
   const den = heldIs('den'), fold = held.on ? 'Bấm Q cho tới khi gấp thành ' : 'Lấy tờ lịch, gấp ';
   if(P.x < 18) return !bong.awake ? 'Bóc tờ lịch trên tường nhà Bống.' : !H1.lit ? (den ? 'Đứng dưới đèn treo, bấm E để thắp.' : fold + 'đèn.') : 'Bậc trăng chỉ cứng chỗ có đèn treo soi tới. Leo lên tường.';
   if(P.x < 37) return den ? 'Thắp từng đèn trên dây. Đứng trên bậc vừa sáng rồi thắp đèn kế tiếp.' : fold + 'đèn.';
-  if(P.x < 58) return !vBanh.awake ? 'Bóc tờ lịch trên lò bánh nướng.' : !H3.lit ? (den ? 'Thắp đèn treo cạnh lò cho bậc trăng sáng.' : fold + 'đèn, thắp đèn treo cạnh lò.') : heldIs('dieu') ? 'Cầm diều đứng trên miệng lò, bay lên bậc trăng rồi nhảy lên tường.' : fold + 'diều.';
+  if(P.x < 58) return !vBanh.awake ? 'Bóc tờ lịch trên bếp bánh trôi.' : !H3.lit ? (den ? 'Thắp đèn treo cạnh lò cho bậc trăng sáng.' : fold + 'đèn, thắp đèn treo cạnh lò.') : heldIs('dieu') ? 'Cầm diều đứng trên miệng lò, bay lên bậc trăng rồi nhảy lên tường.' : fold + 'diều.';
   if(P.x < 84) return !dustGone ? (heldIs('quat') ? 'Quay mặt về phía Lũ Bụi, bấm E để quạt.' : fold + 'quạt.') : !H4.lit ? (den ? 'Đứng dưới đèn trên cột, bấm E để thắp.' : fold + 'đèn.') : 'Leo theo bậc trăng lên tường.';
   if(P.x < 108) return !vSen.awake ? 'Bóc tờ lịch trên vách nhà bà Sen.' : !H5.lit ? (den ? 'Đứng sát mép sông, bấm E thắp đèn hoa đăng.' : fold + 'đèn.') : boat.on ? 'Đi trên thuyền sang bờ bên kia, nhảy lên bậc trăng.' : heldIs('thuyen') ? 'Đứng sát mép nước, bấm E thả thuyền rồi nhảy lên.' : fold + 'thuyền.';
   if(P.x < 138) return sheetM6.L === 1 ? 'Trăng Rằm soi sáng bậc. Leo lên tường.' : sheetM6.L === 0 ? 'Mây che trăng. Bóc tờ lịch cho tới đêm Rằm.' : 'Không có trăng. Bấm R dán lại ngày trước.';
